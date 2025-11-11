@@ -1157,10 +1157,35 @@ Analytics Views (mart_player_season, leaderboards, etc.)
 2. Circuit strength ratings (adjust stats by competition level)
 3. Scouting reports (auto-generated from stats + video metadata)
 
+### COMPLETED (Continued)
+
+#### [2025-11-12 03:00] Phase 10: High-Leverage Sources + AAU Event Platforms
+- ✅ **CIF-SS Widgets Adapter** (`src/datasources/us/cifsshome.py`, 260 lines)
+  - California Interscholastic Federation - Southern Section
+  - Playoff schedules, brackets, tournament data via JSON widget APIs
+  - Coverage: Southern California (largest CA section)
+
+- ✅ **UIL Brackets Adapter** (`src/datasources/us/uil_brackets.py`, 310 lines)
+  - University Interscholastic League (Texas postseason)
+  - Playoff brackets for all classifications (1A-6A)
+  - Game schedules, results, team seeds/lineage
+  - Coverage: Texas (all classifications)
+
+- ✅ **Exposure Events Adapter** (`src/datasources/us/exposure_events.py`, 430 lines)
+  - **Generic AAU event platform** (unlocks dozens of events with zero per-event code)
+  - Event URL → Divisions → Pools/Brackets → Games → Box Scores
+  - Reusable for any exposureevents.com event
+  - Methods: get_event_info(), get_divisions(), get_teams_from_event()
+  - Coverage: National (any Exposure Events tournament)
+
+**Architecture**: Generic event platform pattern, schedule-only graceful degradation, canonical integration
+**Coverage**: 59 total adapters (3 new), California/Texas enhanced, AAU event foundation
+**Impact**: Single Exposure Events adapter unlocks dozens of AAU tournaments nationwide
+
 ### IN PROGRESS
 
-*Ready for testing and commit*
+*Phase 10: 3 of 4 high-leverage sources complete (TournyMachine pending)*
 
 ---
 
-*Last Updated: 2025-11-12 02:00 UTC*
+*Last Updated: 2025-11-12 03:00 UTC*

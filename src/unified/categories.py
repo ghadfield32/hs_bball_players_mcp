@@ -94,13 +94,13 @@ CIRCUIT_KEYS = {
     "dciaa": "DCIAA",
     "hhsaa": "HHSAA",
     "oia": "OIA",
-    # Event Platforms (future)
+    # Event Platforms
     "exposure_events": "EXPOSURE_EVENTS",
     "tourneymachine": "TOURNEYMACHINE",
-    # Additional platforms
+    # State-specific platforms
     "texas_hoops": "TEXAS_HOOPS",
-    "cifsshome": "CIFSSHOME",
-    "uil_brackets": "UIL_BRACKETS",
+    "cifsshome": "CIFSSHOME",  # California CIF-SS
+    "uil_brackets": "UIL_BRACKETS",  # Texas UIL
     # Canada
     "npa": "NPA",
 }
