@@ -9,6 +9,9 @@ from .ote import OTEDataSource
 from .rankone import RankOneDataSource
 from .sblive import SBLiveDataSource
 from .three_ssb import ThreeSSBDataSource
+from .three_ssb_girls import ThreeSSBGirlsDataSource
+from .uaa import UAADataSource
+from .uaa_girls import UAAGirlsDataSource
 
 # Regional/State platforms
 from .fhsaa import FHSAADataSource
@@ -72,6 +75,9 @@ __all__ = [
     "RankOneDataSource",
     "SBLiveDataSource",
     "ThreeSSBDataSource",
+    "ThreeSSBGirlsDataSource",
+    "UAADataSource",
+    "UAAGirlsDataSource",
     # Regional/State platforms
     "FHSAADataSource",
     "HHSAADataSource",

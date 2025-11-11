@@ -17,7 +17,10 @@ class DataSourceType(str, Enum):
     # US - National Circuits
     EYBL = "eybl"  # Nike EYBL (Boys)
     EYBL_GIRLS = "eybl_girls"  # Nike Girls EYBL
-    THREE_SSB = "three_ssb"  # Adidas 3 Stripe Select Basketball
+    THREE_SSB = "three_ssb"  # Adidas 3 Stripe Select Basketball (Boys)
+    THREE_SSB_GIRLS = "three_ssb_girls"  # Adidas 3 Stripe Select Basketball (Girls)
+    UAA = "uaa"  # Under Armour Association (Boys)
+    UAA_GIRLS = "uaa_girls"  # Under Armour Association (Girls) / UA Next
     GRIND_SESSION = "grind_session"  # Grind Session
     OTE = "ote"  # Overtime Elite
 

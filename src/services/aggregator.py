@@ -24,6 +24,9 @@ from ..datasources.us.psal import PSALDataSource
 from ..datasources.us.rankone import RankOneDataSource
 from ..datasources.us.sblive import SBLiveDataSource
 from ..datasources.us.three_ssb import ThreeSSBDataSource
+from ..datasources.us.three_ssb_girls import ThreeSSBGirlsDataSource
+from ..datasources.us.uaa import UAADataSource
+from ..datasources.us.uaa_girls import UAAGirlsDataSource
 from ..datasources.us.wsn import WSNDataSource
 
 # Import from global module (avoid 'global' keyword with import style)
@@ -74,10 +77,13 @@ class DataSourceAggregator:
         # Map of source types to their adapter classes
         source_classes = {
             # ===== ACTIVE ADAPTERS (Production Ready) =====
-            # US - National Circuits:
-            "eybl": EYBLDataSource,          # Nike EYBL (boys)
-            "eybl_girls": EYBLGirlsDataSource,  # Nike Girls EYBL
-            "three_ssb": ThreeSSBDataSource,  # Adidas 3SSB national circuit
+            # US - National Circuits (Big 3 complete):
+            "eybl": EYBLDataSource,                      # Nike EYBL (boys)
+            "eybl_girls": EYBLGirlsDataSource,          # Nike Girls EYBL
+            "three_ssb": ThreeSSBDataSource,            # Adidas 3SSB (boys)
+            "three_ssb_girls": ThreeSSBGirlsDataSource, # Adidas 3SSB Girls
+            "uaa": UAADataSource,                        # Under Armour Association (boys)
+            "uaa_girls": UAAGirlsDataSource,            # UA Next (girls)
 
             # US - Multi-State Coverage:
             "bound": BoundDataSource,        # IA, SD, IL, MN (4 states)

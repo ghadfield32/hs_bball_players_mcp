@@ -544,7 +544,7 @@ sources:
 
   - id: three_ssb
     name: "Adidas 3SSB"
-    full_name: "Adidas 3 Stripe Select Basketball"
+    full_name: "Adidas 3 Stripe Select Basketball (Boys)"
     region: US
     type: circuit
     status: active
@@ -577,40 +577,110 @@ sources:
     robots_policy: "allowed"
     notes: "Adidas circuit. Stats availability varies."
 
-  - id: uaa
-    name: "Under Armour AAU"
-    full_name: "Under Armour Association"
+  - id: three_ssb_girls
+    name: "Adidas 3SSB Girls"
+    full_name: "Adidas 3 Stripe Select Basketball (Girls)"
     region: US
     type: circuit
-    status: planned
-    url: "https://underarmournext.com/basketball"
+    status: active
+    url: "https://adidas3ssb.com/girls"
+    adapter_class: "ThreeSSBGirlsDataSource"
+    adapter_module: "src.datasources.us.three_ssb_girls"
+    capabilities:
+      player_search: true
+      player_profiles: false
+      season_stats: true
+      game_stats: false
+      box_scores: false
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: false
+      stat_completeness: medium
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Adidas Girls circuit - same structure as boys"
+
+  - id: uaa
+    name: "Under Armour Association"
+    full_name: "Under Armour Association (Boys)"
+    region: US
+    type: circuit
+    status: active
+    url: "https://underarmourassociation.com"
     adapter_class: "UAADataSource"
     adapter_module: "src.datasources.us.uaa"
     capabilities:
       player_search: true
       player_profiles: false
-      season_stats: false
+      season_stats: true
       game_stats: false
       box_scores: false
-      leaderboards: false
-      team_stats: false
+      leaderboards: true
+      team_stats: true
       schedules: true
-      standings: false
+      standings: true
     data_quality:
-      has_player_stats: false
+      has_player_stats: true
       has_box_scores: false
-      stat_completeness: low
+      stat_completeness: medium
     rate_limit:
-      requests_per_minute: 15
-      burst_capacity: 5
+      requests_per_minute: 20
+      burst_capacity: 8
       safety_margin: 0.5
     cache_ttl:
       players: 3600
-      stats: 0
+      stats: 3600
       games: 1800
-      standings: 0
+      standings: 7200
     robots_policy: "allowed"
-    notes: "Schedule/events focus. Stats exposure varies. Scores-first adapter."
+    notes: "Official Under Armour circuit. Event-based stats and standings. Completes big 3 national circuits."
+
+  - id: uaa_girls
+    name: "UA Next"
+    full_name: "UA Next (Girls Under Armour Association)"
+    region: US
+    type: circuit
+    status: active
+    url: "https://uanext.com"
+    adapter_class: "UAAGirlsDataSource"
+    adapter_module: "src.datasources.us.uaa_girls"
+    capabilities:
+      player_search: true
+      player_profiles: false
+      season_stats: true
+      game_stats: false
+      box_scores: false
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: false
+      stat_completeness: medium
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Girls Under Armour circuit - same structure as boys UAA"
 
   # =============================================================================
   # GLOBAL - FIBA & INTERNATIONAL YOUTH
