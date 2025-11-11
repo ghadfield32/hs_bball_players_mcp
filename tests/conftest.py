@@ -1,0 +1,151 @@
+"""
+Pytest Configuration and Shared Fixtures
+
+Provides shared fixtures for all test modules.
+"""
+
+import asyncio
+from pathlib import Path
+from typing import AsyncGenerator
+
+import pytest
+import pytest_asyncio
+from fastapi.testclient import TestClient
+
+from src.config import get_settings
+from src.datasources.us.eybl import EYBLDataSource
+from src.datasources.us.mn_hub import MNHubDataSource
+from src.datasources.us.psal import PSALDataSource
+from src.datasources.europe.fiba_youth import FIBAYouthDataSource
+from src.main import app
+from src.services.aggregator import DataSourceAggregator, get_aggregator
+from src.services.duckdb_storage import DuckDBStorage, get_duckdb_storage
+from src.services.parquet_exporter import ParquetExporter, get_parquet_exporter
+
+
+# Configure pytest for async tests
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create an event loop for the test session."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(scope="session")
+def test_settings():
+    """Get test settings."""
+    return get_settings()
+
+
+# API Client Fixtures
+@pytest.fixture(scope="module")
+def api_client():
+    """Create FastAPI test client."""
+    with TestClient(app) as client:
+        yield client
+
+
+# DataSource Fixtures
+@pytest_asyncio.fixture(scope="module")
+async def eybl_source() -> AsyncGenerator[EYBLDataSource, None]:
+    """Create EYBL datasource for testing."""
+    source = EYBLDataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def psal_source() -> AsyncGenerator[PSALDataSource, None]:
+    """Create PSAL datasource for testing."""
+    source = PSALDataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def fiba_source() -> AsyncGenerator[FIBAYouthDataSource, None]:
+    """Create FIBA Youth datasource for testing."""
+    source = FIBAYouthDataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def mn_hub_source() -> AsyncGenerator[MNHubDataSource, None]:
+    """Create MN Hub datasource for testing."""
+    source = MNHubDataSource()
+    yield source
+    await source.close()
+
+
+# Service Fixtures
+@pytest_asyncio.fixture(scope="module")
+async def aggregator() -> AsyncGenerator[DataSourceAggregator, None]:
+    """Create aggregator service for testing."""
+    agg = get_aggregator()
+    yield agg
+    await agg.close_all()
+
+
+@pytest.fixture(scope="module")
+def duckdb_storage() -> DuckDBStorage:
+    """Create DuckDB storage for testing."""
+    return get_duckdb_storage()
+
+
+@pytest.fixture(scope="module")
+def parquet_exporter() -> ParquetExporter:
+    """Create Parquet exporter for testing."""
+    return get_parquet_exporter()
+
+
+# Test Data Fixtures
+@pytest.fixture
+def sample_player_search_params():
+    """Sample player search parameters."""
+    return {
+        "name": "Smith",
+        "limit": 5,
+    }
+
+
+@pytest.fixture
+def sample_team_name():
+    """Sample team name for testing."""
+    return "Lakers"
+
+
+@pytest.fixture
+def sample_season():
+    """Sample season for testing."""
+    return "2024-25"
+
+
+# Cleanup Fixtures
+@pytest.fixture(autouse=True)
+def cleanup_test_exports(test_settings):
+    """Clean up test export files after each test."""
+    yield
+    # Cleanup logic here if needed
+    # For now, we'll keep test exports for manual inspection
+
+
+# Markers
+def pytest_configure(config):
+    """Configure custom pytest markers."""
+    config.addinivalue_line(
+        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+    )
+    config.addinivalue_line(
+        "markers", "integration: marks tests as integration tests requiring real APIs"
+    )
+    config.addinivalue_line(
+        "markers", "datasource: marks tests for datasource adapters"
+    )
+    config.addinivalue_line(
+        "markers", "service: marks tests for service layer"
+    )
+    config.addinivalue_line(
+        "markers", "api: marks tests for API endpoints"
+    )

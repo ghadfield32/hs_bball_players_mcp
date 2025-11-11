@@ -11,6 +11,8 @@ from pydantic import BaseModel
 
 from ..models import Player, PlayerSeasonStats, Team
 from ..services.aggregator import get_aggregator
+from ..services.duckdb_storage import get_duckdb_storage
+from ..services.parquet_exporter import get_parquet_exporter
 from ..utils.logger import get_logger
 
 logger = get_logger(__name__)

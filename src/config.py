@@ -85,6 +85,26 @@ class Settings(BaseSettings):
         default="sqlite:///./data/basketball_stats.db", description="Database URL"
     )
 
+    # DuckDB Settings (Analytical Database)
+    duckdb_enabled: bool = Field(default=True, description="Enable DuckDB analytics database")
+    duckdb_path: str = Field(
+        default="./data/basketball_analytics.duckdb", description="DuckDB database path"
+    )
+    duckdb_memory_limit: str = Field(default="2GB", description="DuckDB memory limit")
+    duckdb_threads: int = Field(default=4, ge=1, le=32, description="DuckDB thread count")
+
+    # Data Export Settings
+    export_dir: str = Field(default="./data/exports", description="Export directory path")
+    parquet_compression: str = Field(
+        default="snappy", description="Parquet compression (snappy, gzip, zstd, lz4)"
+    )
+    enable_auto_export: bool = Field(
+        default=False, description="Enable automatic data export to Parquet"
+    )
+    auto_export_interval: int = Field(
+        default=3600, ge=60, description="Auto-export interval in seconds"
+    )
+
     # Data Source Settings - EYBL
     eybl_base_url: str = Field(default="https://nikeeyb.com", description="EYBL base URL")
     eybl_enabled: bool = Field(default=True, description="Enable EYBL datasource")

@@ -17,6 +17,8 @@ from ..datasources.us.mn_hub import MNHubDataSource
 from ..datasources.us.psal import PSALDataSource
 from ..models import Player, PlayerSeasonStats, Team
 from ..utils.logger import get_logger
+from .duckdb_storage import get_duckdb_storage
+from .parquet_exporter import get_parquet_exporter
 
 logger = get_logger(__name__)
 
@@ -34,7 +36,14 @@ class DataSourceAggregator:
         self.sources: dict[str, BaseDataSource] = {}
         self._initialize_sources()
 
-        logger.info(f"Aggregator initialized with {len(self.sources)} sources")
+        # Initialize storage and export services
+        self.duckdb = get_duckdb_storage() if self.settings.duckdb_enabled else None
+        self.exporter = get_parquet_exporter()
+
+        logger.info(
+            f"Aggregator initialized with {len(self.sources)} sources",
+            duckdb_enabled=self.settings.duckdb_enabled,
+        )
 
     def _initialize_sources(self) -> None:
         """Initialize all enabled datasource adapters."""
@@ -148,6 +157,14 @@ class DataSourceAggregator:
             f"Aggregated {len(unique_players)} unique players from {len(all_players)} total results"
         )
 
+        # Persist to DuckDB if enabled
+        if self.duckdb and all_players:
+            try:
+                await self.duckdb.store_players(all_players)
+                logger.info(f"Persisted {len(all_players)} players to DuckDB")
+            except Exception as e:
+                logger.error("Failed to persist players to DuckDB", error=str(e))
+
         return unique_players
 
     async def get_player_from_source(
@@ -222,6 +239,14 @@ class DataSourceAggregator:
             if result:
                 all_stats.append(result)
                 logger.info(f"Got stats from {source_keys[i]}")
+
+        # Persist to DuckDB if enabled
+        if self.duckdb and all_stats:
+            try:
+                await self.duckdb.store_player_stats(all_stats)
+                logger.info(f"Persisted {len(all_stats)} player stats to DuckDB")
+            except Exception as e:
+                logger.error("Failed to persist stats to DuckDB", error=str(e))
 
         return all_stats
 

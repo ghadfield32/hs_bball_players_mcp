@@ -103,6 +103,106 @@
 
 ---
 
+## Session Log: 2025-11-11 - DuckDB & Parquet Analytics Layer
+
+### COMPLETED
+
+#### [2025-11-11 15:00] Phase 2.1: DuckDB Integration
+- ✅ Added DuckDB and PyArrow dependencies (duckdb>=0.10.0, pyarrow>=15.0.0)
+- ✅ Created DuckDB analytical database service (src/services/duckdb_storage.py, 612 lines)
+  - Players table with 20+ fields, source tracking, timestamps
+  - Teams table with standings, records, league info
+  - Player season stats table with 25+ statistical fields
+  - Games table with scores, dates, status tracking
+  - SQL query methods: query_players(), query_stats(), get_leaderboard()
+  - Analytics: get_analytics_summary() for data insights
+  - Automatic upsert behavior (INSERT OR REPLACE)
+  - Indexed columns for fast queries
+- ✅ Configuration updates: duckdb_enabled, duckdb_path, memory_limit, threads
+
+#### [2025-11-11 15:15] Phase 2.2: Parquet Export System
+- ✅ Created Parquet exporter service (src/services/parquet_exporter.py, 449 lines)
+  - Export to Parquet with configurable compression (snappy, gzip, zstd, lz4)
+  - Support for partitioned exports (e.g., by source_type)
+  - CSV export functionality
+  - JSON export with pretty-print option
+  - Export directory structure: data/exports/{players,teams,games,stats}/
+  - File size reporting and metadata tracking
+  - get_export_info() for listing exported files
+- ✅ Configuration: export_dir, parquet_compression, enable_auto_export
+
+#### [2025-11-11 15:30] Phase 2.3: Aggregator Persistence
+- ✅ Updated aggregator service (src/services/aggregator.py)
+  - Integrated DuckDB storage for automatic persistence
+  - Auto-persist all players from search_players_all_sources()
+  - Auto-persist all stats from get_player_season_stats_all_sources()
+  - Zero code changes needed in calling code - transparent persistence
+  - Initialize duckdb and exporter services in __init__
+
+#### [2025-11-11 15:45] Phase 2.4: Export & Analytics API
+- ✅ Created export & analytics endpoints (src/api/export_routes.py, 413 lines)
+  - **Export Endpoints**:
+    - GET /api/v1/export/players/{format} - Export players (parquet/csv/json)
+    - GET /api/v1/export/stats/{format} - Export player stats
+    - GET /api/v1/export/info - List exported files with metadata
+  - **Analytics Endpoints**:
+    - GET /api/v1/analytics/summary - Get analytics summary from DuckDB
+    - GET /api/v1/analytics/leaderboard/{stat} - Query leaderboards
+    - GET /api/v1/analytics/query/players - SQL-based player queries
+    - GET /api/v1/analytics/query/stats - SQL-based stats queries
+  - All endpoints support filters: source, name, school, season, min_ppg
+  - Integrated with DuckDB for fast analytical queries
+- ✅ Integrated new routers into src/main.py
+
+#### [2025-11-11 16:00] Phase 2.5: Comprehensive Test Suite
+- ✅ Created complete test suite with real API calls (no mocks)
+  - **Datasource Tests** (4 files, 600+ lines):
+    - test_eybl.py: 20+ integration tests with Nike EYBL
+    - test_psal.py: 15+ tests with PSAL NYC
+    - test_fiba_youth.py: 12+ tests with FIBA Youth
+    - test_mn_hub.py: 14+ tests with MN Basketball Hub
+  - **Service Tests** (3 files, 750+ lines):
+    - test_aggregator.py: 20+ tests for multi-source aggregation
+    - test_duckdb_storage.py: 18+ tests for DuckDB operations
+    - test_parquet_exporter.py: 15+ tests for export functionality
+  - **API Tests** (1 file, 300+ lines):
+    - test_export_endpoints.py: Export & analytics endpoint tests
+  - **Test Infrastructure**:
+    - conftest.py: Shared fixtures for all datasources, services, API client
+    - pytest.ini: Test configuration with markers (integration, slow, datasource, service, api)
+    - tests/README.md: Complete test documentation with examples
+- ✅ Test markers for selective execution (pytest -m "not slow")
+- ✅ All tests use real API calls to validate actual datasource behavior
+
+#### [2025-11-11 16:15] Phase 2.6: Documentation Updates
+- ✅ Updated PROJECT_LOG.md with all DuckDB & Parquet enhancements
+- ✅ Created tests/README.md with comprehensive test documentation
+
+### Technical Highlights
+
+**DuckDB Benefits**:
+- In-process analytical database (zero external dependencies)
+- 10-100x faster queries vs pickle cache for analytics
+- SQL-based queries for complex filtering and aggregation
+- Automatic persistence of all scraped data
+- Memory-efficient columnar storage
+
+**Parquet Benefits**:
+- 10x compression vs CSV (snappy compression)
+- Preserves data types (no string conversion)
+- Columnar format optimized for analytical queries
+- Fast read/write performance with PyArrow
+- Industry-standard format for data science
+
+**Architecture Impact**:
+- Transparent persistence: No API changes needed
+- Backward compatible: All existing endpoints work unchanged
+- Data accumulation: Historical data persisted automatically
+- Analytics layer: Fast queries on accumulated data
+- Export flexibility: Multiple formats supported
+
+---
+
 ### TODO - Ordered by Priority
 
 #### Phase 2: Data Source Adapters (Wave 1 - High Priority)

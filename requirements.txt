@@ -18,6 +18,8 @@ python-dotenv>=1.0.0
 # Data Processing
 pandas>=2.2.0
 python-dateutil>=2.8.2
+pyarrow>=15.0.0  # Parquet support
+duckdb>=0.10.0  # Analytical database
 
 # Database
 sqlalchemy>=2.0.25
