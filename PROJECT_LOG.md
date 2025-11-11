@@ -178,6 +178,28 @@
 - ✅ Updated PROJECT_LOG.md with all DuckDB & Parquet enhancements
 - ✅ Created tests/README.md with comprehensive test documentation
 
+#### [2025-11-11 16:30] Phase 2.7: Identity Resolution & Persistence Control
+- ✅ Created player identity resolution service (src/services/identity.py, 350+ lines)
+  - Deterministic UID generation: `player_uid = f(name, school, grad_year)`
+  - Name and school normalization (remove suffixes, lowercase, trim)
+  - Fuzzy matching support with configurable thresholds
+  - deduplicate_players() for cross-source deduplication
+  - Cache for performance (in-memory identity lookup)
+- ✅ Updated aggregator service to use identity resolution
+  - Replaced basic deduplication with identity-based dedupe
+  - Added player_uid to all search results
+  - Added player_uid to leaderboard entries
+- ✅ Updated API routes for persistence control
+  - Added `persist=true` parameter to stats endpoint
+  - Updated documentation for identity-aware search
+  - Backward compatible (persist defaults to false)
+- ✅ Created comprehensive identity service tests (15+ tests)
+  - Test UID generation and normalization
+  - Test caching behavior
+  - Test fuzzy matching (names and schools)
+  - Test player deduplication (exact and fuzzy)
+  - Test cache management
+
 ### Technical Highlights
 
 **DuckDB Benefits**:
@@ -194,12 +216,20 @@
 - Fast read/write performance with PyArrow
 - Industry-standard format for data science
 
+**Identity Resolution Benefits**:
+- Stable player UIDs across sources for reliable cross-source matching
+- Intelligent deduplication (name, school, grad year normalization)
+- Fuzzy matching for handling name variations and typos
+- In-memory caching for fast lookup performance
+- Enables player tracking across multiple data sources
+
 **Architecture Impact**:
 - Transparent persistence: No API changes needed
 - Backward compatible: All existing endpoints work unchanged
 - Data accumulation: Historical data persisted automatically
 - Analytics layer: Fast queries on accumulated data
 - Export flexibility: Multiple formats supported
+- Cross-source player matching: Stable UIDs enable data linkage
 
 ---
 

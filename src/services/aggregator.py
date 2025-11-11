@@ -18,6 +18,7 @@ from ..datasources.us.psal import PSALDataSource
 from ..models import Player, PlayerSeasonStats, Team
 from ..utils.logger import get_logger
 from .duckdb_storage import get_duckdb_storage
+from .identity import deduplicate_players, resolve_player_uid
 from .parquet_exporter import get_parquet_exporter
 
 logger = get_logger(__name__)
@@ -140,18 +141,21 @@ class DataSourceAggregator:
                 all_players.extend(result)
                 logger.info(f"Source {source_key} returned {len(result)} players")
 
-        # Deduplicate (basic implementation - by name)
-        seen_names = set()
-        unique_players = []
-
-        for player in all_players:
-            key = (player.full_name.lower(), player.school_name or "")
-            if key not in seen_names:
-                unique_players.append(player)
-                seen_names.add(key)
+        # Deduplicate using identity resolution
+        unique_players = deduplicate_players(all_players, fuzzy=False)
 
         # Apply total limit
         unique_players = unique_players[:total_limit]
+
+        # Add stable player_uid to each result
+        for player in unique_players:
+            # Store uid as a custom attribute (not part of the model)
+            uid = resolve_player_uid(
+                player.full_name, player.school_name or "", player.grad_year
+            )
+            # Add uid as metadata in data_source
+            if player.data_source:
+                player.data_source.player_uid = uid
 
         logger.info(
             f"Aggregated {len(unique_players)} unique players from {len(all_players)} total results"
@@ -326,9 +330,17 @@ class DataSourceAggregator:
                 continue
 
             if result:
-                # Add source info to each entry
+                # Add source info and player_uid to each entry
                 for entry in result:
                     entry["source"] = source_key
+                    # Add stable player_uid if we have player info
+                    if "player_name" in entry:
+                        uid = resolve_player_uid(
+                            entry.get("player_name", ""),
+                            entry.get("school", ""),
+                            entry.get("grad_year"),
+                        )
+                        entry["player_uid"] = uid
                 all_entries.extend(result)
 
         # Sort by stat value (descending)

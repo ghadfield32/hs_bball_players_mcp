@@ -92,7 +92,8 @@ async def search_players(
     Search for players across multiple data sources.
 
     Queries enabled data sources in parallel and aggregates results.
-    Performs basic deduplication by player name and school.
+    Uses identity resolution for intelligent deduplication across sources.
+    Automatically persists results to DuckDB if enabled.
 
     ### Query Parameters:
     - **name**: Filter by player name (case-insensitive partial match)
@@ -102,7 +103,7 @@ async def search_players(
     - **limit**: Maximum number of results (1-200, default: 50)
 
     ### Returns:
-    - List of Player objects matching criteria
+    - List of Player objects matching criteria with stable player_uid for cross-source matching
     - Total count of results
     - Sources that were queried
 
@@ -117,7 +118,7 @@ async def search_players(
 
         aggregator = get_aggregator()
 
-        # Search players
+        # Search players (automatically uses identity resolution)
         players = await aggregator.search_players_all_sources(
             name=name,
             team=team,
@@ -194,6 +195,9 @@ async def get_player_stats(
     player_name: str = Query(..., description="Player name"),
     season: Optional[str] = Query(None, description="Season (e.g., '2024-25')"),
     sources: Optional[str] = Query(None, description="Comma-separated source list"),
+    persist: bool = Query(
+        False, description="If true, persist stats to DuckDB for analytics"
+    ),
 ):
     """
     Get player season statistics from multiple sources.
@@ -205,13 +209,14 @@ async def get_player_stats(
     - **player_name**: Player's full or partial name
     - **season**: Season filter (optional, defaults to current season)
     - **sources**: Limit to specific sources (optional)
+    - **persist**: If true, automatically persist results to DuckDB (default: false)
 
     ### Returns:
     - List of PlayerSeasonStats objects from different sources
 
     ### Example:
     ```
-    GET /api/v1/players/John Smith/stats?season=2024-25
+    GET /api/v1/players/John Smith/stats?season=2024-25&persist=true
     ```
     """
     try:
@@ -229,6 +234,18 @@ async def get_player_stats(
             raise HTTPException(
                 status_code=404, detail=f"No stats found for player: {player_name}"
             )
+
+        # Optional: manually persist to DuckDB if requested
+        if persist and stats:
+            duckdb = get_duckdb_storage()
+            if duckdb:
+                try:
+                    await duckdb.store_player_stats(stats)
+                    logger.info(
+                        f"Manually persisted {len(stats)} stats records to DuckDB"
+                    )
+                except Exception as e:
+                    logger.error("Failed to persist stats", error=str(e))
 
         return stats
 
