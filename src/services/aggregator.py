@@ -13,21 +13,39 @@ from ..config import get_settings
 from ..datasources.base import BaseDataSource
 
 # Active adapters (fully implemented):
-from ..datasources.europe.fiba_youth import FIBAYouthDataSource
+# US - National Circuits
 from ..datasources.us.bound import BoundDataSource
 from ..datasources.us.eybl import EYBLDataSource
 from ..datasources.us.eybl_girls import EYBLGirlsDataSource
+from ..datasources.us.three_ssb import ThreeSSBDataSource
+from ..datasources.us.three_ssb_girls import ThreeSSBGirlsDataSource
+from ..datasources.us.uaa import UAADataSource
+from ..datasources.us.uaa_girls import UAAGirlsDataSource
+
+# US - State/Regional Platforms
 from ..datasources.us.fhsaa import FHSAADataSource
 from ..datasources.us.hhsaa import HHSAADataSource
 from ..datasources.us.mn_hub import MNHubDataSource
 from ..datasources.us.psal import PSALDataSource
 from ..datasources.us.rankone import RankOneDataSource
 from ..datasources.us.sblive import SBLiveDataSource
-from ..datasources.us.three_ssb import ThreeSSBDataSource
-from ..datasources.us.three_ssb_girls import ThreeSSBGirlsDataSource
-from ..datasources.us.uaa import UAADataSource
-from ..datasources.us.uaa_girls import UAAGirlsDataSource
 from ..datasources.us.wsn import WSNDataSource
+
+# US - Event Platforms (Phase 10/11)
+from ..datasources.us.cifsshome import CIFSSHomeDataSource
+from ..datasources.us.uil_brackets import UILBracketsDataSource
+from ..datasources.us.exposure_events import ExposureEventsDataSource
+from ..datasources.us.tourneymachine import TournyMachineDataSource
+
+# Europe - Youth Leagues (Phase 7)
+from ..datasources.europe.fiba_youth import FIBAYouthDataSource
+from ..datasources.europe.nbbl import NBBLDataSource
+from ..datasources.europe.feb import FEBDataSource
+from ..datasources.europe.mkl import MKLDataSource
+from ..datasources.europe.lnb_espoirs import LNBEspoirsDataSource
+
+# Canada - Youth Leagues (Phase 7)
+from ..datasources.canada.npa import NPADataSource
 
 # Import from global module (avoid 'global' keyword with import style)
 import importlib
@@ -98,6 +116,21 @@ class DataSourceAggregator:
             # US - State Associations (Tournaments/Brackets):
             "fhsaa": FHSAADataSource,        # Florida (Southeast anchor)
             "hhsaa": HHSAADataSource,        # Hawaii (excellent historical data)
+
+            # US - Event Platforms (Phase 10/11 - Generic AAU):
+            "cifsshome": CIFSSHomeDataSource,     # California CIF-SS sections
+            "uil_brackets": UILBracketsDataSource, # Texas UIL playoffs
+            "exposure_events": ExposureEventsDataSource,  # Exposure Events (generic)
+            "tourneymachine": TournyMachineDataSource,    # TournyMachine (generic)
+
+            # Europe - Youth Leagues (Phase 7):
+            "nbbl": NBBLDataSource,                # Germany NBBL/JBBL (U19/U16)
+            "feb": FEBDataSource,                  # Spain FEB Junior (U16/U18/U20)
+            "mkl": MKLDataSource,                  # Lithuania MKL Youth (U16/U18/U20)
+            "lnb_espoirs": LNBEspoirsDataSource,  # France LNB Espoirs (U21)
+
+            # Canada - Youth Leagues (Phase 7):
+            "npa": NPADataSource,                  # National Preparatory Association
 
             # Global/International:
             "fiba": FIBAYouthDataSource,           # FIBA Youth competitions
