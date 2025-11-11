@@ -1015,10 +1015,152 @@
 3. Template adapter activation (ANGT, OSBA, PlayHQ, OTE, Grind Session)
 4. Consider additional circuits (UAA ancillaries: EYCL, Jr. EYBL, etc.)
 
+### COMPLETED (Continued)
+
+#### [2025-11-12 02:00] Phase 9: Unified Dataset Layer + Category-Rich Schema
+- ✅ **Unified Schema Module** (`src/unified/`, 1,200+ lines total)
+  - **categories.py** (320 lines): Categorical vocabularies and encoders
+    - SourceType enum (CIRCUIT, ASSOCIATION, PLATFORM, PREP, LEAGUE, EVENT)
+    - CIRCUIT_KEYS mapping (70+ sources: US circuits, state assocs, global leagues)
+    - SOURCE_TYPES classification per source
+    - Normalization functions: normalize_gender(), normalize_level(), map_source_meta()
+    - ML-ready categorical encoding foundation
+
+  - **schema.py** (220 lines): Canonical dimension and fact table definitions
+    - **Dimensions**: SourceRow, CompetitionRow, TeamRow, PlayerRow
+    - **Facts**: GameRow, BoxRow, RosterRow, EventRow
+    - Dataclass-based with full type hints
+    - Lineage tracking (source_url, fetched_at) in all facts
+
+  - **mapper.py** (220 lines): Deterministic UID generation
+    - competition_uid(): {CIRCUIT}:{season}:{name}
+    - team_uid(): {source}:{season}:{team_name}
+    - game_uid(): {source}:{season}:{date}:{home}|{away}
+    - player_uid_from_identity(): Integrates with identity resolution
+    - Helper functions: normalize_string(), extract_date_from_datetime(), infer_season_from_date()
+
+  - **build.py** (440 lines): Unified dataset builder
+    - build_unified_dataset(): Master merge function
+    - Per-table builders: _build_teams_dim(), _build_games_fact(), _build_competitions_dim(), etc.
+    - Input: Dict[source_key -> Dict[table_name -> DataFrame]]
+    - Output: 7 canonical tables (3 dims, 4 facts)
+    - Safe concatenation, deduplication on UIDs
+    - Country/state/region metadata injection
+
+  - **__init__.py** (45 lines): Clean public API exports
+
+- ✅ **Materialization Infrastructure**
+  - **scripts/materialize_unified.py** (280 lines)
+    - CLI tool for pulling and materializing unified dataset
+    - Config: COUNTRY_BY_SOURCE (70+ mappings), STATE_BY_SOURCE (50+ mappings)
+    - Async workflow: pull → build → materialize to DuckDB + Parquet
+    - Command-line args: --sources, --season
+    - Output: data/unified/{unified.duckdb, *.parquet}
+
+  - **src/unified/analytics.sql** (240 lines)
+    - 10+ analytics views and mart tables
+    - mart_player_season: Categorical rollups (circuit, level, gender preserved)
+    - dim_categorical_codes: ML encoding table (categorical → integer codes)
+    - vw_cross_source_players: Multi-source player tracking
+    - vw_circuit_comparison: Performance comparison across circuits/levels
+    - vw_state_coverage: Data coverage by state
+    - vw_season_trends: Metrics across seasons
+    - vw_top_scorers: Multi-circuit leaderboard
+    - vw_data_quality: Completeness metrics per source
+    - vw_ml_features: Feature matrix for ML pipelines
+
+#### Technical Architecture
+
+**Canonical Schema Design**:
+- **Dimensions** (slowly changing): Sources, Competitions, Teams, Players
+- **Facts** (event-driven): Games, Box scores, Rosters, Events
+- **Keys**: Deterministic UIDs enable idempotent backfills and cross-source joins
+- **Lineage**: Every fact includes source_id, source_url, fetched_at
+
+**Categorical Encoding**:
+- String categories (circuit, level, gender, source_type, etc.) → integer codes
+- Enables efficient ML model training (categorical features → embeddings)
+- Maintains human-readable labels in analytics queries
+
+**Normalization Strategy**:
+- Gender: M/F (handles "boys", "girls", "men", "women", "m", "f")
+- Level: HS, PREP, U14, U15, U16, U17, U18, U21 (inferred from source + age_group)
+- Circuit: Canonical names (EYBL, 3SSB, UAA, GHSA, etc.)
+- Source Type: 6 categories (CIRCUIT, ASSOCIATION, PLATFORM, PREP, LEAGUE, EVENT)
+
+**Data Flow**:
+```
+Raw Source Data (per-source DataFrames)
+    ↓
+build_unified_dataset() [normalization + UID generation]
+    ↓
+Canonical Tables (dims + facts)
+    ↓
+DuckDB (fast SQL analytics) + Parquet (ML pipelines)
+    ↓
+Analytics Views (mart_player_season, leaderboards, etc.)
+```
+
+**Benefits**:
+- ✅ Cross-source deduplication via deterministic UIDs
+- ✅ Consistent schema enables multi-source analytics
+- ✅ Categorical encodings enable ML model training
+- ✅ Lineage tracking for auditability
+- ✅ Idempotent backfills (re-run same season → same UIDs)
+- ✅ DuckDB enables fast analytical queries (10-100x faster than Pandas)
+- ✅ Parquet exports for data science workflows
+
+#### Coverage Summary (Post Phase 9)
+
+**Total Adapters**: 56 (3 national circuits × 2 genders, 3 multi-state, 3 single-state, 38 state assocs, 5 global)
+
+**Unified Schema Coverage**:
+- **70+ sources** mapped in CIRCUIT_KEYS and SOURCE_TYPES
+- **6 source types**: CIRCUIT (9), ASSOCIATION (42), PLATFORM (8), PREP (2), LEAGUE (8), EVENT (2)
+- **50+ US states** + DC covered in state mappings
+- **5 countries** explicitly mapped: US, CA, DE, ES, FR, LT, AU
+- **All regions**: US (50 states), CANADA (2 provinces), EUROPE (5 countries), AUSTRALIA
+
+**Analytics Capabilities**:
+- Cross-source player tracking (multi-circuit leaderboards)
+- Circuit comparison (EYBL vs 3SSB vs UAA)
+- State coverage analysis (which states have data)
+- Season trends (metrics over time)
+- Data quality metrics (completeness per source)
+- ML feature matrix (ready for model training)
+
+#### Next Steps (Phase 10 Priorities)
+
+**High-Leverage Additions** (breadth expansion):
+1. **Event Platform Adapters** (unlocks dozens of AAU tournaments with minimal code):
+   - exposure_events.py: Exposure Basketball Events (generic scraper)
+   - tourneymachine.py: TournyMachine (generic scraper)
+   - Each adapter handles: event URL → divisions → pools/brackets → games → box scores
+
+2. **State Platform Expansion** (research-driven):
+   - CIF-SS Widgets (California section calendars)
+   - UIL Brackets (Texas postseason)
+   - SBLive state expansion (FL, GA, NC, VA, TN, SC as supported)
+
+3. **Global Youth Completion** (final templates):
+   - Activate templates: ANGT, OSBA, PlayHQ (URL updates needed)
+   - Add: FIBA Asia (CN, PH, JP, KR if available)
+
+**Engineering Enhancements**:
+1. **Historical Backfill CLI**: Season enumeration, parallel backfill with rate limiting
+2. **School Dictionary**: NCES integration for US school normalization
+3. **Player Dimension**: Build dim_player from identity resolution + aggregated stats
+4. **Auto-Export**: Trigger Parquet exports on DuckDB updates
+
+**Analytics/ML**:
+1. Player performance prediction models (PPG, recruitment potential)
+2. Circuit strength ratings (adjust stats by competition level)
+3. Scouting reports (auto-generated from stats + video metadata)
+
 ### IN PROGRESS
 
-*Ready for commit and push*
+*Ready for testing and commit*
 
 ---
 
-*Last Updated: 2025-11-12 01:30 UTC*
+*Last Updated: 2025-11-12 02:00 UTC*
