@@ -11,16 +11,28 @@ from typing import Optional
 
 from ..config import get_settings
 from ..datasources.base import BaseDataSource
+
+# Active adapters (fully implemented):
 from ..datasources.europe.fiba_youth import FIBAYouthDataSource
+from ..datasources.us.bound import BoundDataSource
 from ..datasources.us.eybl import EYBLDataSource
 from ..datasources.us.mn_hub import MNHubDataSource
 from ..datasources.us.psal import PSALDataSource
-# New adapters (uncomment when scraping logic is implemented):
+from ..datasources.us.sblive import SBLiveDataSource
+from ..datasources.us.wsn import WSNDataSource
+
+# Import from global module (avoid 'global' keyword with import style)
+import importlib
+_fiba_livestats_module = importlib.import_module("..datasources.global.fiba_livestats", package=__name__)
+FIBALiveStatsDataSource = _fiba_livestats_module.FIBALiveStatsDataSource
+
+# Template adapters (need URL updates after website inspection):
+from ..datasources.australia.playhq import PlayHQDataSource
+from ..datasources.canada.osba import OSBADataSource
+from ..datasources.europe.angt import ANGTDataSource
 from ..datasources.us.grind_session import GrindSessionDataSource
 from ..datasources.us.ote import OTEDataSource
-from ..datasources.europe.angt import ANGTDataSource
-from ..datasources.canada.osba import OSBADataSource
-from ..datasources.australia.playhq import PlayHQDataSource
+
 from ..models import Player, PlayerSeasonStats, Team
 from ..utils.logger import get_logger
 from .duckdb_storage import get_duckdb_storage
@@ -56,19 +68,28 @@ class DataSourceAggregator:
         """Initialize all enabled datasource adapters."""
         # Map of source types to their adapter classes
         source_classes = {
-            # Fully implemented adapters:
-            "eybl": EYBLDataSource,
-            "fiba": FIBAYouthDataSource,
-            "mn_hub": MNHubDataSource,
-            "psal": PSALDataSource,
+            # ===== ACTIVE ADAPTERS (Production Ready) =====
+            # US - Multi-State Coverage:
+            "bound": BoundDataSource,        # IA, SD, IL, MN (4 states)
+            "sblive": SBLiveDataSource,      # WA, OR, CA, AZ, ID, NV (6 states)
 
-            # Template adapters (need scraping logic implementation):
-            # Uncomment these as you complete the scraping implementation for each source
-            # "grind_session": GrindSessionDataSource,  # TODO: Implement Grind Session scraping
-            # "ote": OTEDataSource,                      # TODO: Implement OTE scraping
-            # "angt": ANGTDataSource,                    # TODO: Implement ANGT scraping
-            # "osba": OSBADataSource,                    # TODO: Implement OSBA scraping
-            # "playhq": PlayHQDataSource,                # TODO: Implement PlayHQ scraping
+            # US - Single State Deep Coverage:
+            "eybl": EYBLDataSource,          # Nike EYBL circuit
+            "mn_hub": MNHubDataSource,       # Minnesota (best free HS stats)
+            "psal": PSALDataSource,          # NYC public schools
+            "wsn": WSNDataSource,            # Wisconsin (deep stats)
+
+            # Global/International:
+            "fiba": FIBAYouthDataSource,           # FIBA Youth competitions
+            "fiba_livestats": FIBALiveStatsDataSource,  # FIBA LiveStats v7 global
+
+            # ===== TEMPLATE ADAPTERS (Need URL Updates) =====
+            # These have complete code structure but need actual website URLs:
+            # "grind_session": GrindSessionDataSource,  # TODO: Update URLs after inspection
+            # "ote": OTEDataSource,                      # TODO: Update URLs after inspection
+            # "angt": ANGTDataSource,                    # TODO: Update URLs after inspection
+            # "osba": OSBADataSource,                    # TODO: Update URLs after inspection
+            # "playhq": PlayHQDataSource,                # TODO: Update URLs after inspection
         }
 
         for source_key, source_class in source_classes.items():

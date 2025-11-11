@@ -18,11 +18,14 @@ class DataSourceType(str, Enum):
     FIBA = "fiba"  # FIBA Youth
     PSAL = "psal"  # NYC PSAL
     MN_HUB = "mn_hub"  # Minnesota Basketball Hub
+    WSN = "wsn"  # Wisconsin Sports Network
     GRIND_SESSION = "grind_session"  # Grind Session
     OTE = "ote"  # Overtime Elite
     ANGT = "angt"  # NextGen EuroLeague / ANGT
     OSBA = "osba"  # OSBA Canada
     PLAYHQ = "playhq"  # PlayHQ Australia
+    SBLIVE = "sblive"  # SBLive Sports (Multi-state: WA, OR, CA, AZ, ID, NV)
+    BOUND = "bound"  # Bound (formerly Varsity Bound) (Multi-state: IA, SD, IL, MN)
     UNKNOWN = "unknown"  # Unknown/other source
 
 

@@ -1,0 +1,815 @@
+# Basketball Data Sources Registry
+# This file defines all available data sources with their metadata,
+# capabilities, rate limits, and URL patterns.
+
+version: "1.0"
+last_updated: "2025-11-11"
+
+# =============================================================================
+# UNITED STATES - STATE/REGIONAL
+# =============================================================================
+
+sources:
+  # High School State Associations & Hubs
+
+  - id: eybl
+    name: "Nike EYBL"
+    full_name: "Nike Elite Youth Basketball League"
+    region: US
+    type: circuit
+    status: active
+    url: "https://nikeeyb.com"
+    adapter_class: "EYBLDataSource"
+    adapter_module: "src.datasources.us.eybl"
+    capabilities:
+      player_search: true
+      player_profiles: false
+      season_stats: true
+      game_stats: false
+      box_scores: false
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: false
+      stat_completeness: high
+    rate_limit:
+      requests_per_minute: 30
+      burst_capacity: 10
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600      # 1 hour
+      stats: 3600        # 1 hour
+      games: 1800        # 30 min
+      standings: 7200    # 2 hours
+    robots_policy: "allowed"
+    notes: "Official Nike EYBL stats, schedules, standings. Good stat coverage."
+
+  - id: eybl_girls
+    name: "Nike Girls EYBL"
+    full_name: "Nike Elite Youth Basketball League - Girls"
+    region: US
+    type: circuit
+    status: planned
+    url: "https://nikeeyb.com/girls"
+    adapter_class: "EYBLGirlsDataSource"
+    adapter_module: "src.datasources.us.eybl_girls"
+    capabilities:
+      player_search: true
+      player_profiles: false
+      season_stats: true
+      game_stats: false
+      box_scores: false
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: false
+      stat_completeness: high
+    rate_limit:
+      requests_per_minute: 30
+      burst_capacity: 10
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Girls EYBL - same structure as boys, separate URL path"
+
+  - id: psal
+    name: "NYC PSAL"
+    full_name: "New York City Public Schools Athletic League"
+    region: US-NY
+    type: state
+    status: active
+    url: "https://www.psal.org"
+    adapter_class: "PSALDataSource"
+    adapter_module: "src.datasources.us.psal"
+    capabilities:
+      player_search: true
+      player_profiles: false
+      season_stats: true
+      game_stats: false
+      box_scores: false
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: false
+      stat_completeness: medium
+    rate_limit:
+      requests_per_minute: 15
+      burst_capacity: 5
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "NYC public school basketball. Leaders pages with stats."
+
+  - id: mn_hub
+    name: "MN Basketball Hub"
+    full_name: "Minnesota Basketball Hub"
+    region: US-MN
+    type: state
+    status: active
+    url: "https://stats.mnbasketballhub.com"
+    adapter_class: "MNHubDataSource"
+    adapter_module: "src.datasources.us.mn_hub"
+    capabilities:
+      player_search: true
+      player_profiles: true
+      season_stats: true
+      game_stats: false
+      box_scores: false
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: false
+    data_quality:
+      has_player_stats: true
+      has_box_scores: false
+      stat_completeness: high
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Best free HS stats hub in US. Complete player pages."
+
+  - id: sblive
+    name: "SBLive Sports"
+    full_name: "SBLive High School Sports"
+    region: US
+    type: multi_state
+    status: planned
+    url: "https://www.sblive.com"
+    adapter_class: "SBLiveDataSource"
+    adapter_module: "src.datasources.us.sblive"
+    states:
+      - WA
+      - OR
+      - CA
+      - AZ
+      - ID
+      - NV
+    capabilities:
+      player_search: true
+      player_profiles: true
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: high
+    rate_limit:
+      requests_per_minute: 25
+      burst_capacity: 10
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "check_state"
+    url_patterns:
+      state: "https://www.sblive.com/{state}/basketball"
+      player: "https://www.sblive.com/{state}/basketball/player/{id}"
+      stats: "https://www.sblive.com/{state}/basketball/stats"
+    notes: "Official state partner. WA/OR/CA/AZ/ID/NV. High quality stats."
+
+  - id: bound
+    name: "Bound"
+    full_name: "Bound High School Sports"
+    region: US
+    type: multi_state
+    status: planned
+    url: "https://www.bound.com"
+    adapter_class: "BoundDataSource"
+    adapter_module: "src.datasources.us.bound"
+    states:
+      - IA
+      - SD
+      - IL
+      - MN
+    capabilities:
+      player_search: true
+      player_profiles: true
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: high
+    rate_limit:
+      requests_per_minute: 25
+      burst_capacity: 10
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "allowed"
+    url_patterns:
+      state: "https://www.{state}.bound.com/basketball"
+      player: "https://www.{state}.bound.com/player/{id}"
+      stats: "https://www.{state}.bound.com/stats"
+    notes: "Formerly Varsity Bound. IA flagship, also SD/IL/MN. Excellent player pages."
+
+  - id: wsn
+    name: "WSN"
+    full_name: "Wisconsin Sports Network (WisSports)"
+    region: US-WI
+    type: state
+    status: planned
+    url: "https://www.wissports.net"
+    adapter_class: "WSNDataSource"
+    adapter_module: "src.datasources.us.wsn"
+    capabilities:
+      player_search: true
+      player_profiles: true
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: high
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Deep Wisconsin stats. Public leaders, player pages, team stats."
+
+  - id: rankone
+    name: "Rank One Sport"
+    full_name: "Rank One - School Activities Management"
+    region: US
+    type: multi_state
+    status: planned
+    url: "https://rankone.com"
+    adapter_class: "RankOneDataSource"
+    adapter_module: "src.datasources.us.rankone"
+    states:
+      - TX
+      - KY
+      - IN
+      - OH
+      - TN
+    capabilities:
+      player_search: false
+      player_profiles: false
+      season_stats: false
+      game_stats: false
+      box_scores: false
+      leaderboards: false
+      team_stats: false
+      schedules: true
+      standings: false
+    data_quality:
+      has_player_stats: false
+      has_box_scores: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 15
+      burst_capacity: 5
+      safety_margin: 0.5
+    cache_ttl:
+      players: 0
+      stats: 0
+      games: 3600
+      standings: 7200
+    robots_policy: "check_district"
+    url_patterns:
+      districts: "https://rankone.com/districts?state={state}&type=0"
+      schedule: "https://rankone.com/schedule?district={id}"
+    notes: "District schedules/results only. No player stats. Use for fixtures/results enrichment."
+
+  # =============================================================================
+  # UNITED STATES - PREP/ELITE CIRCUITS
+  # =============================================================================
+
+  - id: ote
+    name: "Overtime Elite"
+    full_name: "Overtime Elite"
+    region: US
+    type: circuit
+    status: template
+    url: "https://overtimeelite.com"
+    adapter_class: "OTEDataSource"
+    adapter_module: "src.datasources.us.ote"
+    capabilities:
+      player_search: true
+      player_profiles: true
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: high
+    rate_limit:
+      requests_per_minute: 25
+      burst_capacity: 10
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Professional prep league ages 16-20. Template needs URL updates."
+
+  - id: grind_session
+    name: "The Grind Session"
+    full_name: "The Grind Session"
+    region: US
+    type: circuit
+    status: template
+    url: "https://thegrindsession.com"
+    adapter_class: "GrindSessionDataSource"
+    adapter_module: "src.datasources.us.grind_session"
+    capabilities:
+      player_search: true
+      player_profiles: true
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: medium
+    rate_limit:
+      requests_per_minute: 15
+      burst_capacity: 5
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Elite prep tournaments. Event-based system. Template needs URL updates."
+
+  - id: three_ssb
+    name: "Adidas 3SSB"
+    full_name: "Adidas 3 Stripe Select Basketball"
+    region: US
+    type: circuit
+    status: planned
+    url: "https://adidas3ssb.com"
+    adapter_class: "ThreeSSBDataSource"
+    adapter_module: "src.datasources.us.three_ssb"
+    capabilities:
+      player_search: true
+      player_profiles: false
+      season_stats: true
+      game_stats: false
+      box_scores: false
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: false
+      stat_completeness: medium
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Adidas circuit. Stats availability varies."
+
+  - id: uaa
+    name: "Under Armour AAU"
+    full_name: "Under Armour Association"
+    region: US
+    type: circuit
+    status: planned
+    url: "https://underarmournext.com/basketball"
+    adapter_class: "UAADataSource"
+    adapter_module: "src.datasources.us.uaa"
+    capabilities:
+      player_search: true
+      player_profiles: false
+      season_stats: false
+      game_stats: false
+      box_scores: false
+      leaderboards: false
+      team_stats: false
+      schedules: true
+      standings: false
+    data_quality:
+      has_player_stats: false
+      has_box_scores: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 15
+      burst_capacity: 5
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 0
+      games: 1800
+      standings: 0
+    robots_policy: "allowed"
+    notes: "Schedule/events focus. Stats exposure varies. Scores-first adapter."
+
+  # =============================================================================
+  # GLOBAL - FIBA & INTERNATIONAL YOUTH
+  # =============================================================================
+
+  - id: fiba_livestats
+    name: "FIBA LiveStats"
+    full_name: "FIBA LiveStats v7 (Global Youth Tournaments)"
+    region: GLOBAL
+    type: tournament
+    status: planned
+    url: "https://livestats.fiba.basketball"
+    adapter_class: "FIBALiveStatsDataSource"
+    adapter_module: "src.datasources.global.fiba_livestats"
+    capabilities:
+      player_search: true
+      player_profiles: false
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: high
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 7200
+      stats: 3600
+      games: 1800
+      standings: 3600
+    robots_policy: "allowed"
+    url_patterns:
+      tv_feed: "https://livestats.fiba.basketball/tv/{competition_id}/{game_id}"
+      competition: "https://livestats.fiba.basketball/competition/{id}"
+    notes: "Generic adapter for FIBA LiveStats v7 JSON feeds. Works for U16/U17/U18 events."
+
+  - id: fiba_youth
+    name: "FIBA Youth"
+    full_name: "FIBA Youth Competitions (U16/U17/U18)"
+    region: GLOBAL
+    type: tournament
+    status: active
+    url: "https://about.fiba.basketball/en/youth"
+    adapter_class: "FIBAYouthDataSource"
+    adapter_module: "src.datasources.europe.fiba_youth"
+    capabilities:
+      player_search: true
+      player_profiles: false
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: high
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 7200
+      stats: 3600
+      games: 1800
+      standings: 3600
+    robots_policy: "allowed"
+    notes: "FIBA Youth competitions. Competition-based structure."
+
+  # =============================================================================
+  # EUROPE
+  # =============================================================================
+
+  - id: angt
+    name: "ANGT"
+    full_name: "Adidas Next Generation Tournament"
+    region: EUROPE
+    type: tournament
+    status: template
+    url: "https://www.euroleaguebasketball.net/next-generation"
+    adapter_class: "ANGTDataSource"
+    adapter_module: "src.datasources.europe.angt"
+    capabilities:
+      player_search: true
+      player_profiles: true
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: high
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 7200
+      stats: 3600
+      games: 1800
+      standings: 3600
+    robots_policy: "allowed"
+    notes: "EuroLeague U18 elite. PIR stats. Template needs URL updates."
+
+  - id: nbbl
+    name: "NBBL"
+    full_name: "German NBBL U19 / JBBL U16"
+    region: EUROPE-DE
+    type: league
+    status: planned
+    url: "https://www.nbbl-basketball.de"
+    adapter_class: "NBBLDataSource"
+    adapter_module: "src.datasources.europe.nbbl"
+    capabilities:
+      player_search: true
+      player_profiles: true
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: high
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "German youth leagues. Official stats portals (German/English)."
+
+  - id: feb
+    name: "FEB Competiciones"
+    full_name: "Spanish FEB Junior Categories"
+    region: EUROPE-ES
+    type: league
+    status: planned
+    url: "https://competitions.feb.es"
+    adapter_class: "FEBDataSource"
+    adapter_module: "src.datasources.europe.feb"
+    capabilities:
+      player_search: true
+      player_profiles: true
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: high
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Spanish junior categories. Per-game and season stats available."
+
+  # =============================================================================
+  # CANADA
+  # =============================================================================
+
+  - id: osba
+    name: "OSBA"
+    full_name: "Ontario Scholastic Basketball Association"
+    region: CANADA-ON
+    type: league
+    status: template
+    url: "https://www.osba.ca"
+    adapter_class: "OSBADataSource"
+    adapter_module: "src.datasources.canada.osba"
+    capabilities:
+      player_search: true
+      player_profiles: true
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: medium
+    rate_limit:
+      requests_per_minute: 15
+      burst_capacity: 5
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Ontario prep basketball. U17/U19/Prep divisions. Template needs URL updates."
+
+  - id: npa
+    name: "NPA Canada"
+    full_name: "National Preparatory Association"
+    region: CANADA
+    type: league
+    status: planned
+    url: "https://www.npaleague.com"
+    adapter_class: "NPADataSource"
+    adapter_module: "src.datasources.canada.npa"
+    capabilities:
+      player_search: false
+      player_profiles: false
+      season_stats: false
+      game_stats: false
+      box_scores: false
+      leaderboards: false
+      team_stats: false
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: false
+      has_box_scores: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 15
+      burst_capacity: 5
+      safety_margin: 0.5
+    cache_ttl:
+      players: 0
+      stats: 0
+      games: 3600
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Scores-first adapter. Stats vary year-to-year."
+
+  # =============================================================================
+  # AUSTRALIA
+  # =============================================================================
+
+  - id: playhq
+    name: "PlayHQ"
+    full_name: "Basketball Australia PlayHQ"
+    region: AUSTRALIA
+    type: platform
+    status: template
+    url: "https://www.playhq.com"
+    adapter_class: "PlayHQDataSource"
+    adapter_module: "src.datasources.australia.playhq"
+    capabilities:
+      player_search: true
+      player_profiles: true
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: medium
+    rate_limit:
+      requests_per_minute: 25
+      burst_capacity: 10
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "allowed"
+    url_patterns:
+      org: "https://www.playhq.com/{org}/basketball"
+      comp: "https://www.playhq.com/{org}/basketball/comp/{id}"
+    notes: "Australian platform. U16/U18 Championships, state leagues. Template needs URL updates."
+
+# =============================================================================
+# EVENT ADAPTERS (ONE-OFF TOURNAMENTS)
+# =============================================================================
+
+events:
+  - id: nbpa_top100
+    name: "NBPA Top 100 Camp"
+    url: "https://top100camp.com"
+    status: planned
+    type: event
+    data_format: "pdf"
+    annual: true
+    notes: "Annual event. PDF box scores and leaderboards."
+
+  - id: pangos
+    name: "Pangos All-American Camp"
+    url: "https://pangosallamericancamp.com"
+    status: planned
+    type: event
+    data_format: "html"
+    annual: true
+    notes: "Elite showcase event."
+
+# =============================================================================
+# METADATA
+# =============================================================================
+
+metadata:
+  total_sources: 26
+  active: 4
+  planned: 14
+  template: 5
+  event: 3
+
+  by_region:
+    US: 13
+    GLOBAL: 2
+    EUROPE: 5
+    CANADA: 2
+    AUSTRALIA: 1
+
+  coverage:
+    has_player_stats: 20
+    has_box_scores: 16
+    has_leaderboards: 21
+    fixtures_only: 3

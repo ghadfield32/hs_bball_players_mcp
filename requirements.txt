@@ -41,3 +41,4 @@ mypy>=1.8.0
 tenacity>=8.2.3  # Retry logic
 aiofiles>=23.2.1  # Async file operations
 python-multipart>=0.0.6  # Form data parsing
+pyyaml>=6.0.1  # YAML parsing for source registry

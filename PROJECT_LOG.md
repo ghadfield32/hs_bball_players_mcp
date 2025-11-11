@@ -387,4 +387,72 @@
 
 ---
 
-*Last Updated: 2025-11-11 00:05 UTC*
+## Session Log: 2025-11-11 - Nationwide Coverage Expansion
+
+### COMPLETED
+
+#### [2025-11-11 18:00] Phase 3.1: Source Registry System
+- ✅ Created comprehensive source registry (`config/sources.yaml`, 600+ lines)
+  - Registry for 26+ datasources (US, Canada, Europe, Australia, Global)
+  - Metadata: capabilities, rate limits, cache TTLs, robots policy, URL patterns
+  - Status tracking: active (8), planned (14), template (5), events (3)
+  - Coverage mapping: 13 US sources, 5 Europe, 2 Canada, 1 Australia, 2 Global
+- ✅ Created source registry service (`src/services/source_registry.py`, 580+ lines)
+  - Load and parse sources.yaml with Pydantic validation
+  - Query sources by: status, region, capability, type
+  - Dynamic adapter loading via importlib
+  - Auto-routing based on capabilities
+  - Source validation and summary methods
+  - CLI helpers: list_sources(), validate_source(), get_summary()
+- ✅ Added PyYAML dependency to requirements.txt
+
+#### [2025-11-11 18:30] Phase 3.2: Global Tournament Coverage
+- ✅ Created FIBA LiveStats adapter (`src/datasources/global/fiba_livestats.py`, 1,065 lines)
+  - **HIGH LEVERAGE**: Works with any FIBA LiveStats v7 tournament globally
+  - JSON API (not HTML scraping)
+  - TV feed endpoint: `/tv/{competition_id}/{game_id}`
+  - Competition metadata endpoint: `/competition/{competition_id}`
+  - Features: Competition-scoped IDs, FIBA minutes parsing, height conversion, PIR support
+  - Methods: All 9 required + 2 bonus (get_competition_data, get_game_data)
+  - Coverage: U16/U17/U18 tournaments worldwide where JSON is public
+
+#### [2025-11-11 19:00] Phase 3.3: Multi-State US Coverage (Sprint 1)
+- ✅ **SBLive adapter** (`src/datasources/us/sblive.py`, 1,012 lines)
+  - **Covers 6 states**: WA, OR, CA, AZ, ID, NV | Official state partner
+  - Multi-state architecture with state validation | Player ID: `sblive_{state}_{name}`
+  - Bonus: get_leaderboards_all_states() for cross-state comparison
+
+- ✅ **Bound adapter** (`src/datasources/us/bound.py`, 1,152 lines)
+  - **Covers 4 states**: IA (flagship), SD, IL, MN | Formerly Varsity Bound
+  - Unique subdomain URLs: `www.{state}.bound.com` | Player ID: `bound_{state}_{name}`
+
+- ✅ **WSN adapter** (`src/datasources/us/wsn.py`, 1,021 lines)
+  - **Deep Wisconsin coverage** (WI only) | Similar quality to MN Hub
+  - Multi-table leaders (PPG, RPG, APG, SPG, BPG) | WIAA division support
+
+#### [2025-11-11 19:30] Phase 3.4: Aggregation Service Integration
+- ✅ Updated aggregation service (`src/services/aggregator.py`)
+  - Added 4 new active adapters: FIBA LiveStats, SBLive, Bound, WSN
+  - Organized: 8 active adapters (6 US + 2 Global), 5 template adapters
+  - Multi-state support | Import handling for `global` module workaround
+
+#### [2025-11-11 19:45] Phase 3.5: Model Updates
+- ✅ Updated DataSourceType enum: Added SBLIVE, BOUND, WSN
+
+### Coverage Summary
+
+**Datasource Count**: 8 active (4 new) + 5 templates = 13 total
+**US State Coverage**: 13 states (was 2) - MN, NY, WA, OR, CA, AZ, ID, NV, IA, SD, IL, WI + EYBL circuit
+**Global Coverage**: FIBA LiveStats v7 (U16/U17/U18 worldwide)
+**Code Added**: 4,250+ lines (4 production adapters + registry system)
+
+### Technical Highlights
+- Multi-state architecture with state validation and dynamic URL building
+- Source registry for centralized metadata and auto-routing
+- JSON API support (FIBA LiveStats) + HTML scraping (SBLive/Bound/WSN)
+- Type hints, comprehensive docstrings, structured logging throughout
+- Cache TTLs: 3600s (stats), 7200s (standings)
+
+---
+
+*Last Updated: 2025-11-11 19:45 UTC*

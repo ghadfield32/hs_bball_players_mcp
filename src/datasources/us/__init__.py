@@ -5,6 +5,8 @@ from .grind_session import GrindSessionDataSource
 from .mn_hub import MNHubDataSource
 from .ote import OTEDataSource
 from .psal import PSALDataSource
+from .sblive import SBLiveDataSource
+from .wsn import WSNDataSource
 
 __all__ = [
     "EYBLDataSource",
@@ -12,4 +14,6 @@ __all__ = [
     "MNHubDataSource",
     "OTEDataSource",
     "PSALDataSource",
+    "SBLiveDataSource",
+    "WSNDataSource",
 ]
