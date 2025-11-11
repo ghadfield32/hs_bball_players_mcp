@@ -1,7 +1,7 @@
 """
 Utility Functions and Helpers
 
-Common utilities for HTTP, parsing, and logging.
+Common utilities for HTTP, parsing, logging, and scraping.
 """
 
 from .http_client import HTTPClient, create_http_client
@@ -23,6 +23,15 @@ from .parser import (
     parse_int,
     parse_record,
     parse_stat,
+)
+from .scraping_helpers import (
+    build_leaderboard_entry,
+    extract_links_from_table,
+    find_stat_table,
+    parse_grad_year,
+    parse_player_from_row,
+    parse_season_stats_from_row,
+    standardize_stat_columns,
 )
 
 __all__ = [
@@ -46,4 +55,12 @@ __all__ = [
     "parse_record",
     "clean_player_name",
     "extract_table_data",
+    # Scraping helpers
+    "find_stat_table",
+    "parse_player_from_row",
+    "parse_season_stats_from_row",
+    "parse_grad_year",
+    "standardize_stat_columns",
+    "build_leaderboard_entry",
+    "extract_links_from_table",
 ]
