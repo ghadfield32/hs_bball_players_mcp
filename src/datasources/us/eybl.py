@@ -2,6 +2,9 @@
 EYBL (Nike Elite Youth Basketball League) DataSource Adapter
 
 Scrapes player and game statistics from Nike EYBL public pages.
+Now supports React SPA rendering using browser automation.
+
+Updated: 2025-11-11 - Added browser automation support for React website
 """
 
 from datetime import datetime
@@ -23,12 +26,16 @@ from ...models import (
     TeamLevel,
 )
 from ...utils import extract_table_data, get_text_or_none, parse_float, parse_html, parse_int
+from ...utils.browser_client import BrowserClient
 from ..base import BaseDataSource
 
 
 class EYBLDataSource(BaseDataSource):
     """
-    Nike EYBL data source adapter.
+    Nike EYBL data source adapter with browser automation support.
+
+    The EYBL website uses React for client-side rendering, requiring
+    browser automation to access stats tables.
 
     Provides access to Nike EYBL stats, schedules, standings, and leaderboards.
     Public stats pages at https://nikeeyb.com
@@ -40,13 +47,30 @@ class EYBLDataSource(BaseDataSource):
     region = DataSourceRegion.US
 
     def __init__(self):
-        """Initialize EYBL datasource."""
+        """Initialize EYBL datasource with browser automation."""
         super().__init__()
 
         # EYBL-specific endpoints
         self.stats_url = f"{self.base_url}/cumulative-season-stats"
         self.schedule_url = f"{self.base_url}/schedule"
         self.standings_url = f"{self.base_url}/standings"
+
+        # Initialize browser client for React rendering
+        # Browser settings optimized for EYBL's React app
+        self.browser_client = BrowserClient(
+            settings=self.settings,
+            browser_type=self.settings.browser_type if hasattr(self.settings, 'browser_type') else "chromium",
+            headless=self.settings.browser_headless if hasattr(self.settings, 'browser_headless') else True,
+            timeout=self.settings.browser_timeout if hasattr(self.settings, 'browser_timeout') else 30000,
+            cache_enabled=self.settings.browser_cache_enabled if hasattr(self.settings, 'browser_cache_enabled') else True,
+            cache_ttl=self.settings.browser_cache_ttl if hasattr(self.settings, 'browser_cache_ttl') else 7200,
+        )
+
+    async def close(self):
+        """Close connections and browser instances."""
+        await super().close()
+        # Note: Browser is singleton, so we don't close it here
+        # It will be closed globally when needed
 
     async def get_player(self, player_id: str) -> Optional[Player]:
         """
@@ -75,6 +99,8 @@ class EYBLDataSource(BaseDataSource):
         """
         Search for players in EYBL stats tables.
 
+        Uses browser automation to render React app and extract stats table.
+
         Args:
             name: Player name (partial match)
             team: Team name (partial match)
@@ -85,22 +111,38 @@ class EYBLDataSource(BaseDataSource):
             List of Player objects
         """
         try:
-            # Fetch cumulative stats page
-            html = await self.http_client.get_text(self.stats_url, cache_ttl=3600)
+            self.logger.info("Fetching EYBL player stats (React rendering)")
+
+            # Use browser automation to render React app
+            # Wait for table element to appear (React renders asynchronously)
+            html = await self.browser_client.get_rendered_html(
+                url=self.stats_url,
+                wait_for="table",  # Wait for stats table to render
+                wait_timeout=self.browser_client.timeout,
+                wait_for_network_idle=True,  # Wait for React to finish loading
+            )
+
+            # Parse rendered HTML
             soup = parse_html(html)
 
-            # Find stats table
-            stats_table = soup.find("table", class_=lambda x: x and "stats" in x.lower())
+            # Find stats table (same parsing as before, but now has data!)
+            stats_table = soup.find("table", class_=lambda x: x and "stats" in str(x).lower())
             if not stats_table:
                 # Try finding any table
                 stats_table = soup.find("table")
 
             if not stats_table:
-                self.logger.warning("No stats table found on EYBL stats page")
+                self.logger.warning("No stats table found on EYBL stats page after rendering")
                 return []
 
             # Extract table data
             rows = extract_table_data(stats_table)
+
+            if not rows:
+                self.logger.warning("Stats table found but no rows extracted")
+                return []
+
+            self.logger.info(f"Extracted {len(rows)} rows from EYBL stats table")
 
             players = []
             data_source = self.create_data_source_metadata(
@@ -127,7 +169,7 @@ class EYBLDataSource(BaseDataSource):
             return players
 
         except Exception as e:
-            self.logger.error("Failed to search players", error=str(e))
+            self.logger.error("Failed to search players", error=str(e), error_type=type(e).__name__)
             return []
 
     def _parse_player_from_stats_row(self, row: dict, data_source) -> Optional[Player]:
@@ -193,118 +235,185 @@ class EYBLDataSource(BaseDataSource):
         """
         Get player season statistics from cumulative stats page.
 
+        Uses browser automation to render React app before extracting stats.
+
         Args:
             player_id: Player identifier
             season: Season (uses current if None)
 
         Returns:
-            PlayerSeasonStats or None
+            PlayerSeasonStats object or None
         """
         try:
-            # Fetch cumulative stats page
-            html = await self.http_client.get_text(self.stats_url, cache_ttl=3600)
+            self.logger.info(f"Fetching season stats for player {player_id}")
+
+            # Render page with browser
+            html = await self.browser_client.get_rendered_html(
+                url=self.stats_url,
+                wait_for="table",
+                wait_for_network_idle=True,
+            )
+
             soup = parse_html(html)
 
             # Find stats table
-            stats_table = soup.find("table")
+            stats_table = soup.find("table", class_=lambda x: x and "stats" in str(x).lower())
             if not stats_table:
+                stats_table = soup.find("table")
+
+            if not stats_table:
+                self.logger.warning("No stats table found")
                 return None
+
+            # Extract rows and find matching player
+            rows = extract_table_data(stats_table)
+
+            # Extract player name from ID (format: eybl_firstname_lastname)
+            player_name_from_id = player_id.replace("eybl_", "").replace("_", " ")
+
+            for row in rows:
+                row_player_name = row.get("Player") or row.get("NAME") or row.get("Name", "")
+
+                # Match player
+                if row_player_name.lower() == player_name_from_id.lower():
+                    return self._parse_season_stats_from_row(row, player_id)
+
+            self.logger.warning(f"Player {player_id} not found in stats table")
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Failed to get player season stats", player_id=player_id, error=str(e))
+            return None
+
+    def _parse_season_stats_from_row(self, row: dict, player_id: str) -> Optional[PlayerSeasonStats]:
+        """Parse season stats from stats table row."""
+        try:
+            data_source = self.create_data_source_metadata(
+                url=self.stats_url, quality_flag=DataQualityFlag.COMPLETE
+            )
+
+            stats_data = {
+                "player_id": player_id,
+                "season": str(datetime.now().year),
+                "games_played": parse_int(row.get("GP") or row.get("G") or row.get("Games")),
+                "points_per_game": parse_float(row.get("PPG") or row.get("PTS")),
+                "rebounds_per_game": parse_float(row.get("RPG") or row.get("REB")),
+                "assists_per_game": parse_float(row.get("APG") or row.get("AST")),
+                "steals_per_game": parse_float(row.get("SPG") or row.get("STL")),
+                "blocks_per_game": parse_float(row.get("BPG") or row.get("BLK")),
+                "field_goal_percentage": parse_float(row.get("FG%")),
+                "three_point_percentage": parse_float(row.get("3P%") or row.get("3PT%")),
+                "free_throw_percentage": parse_float(row.get("FT%")),
+                "data_source": data_source,
+            }
+
+            return self.validate_and_log_data(
+                PlayerSeasonStats, stats_data, f"season stats for {player_id}"
+            )
+
+        except Exception as e:
+            self.logger.error("Failed to parse season stats", error=str(e), row=row)
+            return None
+
+    async def get_leaderboard(
+        self, stat_type: str = "points", limit: int = 50
+    ) -> list[dict]:
+        """
+        Get statistical leaderboard.
+
+        Uses browser automation to render React app before extracting leaderboard.
+
+        Args:
+            stat_type: Type of stat (points, rebounds, assists, etc.)
+            limit: Maximum number of leaders to return
+
+        Returns:
+            List of leaderboard entries
+        """
+        try:
+            self.logger.info(f"Fetching EYBL {stat_type} leaderboard")
+
+            # Render cumulative stats page
+            html = await self.browser_client.get_rendered_html(
+                url=self.stats_url,
+                wait_for="table",
+                wait_for_network_idle=True,
+            )
+
+            soup = parse_html(html)
+
+            # Find stats table
+            stats_table = soup.find("table", class_=lambda x: x and "stats" in str(x).lower())
+            if not stats_table:
+                stats_table = soup.find("table")
+
+            if not stats_table:
+                self.logger.warning("No stats table found for leaderboard")
+                return []
 
             # Extract table data
             rows = extract_table_data(stats_table)
 
-            # Find player row (match by name from player_id)
-            player_name = player_id.replace("eybl_", "").replace("_", " ").title()
-
-            for row in rows:
-                row_player_name = row.get("Player") or row.get("NAME") or row.get("Name")
-                if row_player_name and player_name.lower() in row_player_name.lower():
-                    # Parse stats from row
-                    return self._parse_season_stats_from_row(row, player_id, season or "2024-25")
-
-            self.logger.warning(f"Player not found in stats", player_id=player_id)
-            return None
-
-        except Exception as e:
-            self.logger.error("Failed to get player season stats", player_id=player_id, error=str(e))
-            return None
-
-    def _parse_season_stats_from_row(
-        self, row: dict, player_id: str, season: str
-    ) -> Optional[PlayerSeasonStats]:
-        """
-        Parse season stats from table row.
-
-        Args:
-            row: Row dictionary
-            player_id: Player ID
-            season: Season string
-
-        Returns:
-            PlayerSeasonStats or None
-        """
-        try:
-            player_name = row.get("Player") or row.get("NAME") or row.get("Name", "")
-            team_name = row.get("Team") or row.get("TEAM") or ""
-
-            # Parse stats (column names may vary)
-            games_played = parse_int(row.get("GP") or row.get("G") or row.get("Games"))
-            points = parse_int(row.get("PTS") or row.get("Points"))
-            ppg = parse_float(row.get("PPG") or row.get("Points Per Game"))
-            rebounds = parse_int(row.get("REB") or row.get("Rebounds"))
-            rpg = parse_float(row.get("RPG") or row.get("Rebounds Per Game"))
-            assists = parse_int(row.get("AST") or row.get("Assists"))
-            apg = parse_float(row.get("APG") or row.get("Assists Per Game"))
-            steals = parse_int(row.get("STL") or row.get("Steals"))
-            blocks = parse_int(row.get("BLK") or row.get("Blocks"))
-            fgm = parse_int(row.get("FGM") or row.get("FG Made"))
-            fga = parse_int(row.get("FGA") or row.get("FG Attempted"))
-            tpm = parse_int(row.get("3PM") or row.get("3P Made"))
-            tpa = parse_int(row.get("3PA") or row.get("3P Attempted"))
-            ftm = parse_int(row.get("FTM") or row.get("FT Made"))
-            fta = parse_int(row.get("FTA") or row.get("FT Attempted"))
-
-            stats_data = {
-                "player_id": player_id,
-                "player_name": player_name,
-                "team_id": f"eybl_team_{team_name.lower().replace(' ', '_')}",
-                "season": season,
-                "league": "Nike EYBL",
-                "games_played": games_played or 0,
-                "points": points,
-                "points_per_game": ppg,
-                "total_rebounds": rebounds,
-                "rebounds_per_game": rpg,
-                "assists": assists,
-                "assists_per_game": apg,
-                "steals": steals,
-                "steals_per_game": parse_float(row.get("SPG")),
-                "blocks": blocks,
-                "blocks_per_game": parse_float(row.get("BPG")),
-                "field_goals_made": fgm,
-                "field_goals_attempted": fga,
-                "three_pointers_made": tpm,
-                "three_pointers_attempted": tpa,
-                "free_throws_made": ftm,
-                "free_throws_attempted": fta,
+            # Map stat types to column names
+            stat_column_map = {
+                "points": ["PPG", "PTS", "Points"],
+                "rebounds": ["RPG", "REB", "Rebounds"],
+                "assists": ["APG", "AST", "Assists"],
+                "steals": ["SPG", "STL", "Steals"],
+                "blocks": ["BPG", "BLK", "Blocks"],
+                "field_goal_pct": ["FG%"],
+                "three_point_pct": ["3P%", "3PT%"],
             }
 
-            return self.validate_and_log_data(
-                PlayerSeasonStats, stats_data, f"season stats for {player_name}"
-            )
+            column_names = stat_column_map.get(stat_type, ["PPG"])
+
+            # Find matching column
+            stat_column = None
+            for col in column_names:
+                if col in rows[0] if rows else {}:
+                    stat_column = col
+                    break
+
+            if not stat_column:
+                self.logger.warning(f"Stat column not found for {stat_type}")
+                return []
+
+            # Build leaderboard
+            leaderboard = []
+            for row in rows:
+                player_name = row.get("Player") or row.get("NAME") or row.get("Name")
+                stat_value = parse_float(row.get(stat_column))
+
+                if player_name and stat_value is not None:
+                    leaderboard.append({
+                        "player_name": player_name,
+                        "team_name": row.get("Team") or row.get("TEAM"),
+                        "stat_value": stat_value,
+                        "stat_type": stat_type,
+                    })
+
+            # Sort by stat value descending
+            leaderboard.sort(key=lambda x: x["stat_value"], reverse=True)
+
+            # Add ranks
+            for i, entry in enumerate(leaderboard[:limit], 1):
+                entry["rank"] = i
+
+            self.logger.info(f"Generated {len(leaderboard[:limit])} leaderboard entries")
+            return leaderboard[:limit]
 
         except Exception as e:
-            self.logger.error("Failed to parse season stats", error=str(e))
-            return None
+            self.logger.error("Failed to get leaderboard", stat_type=stat_type, error=str(e))
+            return []
 
     async def get_player_game_stats(
         self, player_id: str, game_id: str
     ) -> Optional[PlayerGameStats]:
         """
-        Get player game statistics.
+        Get player statistics for a specific game.
 
-        Note: EYBL cumulative stats page doesn't show individual game stats.
-        Would need to access specific game box scores.
+        Note: EYBL cumulative stats page doesn't provide game-by-game breakdowns.
+        This would require accessing individual game box scores.
 
         Args:
             player_id: Player identifier
@@ -313,12 +422,15 @@ class EYBLDataSource(BaseDataSource):
         Returns:
             PlayerGameStats or None
         """
-        self.logger.warning("Individual game stats not yet implemented for EYBL")
+        self.logger.warning("get_player_game_stats not yet implemented for EYBL")
         return None
 
     async def get_team(self, team_id: str) -> Optional[Team]:
         """
-        Get team information.
+        Get team by ID.
+
+        Note: EYBL has team pages but they're not yet scraped.
+        Future implementation would parse team rosters and standings.
 
         Args:
             team_id: Team identifier
@@ -326,54 +438,8 @@ class EYBLDataSource(BaseDataSource):
         Returns:
             Team object or None
         """
-        # EYBL teams can be extracted from standings page
-        try:
-            html = await self.http_client.get_text(self.standings_url, cache_ttl=7200)
-            soup = parse_html(html)
-
-            # Find standings table
-            table = soup.find("table")
-            if not table:
-                return None
-
-            rows = extract_table_data(table)
-
-            # Find team row
-            team_name = team_id.replace("eybl_team_", "").replace("_", " ").title()
-
-            for row in rows:
-                row_team = row.get("Team") or row.get("TEAM") or row.get("Name")
-                if row_team and team_name.lower() in row_team.lower():
-                    return self._parse_team_from_row(row, team_id)
-
-            return None
-
-        except Exception as e:
-            self.logger.error("Failed to get team", team_id=team_id, error=str(e))
-            return None
-
-    def _parse_team_from_row(self, row: dict, team_id: str) -> Optional[Team]:
-        """Parse team from standings row."""
-        team_name = row.get("Team") or row.get("TEAM") or row.get("Name", "")
-        wins = parse_int(row.get("W") or row.get("Wins"))
-        losses = parse_int(row.get("L") or row.get("Losses"))
-
-        data_source = self.create_data_source_metadata(
-            url=self.standings_url, quality_flag=DataQualityFlag.COMPLETE
-        )
-
-        team_data = {
-            "team_id": team_id,
-            "team_name": team_name,
-            "level": TeamLevel.GRASSROOTS,
-            "league": "Nike EYBL",
-            "season": "2024-25",
-            "wins": wins,
-            "losses": losses,
-            "data_source": data_source,
-        }
-
-        return self.validate_and_log_data(Team, team_data, f"team {team_name}")
+        self.logger.warning("get_team not yet implemented for EYBL")
+        return None
 
     async def get_games(
         self,
@@ -384,7 +450,10 @@ class EYBLDataSource(BaseDataSource):
         limit: int = 100,
     ) -> list[Game]:
         """
-        Get games from schedule page.
+        Get games with optional filters.
+
+        Note: EYBL has schedule pages but they're not yet scraped.
+        Future implementation would parse schedule and game results.
 
         Args:
             team_id: Filter by team
@@ -396,50 +465,5 @@ class EYBLDataSource(BaseDataSource):
         Returns:
             List of Game objects
         """
-        self.logger.warning("Games/schedule parsing not yet implemented for EYBL")
+        self.logger.warning("get_games not yet implemented for EYBL")
         return []
-
-    async def get_leaderboard(
-        self,
-        stat: str,
-        season: Optional[str] = None,
-        limit: int = 50,
-    ) -> list[dict]:
-        """
-        Get statistical leaderboard.
-
-        EYBL cumulative stats page is essentially a leaderboard.
-
-        Args:
-            stat: Stat category
-            season: Season filter
-            limit: Maximum results
-
-        Returns:
-            List of leaderboard entries
-        """
-        try:
-            # Get all players
-            players_with_stats = await self.search_players(limit=limit)
-
-            # Note: Would need to sort by requested stat
-            # For now, return first N players
-
-            leaderboard = []
-            for i, player in enumerate(players_with_stats[:limit], 1):
-                leaderboard.append(
-                    {
-                        "rank": i,
-                        "player_id": player.player_id,
-                        "player_name": player.full_name,
-                        "team_name": player.team_name,
-                        "stat_name": stat,
-                        "season": season or "2024-25",
-                    }
-                )
-
-            return leaderboard
-
-        except Exception as e:
-            self.logger.error("Failed to get leaderboard", stat=stat, error=str(e))
-            return []

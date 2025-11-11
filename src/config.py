@@ -80,6 +80,25 @@ class Settings(BaseSettings):
         description="HTTP User-Agent header",
     )
 
+    # Browser Automation Settings (for SPA websites)
+    browser_enabled: bool = Field(default=True, description="Enable browser automation")
+    browser_type: Literal["chromium", "firefox", "webkit"] = Field(
+        default="chromium", description="Browser type for automation"
+    )
+    browser_headless: bool = Field(default=True, description="Run browser in headless mode")
+    browser_timeout: int = Field(
+        default=30000, ge=5000, le=120000, description="Browser operation timeout (milliseconds)"
+    )
+    browser_cache_enabled: bool = Field(
+        default=True, description="Enable browser HTML caching"
+    )
+    browser_cache_ttl: int = Field(
+        default=7200, ge=0, description="Browser cache TTL (seconds) - 2 hours default for SPA"
+    )
+    browser_max_contexts: int = Field(
+        default=5, ge=1, le=20, description="Maximum concurrent browser contexts"
+    )
+
     # Database
     database_url: str = Field(
         default="sqlite:///./data/basketball_stats.db", description="Database URL"

@@ -6,7 +6,7 @@ RESTful API endpoints for basketball player statistics.
 
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Path, Query
 from pydantic import BaseModel
 
 from ..models import Player, PlayerSeasonStats, Team
@@ -149,8 +149,8 @@ async def search_players(
     summary="Get Player by ID",
 )
 async def get_player(
-    source: str = Query(..., description="Data source (e.g., 'eybl', 'psal')"),
-    player_id: str = Query(..., description="Player ID within the source"),
+    source: str = Path(..., description="Data source (e.g., 'eybl', 'psal')"),
+    player_id: str = Path(..., description="Player ID within the source"),
 ):
     """
     Get detailed player information from a specific source.
@@ -192,7 +192,7 @@ async def get_player(
     summary="Get Player Season Stats",
 )
 async def get_player_stats(
-    player_name: str = Query(..., description="Player name"),
+    player_name: str = Path(..., description="Player name"),
     season: Optional[str] = Query(None, description="Season (e.g., '2024-25')"),
     sources: Optional[str] = Query(None, description="Comma-separated source list"),
     persist: bool = Query(
@@ -311,7 +311,7 @@ async def search_teams(
     summary="Get Statistical Leaderboard",
 )
 async def get_leaderboard(
-    stat: str = Query(
+    stat: str = Path(
         ...,
         description="Stat category (points, rebounds, assists, steals, blocks)",
     ),

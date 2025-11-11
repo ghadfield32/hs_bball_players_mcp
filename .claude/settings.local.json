@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest:*)",
+      "Bash(pip install:*)",
+      "Bash(C:/Users/ghadf/Anaconda3/python.exe -m pytest tests/test_datasources/test_eybl.py::TestEYBLDataSource::test_search_players -v -s)",
+      "Bash(C:/Users/ghadf/Anaconda3/python.exe -m pip install:*)",
+      "Bash(C:/Users/ghadf/Anaconda3/python.exe -m pytest tests/test_datasources/test_eybl.py::TestEYBLDataSource::test_search_players -v -s --tb=short)",
+      "Bash(C:/Users/ghadf/Anaconda3/python.exe -m pytest tests/test_datasources/test_eybl.py::TestEYBLDataSource::test_search_players -v --tb=short)",
+      "Bash(C:/Users/ghadf/Anaconda3/python.exe -m pytest:*)",
+      "Bash(chmod:*)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File setup.ps1 -UseUV)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(python scripts/inspect_website.py:*)",
+      "Bash(=1.40.0)",
+      "Bash(uv pip install:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

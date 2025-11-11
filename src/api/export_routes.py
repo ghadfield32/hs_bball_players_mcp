@@ -7,7 +7,7 @@ Also provides DuckDB query endpoints for analytical queries.
 
 from typing import Literal, Optional
 
-from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi import APIRouter, HTTPException, Path, Query, Response
 
 from ..services.duckdb_storage import get_duckdb_storage
 from ..services.parquet_exporter import get_parquet_exporter
@@ -25,7 +25,7 @@ analytics_router = APIRouter(prefix="/api/v1/analytics", tags=["analytics"])
 
 @export_router.get("/players/{format}", summary="Export Players Data")
 async def export_players(
-    format: Literal["parquet", "csv", "json"] = Query(..., description="Export format"),
+    format: Literal["parquet", "csv", "json"] = Path(..., description="Export format"),
     source: Optional[str] = Query(None, description="Filter by source"),
     name: Optional[str] = Query(None, description="Filter by player name"),
     school: Optional[str] = Query(None, description="Filter by school"),
@@ -105,7 +105,7 @@ async def export_players(
 
 @export_router.get("/stats/{format}", summary="Export Player Statistics")
 async def export_stats(
-    format: Literal["parquet", "csv", "json"] = Query(..., description="Export format"),
+    format: Literal["parquet", "csv", "json"] = Path(..., description="Export format"),
     season: Optional[str] = Query(None, description="Filter by season"),
     source: Optional[str] = Query(None, description="Filter by source"),
     min_ppg: Optional[float] = Query(None, description="Minimum points per game"),
@@ -252,7 +252,7 @@ async def get_analytics_summary():
 
 @analytics_router.get("/leaderboard/{stat}", summary="Get Leaderboard from DuckDB")
 async def get_analytics_leaderboard(
-    stat: str = Query(..., description="Stat to rank by (points_per_game, rebounds_per_game, etc.)"),
+    stat: str = Path(..., description="Stat to rank by (points_per_game, rebounds_per_game, etc.)"),
     season: Optional[str] = Query(None, description="Season filter"),
     source: Optional[str] = Query(None, description="Source filter"),
     limit: int = Query(50, ge=1, le=200, description="Maximum results"),

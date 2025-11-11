@@ -16,6 +16,10 @@ from src.config import get_settings
 from src.datasources.us.eybl import EYBLDataSource
 from src.datasources.us.mn_hub import MNHubDataSource
 from src.datasources.us.psal import PSALDataSource
+from src.datasources.us.sblive import SBLiveDataSource
+from src.datasources.us.bound import BoundDataSource
+from src.datasources.us.three_ssb import ThreeSSBDataSource
+from src.datasources.us.wsn import WSNDataSource
 from src.datasources.europe.fiba_youth import FIBAYouthDataSource
 from src.main import app
 from src.services.aggregator import DataSourceAggregator, get_aggregator
@@ -75,6 +79,38 @@ async def fiba_source() -> AsyncGenerator[FIBAYouthDataSource, None]:
 async def mn_hub_source() -> AsyncGenerator[MNHubDataSource, None]:
     """Create MN Hub datasource for testing."""
     source = MNHubDataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def sblive_source() -> AsyncGenerator[SBLiveDataSource, None]:
+    """Create SBLive datasource for testing."""
+    source = SBLiveDataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def bound_source() -> AsyncGenerator[BoundDataSource, None]:
+    """Create Bound datasource for testing."""
+    source = BoundDataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def three_ssb_source() -> AsyncGenerator[ThreeSSBDataSource, None]:
+    """Create 3SSB datasource for testing."""
+    source = ThreeSSBDataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def wsn_source() -> AsyncGenerator[WSNDataSource, None]:
+    """Create WSN (Wisconsin Sports Network) datasource for testing."""
+    source = WSNDataSource()
     yield source
     await source.close()
 

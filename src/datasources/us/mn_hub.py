@@ -3,6 +3,9 @@ Minnesota Basketball Hub DataSource Adapter
 
 Scrapes player and team statistics from Minnesota Basketball Hub.
 One of the best free high school basketball stats hubs in the U.S.
+
+Now supports Angular SPA rendering using browser automation.
+Updated: 2025-11-11 - Added browser automation + updated URLs for 2025-26 season
 """
 
 from datetime import datetime
@@ -32,14 +35,18 @@ from ...utils import (
     parse_html,
     parse_int,
 )
+from ...utils.browser_client import BrowserClient
 from ..base import BaseDataSource
 
 
 class MNHubDataSource(BaseDataSource):
     """
-    Minnesota Basketball Hub data source adapter.
+    Minnesota Basketball Hub data source adapter with browser automation.
 
-    Provides access to Minnesota high school basketball statistics.
+    The MN Hub website uses Angular for client-side rendering and has
+    season-specific URLs, requiring browser automation to access stats.
+
+    Integrated with Star Tribune Varsity platform.
     Public stats at https://stats.mnbasketballhub.com
     """
 
@@ -49,115 +56,40 @@ class MNHubDataSource(BaseDataSource):
     region = DataSourceRegion.US
 
     def __init__(self):
-        """Initialize MN Hub datasource."""
+        """Initialize MN Hub datasource with browser automation."""
         super().__init__()
 
-        # MN Hub-specific endpoints
-        self.stats_url = f"{self.base_url}/stats"
-        self.players_url = f"{self.base_url}/players"
-        self.teams_url = f"{self.base_url}/teams"
-        self.schedule_url = f"{self.base_url}/schedule"
-        self.leaders_url = f"{self.base_url}/leaders"
+        # Determine current season (format: 2025-26)
+        now = datetime.now()
+        if now.month >= 11:  # Season starts in November
+            season_year = now.year
+        else:
+            season_year = now.year - 1
 
-    async def get_player(self, player_id: str) -> Optional[Player]:
-        """
-        Get player by ID.
+        season_str = f"{season_year}-{str(season_year + 1)[-2:]}"
 
-        Args:
-            player_id: Player identifier
+        # MN Hub-specific endpoints (season-specific URLs)
+        self.season = season_str
+        self.leaderboards_url = f"{self.base_url}/{season_str}-boys-basketball-stat-leaderboards"
+        self.historical_url = f"{self.base_url}/historical-data"
 
-        Returns:
-            Player object or None
-        """
-        try:
-            # Construct player profile URL
-            profile_url = f"{self.players_url}/{player_id}"
+        # Initialize browser client for Angular rendering
+        # Browser settings optimized for MN Hub's Angular app
+        self.browser_client = BrowserClient(
+            settings=self.settings,
+            browser_type=self.settings.browser_type if hasattr(self.settings, 'browser_type') else "chromium",
+            headless=self.settings.browser_headless if hasattr(self.settings, 'browser_headless') else True,
+            timeout=self.settings.browser_timeout if hasattr(self.settings, 'browser_timeout') else 30000,
+            cache_enabled=self.settings.browser_cache_enabled if hasattr(self.settings, 'browser_cache_enabled') else True,
+            cache_ttl=self.settings.browser_cache_ttl if hasattr(self.settings, 'browser_cache_ttl') else 7200,
+        )
 
-            html = await self.http_client.get_text(profile_url, cache_ttl=3600)
-            soup = parse_html(html)
+        self.logger.info(f"MN Hub initialized for {season_str} season")
 
-            # Find player info section
-            player_info = soup.find("div", class_=lambda x: x and "player-info" in str(x).lower())
-            if not player_info:
-                return None
-
-            return self._parse_player_from_profile(soup, player_id, profile_url)
-
-        except Exception as e:
-            self.logger.error(f"Failed to get player", player_id=player_id, error=str(e))
-            return None
-
-    def _parse_player_from_profile(self, soup, player_id: str, url: str) -> Optional[Player]:
-        """Parse player from profile page."""
-        try:
-            # Extract player name
-            name_elem = soup.find(["h1", "h2"], class_=lambda x: x and "player-name" in str(x).lower())
-            full_name = get_text_or_none(name_elem) if name_elem else ""
-
-            if not full_name:
-                return None
-
-            # Split name
-            name_parts = full_name.split()
-            first_name = name_parts[0] if len(name_parts) > 0 else full_name
-            last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
-
-            # Find info fields
-            info_fields = soup.find_all(["div", "span"], class_=lambda x: x and "info" in str(x).lower())
-
-            height = None
-            position = None
-            grad_year = None
-            school = None
-            team = None
-
-            for field in info_fields:
-                text = get_text_or_none(field)
-                if not text:
-                    continue
-
-                # Parse different field types
-                if "height" in text.lower() or "'" in text:
-                    height = parse_height_to_inches(text)
-                elif "position" in text.lower() or text.upper() in ["PG", "SG", "SF", "PF", "C"]:
-                    try:
-                        position = Position(text.upper().strip())
-                    except ValueError:
-                        pass
-                elif "class" in text.lower() or "'" in text and len(text) == 2:
-                    # Grad year like '25, '26
-                    grad_year = parse_int("20" + text.replace("'", ""))
-                elif "school" in text.lower():
-                    school = text.replace("School:", "").strip()
-                elif "team" in text.lower():
-                    team = text.replace("Team:", "").strip()
-
-            data_source = self.create_data_source_metadata(
-                url=url, quality_flag=DataQualityFlag.COMPLETE
-            )
-
-            player_data = {
-                "player_id": player_id,
-                "first_name": first_name,
-                "last_name": last_name,
-                "full_name": full_name,
-                "height_inches": height,
-                "position": position,
-                "grad_year": grad_year,
-                "school_name": school,
-                "school_state": "MN",
-                "school_country": "USA",
-                "team_name": team,
-                "level": PlayerLevel.HIGH_SCHOOL,
-                "profile_url": url,
-                "data_source": data_source,
-            }
-
-            return self.validate_and_log_data(Player, player_data, f"player {full_name}")
-
-        except Exception as e:
-            self.logger.error("Failed to parse player profile", error=str(e))
-            return None
+    async def close(self):
+        """Close connections and browser instances."""
+        await super().close()
+        # Note: Browser is singleton, so we don't close it here
 
     async def search_players(
         self,
@@ -167,80 +99,133 @@ class MNHubDataSource(BaseDataSource):
         limit: int = 50,
     ) -> list[Player]:
         """
-        Search for players.
+        Search for players in MN Hub leaderboards.
+
+        Uses browser automation to render Angular app and extract stats.
 
         Args:
             name: Player name (partial match)
             team: Team name (partial match)
-            season: Season filter
+            season: Season (uses current if None)
             limit: Maximum results
 
         Returns:
             List of Player objects
         """
         try:
-            # Get stats page which lists players
-            html = await self.http_client.get_text(self.stats_url, cache_ttl=3600)
-            soup = parse_html(html)
+            self.logger.info(f"Fetching MN Hub player stats (Angular rendering) - Season: {self.season}")
 
-            # Find stats table
-            stats_table = soup.find("table")
-            if not stats_table:
-                self.logger.warning("No stats table found")
-                return []
-
-            rows = extract_table_data(stats_table)
-            players = []
-
-            data_source = self.create_data_source_metadata(
-                url=self.stats_url, quality_flag=DataQualityFlag.COMPLETE
+            # Use browser automation to render Angular app
+            # Wait for table element to appear (Angular renders asynchronously)
+            html = await self.browser_client.get_rendered_html(
+                url=self.leaderboards_url,
+                wait_for="table",  # Wait for stats table to render
+                wait_timeout=self.browser_client.timeout,
+                wait_for_network_idle=True,  # Wait for Angular to finish loading
             )
 
-            for row in rows[:limit * 2]:  # Get more for filtering
-                player = self._parse_player_from_stats_row(row, data_source)
-                if not player:
+            # Parse rendered HTML
+            soup = parse_html(html)
+
+            # Find stats tables (may have multiple leaderboards)
+            stats_tables = soup.find_all("table")
+
+            if not stats_tables:
+                self.logger.warning("No stats tables found on MN Hub leaderboards page after rendering")
+                return []
+
+            self.logger.info(f"Found {len(stats_tables)} stat tables")
+
+            players = []
+            seen_players = set()
+            data_source = self.create_data_source_metadata(
+                url=self.leaderboards_url, quality_flag=DataQualityFlag.PARTIAL
+            )
+
+            # Extract players from all tables
+            for table in stats_tables:
+                rows = extract_table_data(table)
+
+                if not rows:
                     continue
 
-                # Apply filters
-                if name and name.lower() not in player.full_name.lower():
-                    continue
-                if team and (not player.team_name or team.lower() not in player.team_name.lower()):
-                    continue
+                for row in rows:
+                    player = self._parse_player_from_stats_row(row, data_source)
+                    if not player:
+                        continue
 
-                players.append(player)
+                    # Avoid duplicates
+                    if player.player_id in seen_players:
+                        continue
+
+                    # Filter by name if provided
+                    if name and name.lower() not in player.full_name.lower():
+                        continue
+
+                    # Filter by team if provided
+                    if team and (
+                        not player.team_name or team.lower() not in player.team_name.lower()
+                    ):
+                        continue
+
+                    players.append(player)
+                    seen_players.add(player.player_id)
+
+                    if len(players) >= limit:
+                        break
 
                 if len(players) >= limit:
                     break
 
-            self.logger.info(f"Found {len(players)} players")
+            self.logger.info(f"Found {len(players)} players", filters={"name": name, "team": team})
             return players
 
         except Exception as e:
-            self.logger.error("Failed to search players", error=str(e))
+            self.logger.error("Failed to search players", error=str(e), error_type=type(e).__name__)
             return []
 
     def _parse_player_from_stats_row(self, row: dict, data_source) -> Optional[Player]:
-        """Parse player from stats table row."""
+        """
+        Parse player from stats table row.
+
+        Args:
+            row: Row dictionary from stats table
+            data_source: DataSource metadata
+
+        Returns:
+            Player object or None
+        """
         try:
-            # Common column names
+            # Common column names (may vary across tables)
             player_name = (
-                row.get("Player")
-                or row.get("NAME")
-                or row.get("Name")
-                or row.get("PLAYER")
+                row.get("Player") or
+                row.get("NAME") or
+                row.get("Name") or
+                row.get("PLAYER")
             )
-            school = row.get("School") or row.get("SCHOOL") or row.get("Team")
-            class_year = row.get("Class") or row.get("YR") or row.get("Year")
-            position = row.get("Pos") or row.get("POS")
+
+            team_name = (
+                row.get("Team") or
+                row.get("TEAM") or
+                row.get("School")
+            )
+
+            position = row.get("Pos") or row.get("POS") or row.get("Position")
 
             if not player_name:
                 return None
 
-            # Clean and split name
+            # Clean player name
             player_name = clean_player_name(player_name)
-            name_parts = player_name.split()
-            first_name = name_parts[0] if len(name_parts) > 0 else player_name
-            last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+
+            # Split name into first/last
+            name_parts = player_name.strip().split()
+            if len(name_parts) >= 2:
+                first_name = name_parts[0]
+                last_name = " ".join(name_parts[1:])
+            else:
+                first_name = player_name
+                last_name = ""
 
             # Parse position
             pos_enum = None
@@ -250,18 +235,8 @@ class MNHubDataSource(BaseDataSource):
                 except ValueError:
                     pass
 
-            # Parse grad year from class
-            grad_year = None
-            if class_year:
-                # Could be '25, 2025, Sr, etc.
-                year_num = parse_int(class_year.replace("'", ""))
-                if year_num and year_num < 100:
-                    grad_year = 2000 + year_num
-                elif year_num and year_num > 2020:
-                    grad_year = year_num
-
-            # Create player ID
-            player_id = f"mnhub_{player_name.lower().replace(' ', '_')}"
+            # Create player ID from name (sanitized)
+            player_id = f"mnhub_{player_name.lower().replace(' ', '_').replace('.', '')}"
 
             player_data = {
                 "player_id": player_id,
@@ -269,8 +244,7 @@ class MNHubDataSource(BaseDataSource):
                 "last_name": last_name,
                 "full_name": player_name,
                 "position": pos_enum,
-                "grad_year": grad_year,
-                "school_name": school,
+                "team_name": team_name,
                 "school_state": "MN",
                 "school_country": "USA",
                 "level": PlayerLevel.HIGH_SCHOOL,
@@ -280,105 +254,233 @@ class MNHubDataSource(BaseDataSource):
             return self.validate_and_log_data(Player, player_data, f"player {player_name}")
 
         except Exception as e:
-            self.logger.error("Failed to parse player from row", error=str(e))
+            self.logger.error("Failed to parse player from row", error=str(e), row=row)
             return None
+
+    async def get_player(self, player_id: str) -> Optional[Player]:
+        """
+        Get player by ID.
+
+        Note: MN Hub leaderboards don't have direct player profile pages.
+        Need to search through leaderboards.
+
+        Args:
+            player_id: Player identifier
+
+        Returns:
+            Player object or None
+        """
+        # Extract player name from ID (format: mnhub_firstname_lastname)
+        player_name = player_id.replace("mnhub_", "").replace("_", " ")
+
+        # Search for player
+        players = await self.search_players(name=player_name, limit=1)
+        return players[0] if players else None
 
     async def get_player_season_stats(
         self, player_id: str, season: Optional[str] = None
     ) -> Optional[PlayerSeasonStats]:
         """
-        Get player season statistics.
+        Get player season statistics from leaderboards.
+
+        Uses browser automation to render Angular app before extracting stats.
 
         Args:
             player_id: Player identifier
             season: Season (uses current if None)
 
         Returns:
-            PlayerSeasonStats or None
+            PlayerSeasonStats object or None
         """
         try:
-            # Get from stats page
-            html = await self.http_client.get_text(self.stats_url, cache_ttl=3600)
+            self.logger.info(f"Fetching season stats for player {player_id}")
+
+            # Render page with browser
+            html = await self.browser_client.get_rendered_html(
+                url=self.leaderboards_url,
+                wait_for="table",
+                wait_for_network_idle=True,
+            )
+
             soup = parse_html(html)
 
-            stats_table = soup.find("table")
-            if not stats_table:
+            # Find all stats tables
+            stats_tables = soup.find_all("table")
+
+            if not stats_tables:
+                self.logger.warning("No stats tables found")
                 return None
 
-            rows = extract_table_data(stats_table)
+            # Extract player name from ID
+            player_name_from_id = player_id.replace("mnhub_", "").replace("_", " ")
 
-            # Find player row
-            player_name = player_id.replace("mnhub_", "").replace("_", " ").title()
+            # Search all tables for player
+            for table in stats_tables:
+                rows = extract_table_data(table)
 
-            for row in rows:
-                row_player = row.get("Player") or row.get("NAME")
-                if row_player and player_name.lower() in clean_player_name(row_player).lower():
-                    return self._parse_season_stats_from_row(row, player_id, season or "2024-25")
+                for row in rows:
+                    row_player_name = (
+                        row.get("Player") or
+                        row.get("NAME") or
+                        row.get("Name", "")
+                    )
 
+                    # Clean and match player name
+                    row_player_name = clean_player_name(row_player_name)
+
+                    if row_player_name.lower() == player_name_from_id.lower():
+                        return self._parse_season_stats_from_row(row, player_id)
+
+            self.logger.warning(f"Player {player_id} not found in stats tables")
             return None
 
         except Exception as e:
-            self.logger.error("Failed to get player season stats", error=str(e))
+            self.logger.error(f"Failed to get player season stats", player_id=player_id, error=str(e))
             return None
 
-    def _parse_season_stats_from_row(
-        self, row: dict, player_id: str, season: str
-    ) -> Optional[PlayerSeasonStats]:
-        """Parse season stats from table row."""
+    def _parse_season_stats_from_row(self, row: dict, player_id: str) -> Optional[PlayerSeasonStats]:
+        """Parse season stats from stats table row."""
         try:
-            player_name = clean_player_name(row.get("Player") or row.get("NAME") or "")
-            school = row.get("School") or row.get("SCHOOL") or ""
-
-            # Parse stats
-            games = parse_int(row.get("GP") or row.get("G") or row.get("Games"))
-            ppg = parse_float(row.get("PPG") or row.get("Points"))
-            rpg = parse_float(row.get("RPG") or row.get("Rebounds"))
-            apg = parse_float(row.get("APG") or row.get("Assists"))
-            spg = parse_float(row.get("SPG") or row.get("Steals"))
-            bpg = parse_float(row.get("BPG") or row.get("Blocks"))
-            fgp = parse_float(row.get("FG%") or row.get("FG Pct"))
-            tpp = parse_float(row.get("3P%") or row.get("3PT%"))
-            ftp = parse_float(row.get("FT%") or row.get("FT Pct"))
-
-            # Calculate totals from averages
-            total_points = int(ppg * games) if ppg and games else None
-            total_rebounds = int(rpg * games) if rpg and games else None
-            total_assists = int(apg * games) if apg and games else None
-            total_steals = int(spg * games) if spg and games else None
-            total_blocks = int(bpg * games) if bpg and games else None
+            data_source = self.create_data_source_metadata(
+                url=self.leaderboards_url, quality_flag=DataQualityFlag.PARTIAL
+            )
 
             stats_data = {
                 "player_id": player_id,
-                "player_name": player_name,
-                "team_id": f"mnhub_{school.lower().replace(' ', '_')}",
-                "season": season,
-                "league": "Minnesota High School",
-                "games_played": games or 0,
-                "points": total_points,
-                "points_per_game": ppg,
-                "total_rebounds": total_rebounds,
-                "rebounds_per_game": rpg,
-                "assists": total_assists,
-                "assists_per_game": apg,
-                "steals": total_steals,
-                "steals_per_game": spg,
-                "blocks": total_blocks,
-                "blocks_per_game": bpg,
+                "season": self.season,
+                "games_played": parse_int(row.get("GP") or row.get("G") or row.get("Games") or row.get("GMS")),
+                "points_per_game": parse_float(row.get("PPG") or row.get("PTS") or row.get("Points")),
+                "rebounds_per_game": parse_float(row.get("RPG") or row.get("REB") or row.get("Rebounds")),
+                "assists_per_game": parse_float(row.get("APG") or row.get("AST") or row.get("Assists")),
+                "steals_per_game": parse_float(row.get("SPG") or row.get("STL") or row.get("Steals")),
+                "blocks_per_game": parse_float(row.get("BPG") or row.get("BLK") or row.get("Blocks")),
+                "field_goal_percentage": parse_float(row.get("FG%") or row.get("FG PCT")),
+                "three_point_percentage": parse_float(row.get("3P%") or row.get("3PT%") or row.get("3PT PCT")),
+                "free_throw_percentage": parse_float(row.get("FT%") or row.get("FT PCT")),
+                "data_source": data_source,
             }
 
             return self.validate_and_log_data(
-                PlayerSeasonStats, stats_data, f"season stats for {player_name}"
+                PlayerSeasonStats, stats_data, f"season stats for {player_id}"
             )
 
         except Exception as e:
-            self.logger.error("Failed to parse season stats", error=str(e))
+            self.logger.error("Failed to parse season stats", error=str(e), row=row)
             return None
+
+    async def get_leaderboard(
+        self, stat_type: str = "points", limit: int = 50
+    ) -> list[dict]:
+        """
+        Get statistical leaderboard.
+
+        Uses browser automation to render Angular app before extracting leaderboard.
+
+        Args:
+            stat_type: Type of stat (points, rebounds, assists, etc.)
+            limit: Maximum number of leaders to return
+
+        Returns:
+            List of leaderboard entries
+        """
+        try:
+            self.logger.info(f"Fetching MN Hub {stat_type} leaderboard")
+
+            # Render leaderboards page
+            html = await self.browser_client.get_rendered_html(
+                url=self.leaderboards_url,
+                wait_for="table",
+                wait_for_network_idle=True,
+            )
+
+            soup = parse_html(html)
+
+            # Find all stats tables
+            stats_tables = soup.find_all("table")
+
+            if not stats_tables:
+                self.logger.warning("No stats tables found for leaderboard")
+                return []
+
+            # Map stat types to column names
+            stat_column_map = {
+                "points": ["PPG", "PTS", "Points"],
+                "rebounds": ["RPG", "REB", "Rebounds"],
+                "assists": ["APG", "AST", "Assists"],
+                "steals": ["SPG", "STL", "Steals"],
+                "blocks": ["BPG", "BLK", "Blocks"],
+                "field_goal_pct": ["FG%", "FG PCT"],
+                "three_point_pct": ["3P%", "3PT%", "3PT PCT"],
+            }
+
+            column_names = stat_column_map.get(stat_type, ["PPG"])
+
+            # Search tables for matching stat column
+            leaderboard = []
+
+            for table in stats_tables:
+                rows = extract_table_data(table)
+
+                if not rows:
+                    continue
+
+                # Find matching column
+                stat_column = None
+                for col in column_names:
+                    if col in rows[0]:
+                        stat_column = col
+                        break
+
+                if not stat_column:
+                    continue
+
+                # Build leaderboard from this table
+                for row in rows:
+                    player_name = (
+                        row.get("Player") or
+                        row.get("NAME") or
+                        row.get("Name")
+                    )
+                    stat_value = parse_float(row.get(stat_column))
+
+                    if player_name and stat_value is not None:
+                        leaderboard.append({
+                            "player_name": clean_player_name(player_name),
+                            "team_name": row.get("Team") or row.get("TEAM") or row.get("School"),
+                            "stat_value": stat_value,
+                            "stat_type": stat_type,
+                        })
+
+                # If we found data, stop searching tables
+                if leaderboard:
+                    break
+
+            if not leaderboard:
+                self.logger.warning(f"No leaderboard data found for {stat_type}")
+                return []
+
+            # Sort by stat value descending
+            leaderboard.sort(key=lambda x: x["stat_value"], reverse=True)
+
+            # Add ranks
+            for i, entry in enumerate(leaderboard[:limit], 1):
+                entry["rank"] = i
+
+            self.logger.info(f"Generated {len(leaderboard[:limit])} leaderboard entries")
+            return leaderboard[:limit]
+
+        except Exception as e:
+            self.logger.error("Failed to get leaderboard", stat_type=stat_type, error=str(e))
+            return []
 
     async def get_player_game_stats(
         self, player_id: str, game_id: str
     ) -> Optional[PlayerGameStats]:
         """
-        Get player game statistics.
+        Get player statistics for a specific game.
+
+        Note: MN Hub leaderboards don't provide game-by-game breakdowns.
+        This would require accessing individual game box scores.
 
         Args:
             player_id: Player identifier
@@ -387,12 +489,15 @@ class MNHubDataSource(BaseDataSource):
         Returns:
             PlayerGameStats or None
         """
-        self.logger.warning("Individual game stats require game log access - not yet implemented")
+        self.logger.warning("get_player_game_stats not yet implemented for MN Hub")
         return None
 
     async def get_team(self, team_id: str) -> Optional[Team]:
         """
-        Get team information.
+        Get team by ID.
+
+        Note: MN Hub has team pages but they're not yet scraped.
+        Future implementation would parse team rosters.
 
         Args:
             team_id: Team identifier
@@ -400,64 +505,8 @@ class MNHubDataSource(BaseDataSource):
         Returns:
             Team object or None
         """
-        try:
-            # Teams page should list all teams
-            html = await self.http_client.get_text(self.teams_url, cache_ttl=7200)
-            soup = parse_html(html)
-
-            # Find teams table or list
-            teams_table = soup.find("table")
-            if not teams_table:
-                return None
-
-            rows = extract_table_data(teams_table)
-
-            team_name = team_id.replace("mnhub_", "").replace("_", " ").title()
-
-            for row in rows:
-                row_team = row.get("Team") or row.get("School") or row.get("NAME")
-                if row_team and team_name.lower() in row_team.lower():
-                    return self._parse_team_from_row(row, team_id)
-
-            return None
-
-        except Exception as e:
-            self.logger.error("Failed to get team", error=str(e))
-            return None
-
-    def _parse_team_from_row(self, row: dict, team_id: str) -> Optional[Team]:
-        """Parse team from table row."""
-        try:
-            team_name = row.get("Team") or row.get("School") or row.get("NAME") or ""
-            wins = parse_int(row.get("W") or row.get("Wins"))
-            losses = parse_int(row.get("L") or row.get("Losses"))
-            conference = row.get("Conference") or row.get("Conf")
-            section = row.get("Section")
-
-            data_source = self.create_data_source_metadata(
-                url=self.teams_url, quality_flag=DataQualityFlag.COMPLETE
-            )
-
-            team_data = {
-                "team_id": team_id,
-                "team_name": team_name,
-                "school_name": team_name,
-                "state": "MN",
-                "country": "USA",
-                "level": TeamLevel.HIGH_SCHOOL_VARSITY,
-                "league": "Minnesota High School",
-                "conference": conference or section,
-                "season": "2024-25",
-                "wins": wins,
-                "losses": losses,
-                "data_source": data_source,
-            }
-
-            return self.validate_and_log_data(Team, team_data, f"team {team_name}")
-
-        except Exception as e:
-            self.logger.error("Failed to parse team", error=str(e))
-            return None
+        self.logger.warning("get_team not yet implemented for MN Hub")
+        return None
 
     async def get_games(
         self,
@@ -468,7 +517,10 @@ class MNHubDataSource(BaseDataSource):
         limit: int = 100,
     ) -> list[Game]:
         """
-        Get games from schedule.
+        Get games with optional filters.
+
+        Note: MN Hub has schedule/game data but it's not yet scraped.
+        Future implementation would parse schedules and game results.
 
         Args:
             team_id: Filter by team
@@ -480,79 +532,5 @@ class MNHubDataSource(BaseDataSource):
         Returns:
             List of Game objects
         """
-        self.logger.warning("Game schedule parsing not yet implemented for MN Hub")
-        return []
-
-    async def get_leaderboard(
-        self,
-        stat: str,
-        season: Optional[str] = None,
-        limit: int = 50,
-    ) -> list[dict]:
-        """
-        Get statistical leaderboard.
-
-        Args:
-            stat: Stat category
-            season: Season filter
-            limit: Maximum results
-
-        Returns:
-            List of leaderboard entries
-        """
-        try:
-            # MN Hub has dedicated leaders page
-            html = await self.http_client.get_text(self.leaders_url, cache_ttl=3600)
-            soup = parse_html(html)
-
-            # Find the specific stat table
-            # Could have separate tables for PPG, RPG, APG, etc.
-            tables = soup.find_all("table")
-
-            for table in tables:
-                # Check if this is the right stat table
-                header = table.find_previous(["h2", "h3"])
-                if header and stat.lower() in get_text_or_none(header, strip=True).lower():
-                    rows = extract_table_data(table)
-                    leaderboard = []
-
-                    for i, row in enumerate(rows[:limit], 1):
-                        player_name = row.get("Player") or row.get("NAME")
-                        school = row.get("School") or row.get("Team")
-                        stat_value = parse_float(
-                            row.get(stat.upper())
-                            or row.get("Value")
-                            or row.get("AVG")
-                            or row.get("Total")
-                        )
-
-                        if player_name and stat_value is not None:
-                            leaderboard.append(
-                                {
-                                    "rank": i,
-                                    "player_id": f"mnhub_{clean_player_name(player_name).lower().replace(' ', '_')}",
-                                    "player_name": clean_player_name(player_name),
-                                    "team_name": school,
-                                    "stat_value": stat_value,
-                                    "stat_name": stat,
-                                    "season": season or "2024-25",
-                                }
-                            )
-
-                    if leaderboard:
-                        return leaderboard
-
-            # If no specific table found, use main stats page
-            return await self._get_leaderboard_from_stats(stat, season, limit)
-
-        except Exception as e:
-            self.logger.error("Failed to get leaderboard", error=str(e))
-            return []
-
-    async def _get_leaderboard_from_stats(
-        self, stat: str, season: Optional[str], limit: int
-    ) -> list[dict]:
-        """Get leaderboard by sorting main stats page."""
-        # Would need to fetch all players and sort by stat
-        # For now, return empty
+        self.logger.warning("get_games not yet implemented for MN Hub")
         return []
