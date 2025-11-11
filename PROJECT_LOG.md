@@ -534,4 +534,138 @@
 
 ---
 
-*Last Updated: 2025-11-11 20:45 UTC*
+## Session Log: 2025-11-11 - Nationwide Coverage Analysis (Phase 4)
+
+### COMPLETED
+
+#### [2025-11-11 21:00] Phase 4: Comprehensive Coverage Audit & Expansion Planning
+- ✅ **Coverage Analysis Document** (`COVERAGE_ANALYSIS.md`, 500+ lines)
+  - **US State Audit**: Identified 37 missing states + DC (74% gap)
+    - Currently covered: 13 states (26% coverage)
+    - Missing by region: Northeast (10), Southeast (11), Midwest (6), Southwest (5), West (5)
+  - **Platform Expansion Opportunities**:
+    - SBLive: Research needed for 20+ additional states (FL, GA, NC, VA, TX, etc.)
+    - Bound: Research needed for 6+ Midwest states (KS, MO, NE, WI, IN, OH, MI)
+    - RankOne: 5 states confirmed (TX, KY, IN, OH, TN) - schedules only
+  - **Southeast Priority** (basketball hotbed): FL, GA, NC, VA, TN, SC, AL, LA, MS, AR, KY, WV
+  - **Texas Priority**: TexasHoops.com (largest state, massive talent pool)
+  - **Northeast Prep**: NEPSAC (6 states: CT, MA, ME, NH, RI, VT)
+
+  - **Global Pre-Euroleague Gaps**:
+    - **Europe**: 7 sources (2 active, 2 templates, 3 research needed)
+      - Active: FIBA Youth, FIBA LiveStats
+      - Templates: ANGT (EuroLeague U18), needs URL updates
+      - Planned: NBBL (Germany), FEB (Spain)
+      - Research Needed: MKL (Lithuania), LNB Espoirs (France)
+    - **Canada**: 2 sources (both need URL updates)
+      - Templates: OSBA (Ontario)
+      - Planned: NPA (National Prep)
+    - **Australia**: 1 source (template needs URL updates)
+      - Template: PlayHQ
+
+  - **Coverage Heatmap**: State-by-state status (✅ Full, 🟡 Partial, ❌ None)
+  - **Platform Capabilities Matrix**: Feature comparison across all sources
+  - **90+ Research/Implementation Tasks** identified and prioritized
+
+- ✅ **Implementation Roadmap** (`IMPLEMENTATION_ROADMAP.md`, 600+ lines)
+  - **7-Phase Sprint Plan** (Sprints 2-8):
+    - Sprint 2: RankOne + Template Activation (ANGT, OSBA, PlayHQ)
+    - Sprint 3: TexasHoops + Southeast Research + OTE/Grind Session
+    - Sprint 4: European Youth Leagues (NBBL, FEB, MKL, LNB)
+    - Sprint 5: Event Adapter Framework + NBPA/Pangos/Hoop Summit
+    - Sprint 6: Northeast Expansion (NEPSAC, NJ, PA, MA)
+    - Sprint 7: Midwest/Southwest (MI, MO, KS, CO, UT)
+    - Sprint 8: Engineering Enhancements (Identity Resolution, School Dictionary)
+
+  - **Detailed Task Breakdown**:
+    - Task definitions with priority, effort estimates, steps
+    - Research checklists (immediate, secondary, long-term)
+    - Success metrics per sprint
+    - File organization plan
+
+  - **Engineering Enhancements Planned**:
+    - Identity Resolution System (player_uid, fuzzy matching, deduplication)
+    - School Dictionary (NCES integration, US school normalization)
+    - Event Lineage Enhancement (auditability, change detection)
+    - Historical Backfill CLI (season enumeration, parallel backfill)
+
+- ✅ **Source Registry Updates** (`config/sources.yaml`)
+  - **Status Corrections**: Marked 4 adapters as "active" (were "planned"):
+    - sblive, bound, wsn, fiba_livestats → active
+  - **New Sources Added** (5):
+    - MKL (Lithuanian Youth) - research_needed
+    - LNB Espoirs (France U21) - research_needed
+    - TexasHoops (TX) - research_needed
+    - NEPSAC (New England Prep, 6 states) - research_needed
+  - **Metadata Updated**:
+    - Total sources: 26 → 31
+    - Active: 4 → 10
+    - By region: US (13→16), Europe (5→7)
+    - Coverage tracking: 13 US states with full stats, 5 with schedules only
+
+### Coverage Summary (Phase 4 Analysis)
+
+**Current State**:
+- **10 active adapters**: 3 national circuits, 2 multi-state (10 states), 3 single-state, 2 global
+- **US Coverage**: 13 of 50 states (26%)
+  - Full stats: WA, OR, CA, AZ, ID, NV, IA, SD, IL, MN, WI, NY
+  - National circuits: EYBL, EYBL Girls, 3SSB
+- **Global Coverage**: FIBA Youth + FIBA LiveStats (worldwide youth tournaments)
+
+**Gaps Identified**:
+- **US States Missing**: 37 + DC (74% gap)
+  - High-priority basketball hotbeds: TX, FL, GA, NC, VA, TN, PA, NJ, OH, IN, MI
+- **Global Pre-Euroleague**: 7 sources planned/researched (5 need implementation)
+
+**Next Priorities** (Sprint 2):
+1. RankOne adapter (5 states: TX, KY, IN, OH, TN - schedules layer)
+2. Research SBLive/Bound expansion (potential +10-20 states)
+3. Activate templates: ANGT, OSBA, PlayHQ (+3 global sources)
+4. TexasHoops research (TX full stats coverage)
+
+### Research Tasks Identified
+
+**Immediate** (48 hours):
+- SBLive state enumeration (20+ states to test)
+- Bound state enumeration (6+ states to test)
+- RankOne district verification (5 states)
+- TexasHoops robots.txt + ToS review
+- Template URL research: ANGT, OSBA, PlayHQ
+
+**Secondary** (1 week):
+- Southeast state hubs (FL, GA, NC, VA)
+- NBBL (Germany), FEB (Spain) structure
+- MKL (Lithuania), LNB Espoirs (France) research
+
+**Long-term** (1 month):
+- NEPSAC prep schools stats availability
+- Midwest state hubs (MI, MO, KS, NE)
+- Canadian provincial associations
+- Asian leagues (Philippines, Japan, South Korea)
+
+### Technical Debt & Enhancements
+
+**Identity Resolution System** (high priority):
+- player_uid = (name, school, grad_year)
+- Fuzzy matching for cross-source deduplication
+- Manual override CSV for known players
+- Integration through aggregator
+
+**School Dictionary** (medium priority):
+- NCES ID mapping for US schools
+- Normalize school names across RankOne/SBLive/Bound
+- Fallback fuzzy matching when NCES unavailable
+
+**Event Lineage** (low priority):
+- Mandatory fetched_at and source_url for all adapters
+- Change detection via raw_data hashing
+- Audit trail for data updates
+
+**Historical Backfill** (medium priority):
+- CLI command for season enumeration
+- Parallel backfill with rate limiting
+- Progress tracking in DuckDB
+
+---
+
+*Last Updated: 2025-11-11 21:00 UTC*
