@@ -24,11 +24,25 @@ class DataSourceType(str, Enum):
     # US - Multi-State Coverage
     SBLIVE = "sblive"  # SBLive Sports (Multi-state: WA, OR, CA, AZ, ID, NV)
     BOUND = "bound"  # Bound (formerly Varsity Bound) (Multi-state: IA, SD, IL, MN)
+    RANKONE = "rankone"  # RankOne Sport (Multi-state: TX, KY, IN, OH, TN - schedules/fixtures)
 
     # US - Single State
     PSAL = "psal"  # NYC PSAL
     MN_HUB = "mn_hub"  # Minnesota Basketball Hub
     WSN = "wsn"  # Wisconsin Sports Network
+
+    # US - State Associations (Southeast)
+    FHSAA = "fhsaa"  # Florida High School Athletic Association
+    GHSA = "ghsa"  # Georgia High School Association
+    NCHSAA = "nchsaa"  # North Carolina High School Athletic Association
+    VHSL = "vhsl"  # Virginia High School League
+    TSSAA = "tssaa"  # Tennessee Secondary School Athletic Association
+    SCHSL = "schsl"  # South Carolina High School League
+
+    # US - State Associations (Other)
+    HHSAA = "hhsaa"  # Hawaii High School Athletic Association
+    NEPSAC = "nepsac"  # New England Preparatory School Athletic Council
+    TEXAS_HOOPS = "texas_hoops"  # TexasHoops.com
 
     # International
     FIBA = "fiba"  # FIBA Youth
@@ -36,6 +50,10 @@ class DataSourceType(str, Enum):
     ANGT = "angt"  # NextGen EuroLeague / ANGT
     OSBA = "osba"  # OSBA Canada
     PLAYHQ = "playhq"  # PlayHQ Australia
+    NBBL = "nbbl"  # German NBBL/JBBL (U19/U16)
+    FEB = "feb"  # Spanish FEB Junior categories
+    MKL = "mkl"  # Lithuanian youth leagues
+    LNB_ESPOIRS = "lnb_espoirs"  # French LNB Espoirs (U21)
 
     UNKNOWN = "unknown"  # Unknown/other source
 

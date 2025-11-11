@@ -282,7 +282,7 @@ sources:
     full_name: "Rank One - School Activities Management"
     region: US
     type: multi_state
-    status: planned
+    status: active
     url: "https://rankone.com"
     adapter_class: "RankOneDataSource"
     adapter_module: "src.datasources.us.rankone"
@@ -397,6 +397,76 @@ sources:
       standings: 7200
     robots_policy: "check_required"
     notes: "New England prep schools. Stats availability needs research."
+
+  - id: fhsaa
+    name: "FHSAA"
+    full_name: "Florida High School Athletic Association"
+    region: US-FL
+    type: state
+    status: active
+    url: "https://www.fhsaa.com"
+    adapter_class: "FHSAADataSource"
+    adapter_module: "src.datasources.us.fhsaa"
+    capabilities:
+      player_search: false
+      player_profiles: false
+      season_stats: false
+      game_stats: false
+      box_scores: false
+      leaderboards: false
+      team_stats: false
+      schedules: true
+      standings: false
+    data_quality:
+      has_player_stats: false
+      has_box_scores: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 0
+      stats: 0
+      games: 3600
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "FL state championships - tournament brackets, schedules. Southeast anchor state."
+
+  - id: hhsaa
+    name: "HHSAA"
+    full_name: "Hawaii High School Athletic Association"
+    region: US-HI
+    type: state
+    status: active
+    url: "https://www.hhsaa.org"
+    adapter_class: "HHSAADataSource"
+    adapter_module: "src.datasources.us.hhsaa"
+    capabilities:
+      player_search: false
+      player_profiles: false
+      season_stats: false
+      game_stats: false
+      box_scores: false
+      leaderboards: false
+      team_stats: false
+      schedules: true
+      standings: false
+    data_quality:
+      has_player_stats: false
+      has_box_scores: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 0
+      stats: 0
+      games: 3600
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "HI state championships - excellent historical tournament brackets and records."
 
   # =============================================================================
   # UNITED STATES - PREP/ELITE CIRCUITS
@@ -942,25 +1012,25 @@ events:
 # =============================================================================
 
 metadata:
-  total_sources: 31
-  active: 10
-  planned: 11
+  total_sources: 33
+  active: 13
+  planned: 8
   template: 3
   research_needed: 5
   event: 2
 
   by_region:
-    US: 16
+    US: 18
     GLOBAL: 2
     EUROPE: 7
     CANADA: 2
     AUSTRALIA: 1
 
   coverage:
-    us_states_covered: 13
+    us_states_covered: 15
     us_states_with_full_stats: 13
-    us_states_with_schedules_only: 5
+    us_states_with_schedules_only: 7
     has_player_stats: 24
     has_box_scores: 20
     has_leaderboards: 25
-    fixtures_only: 3
+    fixtures_only: 5

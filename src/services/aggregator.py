@@ -17,8 +17,11 @@ from ..datasources.europe.fiba_youth import FIBAYouthDataSource
 from ..datasources.us.bound import BoundDataSource
 from ..datasources.us.eybl import EYBLDataSource
 from ..datasources.us.eybl_girls import EYBLGirlsDataSource
+from ..datasources.us.fhsaa import FHSAADataSource
+from ..datasources.us.hhsaa import HHSAADataSource
 from ..datasources.us.mn_hub import MNHubDataSource
 from ..datasources.us.psal import PSALDataSource
+from ..datasources.us.rankone import RankOneDataSource
 from ..datasources.us.sblive import SBLiveDataSource
 from ..datasources.us.three_ssb import ThreeSSBDataSource
 from ..datasources.us.wsn import WSNDataSource
@@ -79,11 +82,16 @@ class DataSourceAggregator:
             # US - Multi-State Coverage:
             "bound": BoundDataSource,        # IA, SD, IL, MN (4 states)
             "sblive": SBLiveDataSource,      # WA, OR, CA, AZ, ID, NV (6 states)
+            "rankone": RankOneDataSource,    # TX, KY, IN, OH, TN (schedules/fixtures)
 
             # US - Single State Deep Coverage:
             "mn_hub": MNHubDataSource,       # Minnesota (best free HS stats)
             "psal": PSALDataSource,          # NYC public schools
             "wsn": WSNDataSource,            # Wisconsin (deep stats)
+
+            # US - State Associations (Tournaments/Brackets):
+            "fhsaa": FHSAADataSource,        # Florida (Southeast anchor)
+            "hhsaa": HHSAADataSource,        # Hawaii (excellent historical data)
 
             # Global/International:
             "fiba": FIBAYouthDataSource,           # FIBA Youth competitions

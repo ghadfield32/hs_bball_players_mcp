@@ -14,8 +14,11 @@ from fastapi.testclient import TestClient
 
 from src.config import get_settings
 from src.datasources.us.eybl import EYBLDataSource
+from src.datasources.us.fhsaa import FHSAADataSource
+from src.datasources.us.hhsaa import HHSAADataSource
 from src.datasources.us.mn_hub import MNHubDataSource
 from src.datasources.us.psal import PSALDataSource
+from src.datasources.us.rankone import RankOneDataSource
 from src.datasources.us.sblive import SBLiveDataSource
 from src.datasources.us.bound import BoundDataSource
 from src.datasources.us.three_ssb import ThreeSSBDataSource
@@ -79,6 +82,30 @@ async def fiba_source() -> AsyncGenerator[FIBAYouthDataSource, None]:
 async def mn_hub_source() -> AsyncGenerator[MNHubDataSource, None]:
     """Create MN Hub datasource for testing."""
     source = MNHubDataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def rankone_source() -> AsyncGenerator[RankOneDataSource, None]:
+    """Create RankOne datasource for testing."""
+    source = RankOneDataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def fhsaa_source() -> AsyncGenerator[FHSAADataSource, None]:
+    """Create FHSAA datasource for testing."""
+    source = FHSAADataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def hhsaa_source() -> AsyncGenerator[HHSAADataSource, None]:
+    """Create HHSAA datasource for testing."""
+    source = HHSAADataSource()
     yield source
     await source.close()
 
