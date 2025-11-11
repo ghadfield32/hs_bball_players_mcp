@@ -984,6 +984,600 @@ sources:
       comp: "https://www.playhq.com/{org}/basketball/comp/{id}"
     notes: "Australian platform. U16/U18 Championships, state leagues. Template needs URL updates."
 
+  # =============================================================================
+  # UNITED STATES - ADDITIONAL STATE ASSOCIATIONS (PHASE 5 EXPANSION)
+  # =============================================================================
+
+  # Southeast States (Continued)
+  - id: ghsa
+    name: "GHSA"
+    full_name: "Georgia High School Association"
+    region: US-GA
+    type: state
+    status: planned
+    url: "https://www.ghsa.net"
+    adapter_class: "GHSADataSource"
+    adapter_module: "src.datasources.us.ghsa"
+    capabilities:
+      player_search: false
+      player_profiles: false
+      season_stats: false
+      game_stats: false
+      box_scores: false
+      leaderboards: false
+      team_stats: false
+      schedules: true
+      standings: false
+    data_quality:
+      has_player_stats: false
+      has_box_scores: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 0
+      stats: 0
+      games: 3600
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "GA state championships - tournament brackets, schedules. Major basketball state."
+
+  - id: vhsl
+    name: "VHSL"
+    full_name: "Virginia High School League"
+    region: US-VA
+    type: state
+    status: planned
+    url: "https://www.vhsl.org"
+    adapter_class: "VHSLDataSource"
+    adapter_module: "src.datasources.us.vhsl"
+    capabilities:
+      player_search: false
+      schedules: true
+    data_quality:
+      has_player_stats: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "VA state championships - tournament brackets, schedules."
+
+  - id: tssaa
+    name: "TSSAA"
+    full_name: "Tennessee Secondary School Athletic Association"
+    region: US-TN
+    type: state
+    status: planned
+    url: "https://tssaa.org"
+    adapter_class: "TSSAADataSource"
+    adapter_module: "src.datasources.us.tssaa"
+    capabilities:
+      schedules: true
+    data_quality:
+      has_player_stats: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 20
+    cache_ttl:
+      games: 3600
+    robots_policy: "allowed"
+    notes: "TN state championships. RankOne also covers TN schedules."
+
+  - id: schsl
+    name: "SCHSL"
+    full_name: "South Carolina High School League"
+    region: US-SC
+    type: state
+    status: planned
+    url: "https://schsl.org"
+    adapter_class: "SCHSLDataSource"
+    adapter_module: "src.datasources.us.schsl"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: ahsaa
+    name: "AHSAA"
+    full_name: "Alabama High School Athletic Association"
+    region: US-AL
+    type: state
+    status: planned
+    url: "https://www.ahsaa.com"
+    adapter_class: "AHSAADataSource"
+    adapter_module: "src.datasources.us.ahsaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: lhsaa
+    name: "LHSAA"
+    full_name: "Louisiana High School Athletic Association"
+    region: US-LA
+    type: state
+    status: planned
+    url: "https://www.lhsaa.org"
+    adapter_class: "LHSAADataSource"
+    adapter_module: "src.datasources.us.lhsaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: mhsaa_ms
+    name: "MHSAA (MS)"
+    full_name: "Mississippi High School Activities Association"
+    region: US-MS
+    type: state
+    status: planned
+    url: "https://www.misshsaa.com"
+    adapter_class: "MHSAAMSDataSource"
+    adapter_module: "src.datasources.us.mhsaa_ms"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: aaa_ar
+    name: "AAA (AR)"
+    full_name: "Arkansas Activities Association"
+    region: US-AR
+    type: state
+    status: planned
+    url: "https://www.ahsaa.org"
+    adapter_class: "AAA_ARDataSource"
+    adapter_module: "src.datasources.us.aaa_ar"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: khsaa
+    name: "KHSAA"
+    full_name: "Kentucky High School Athletic Association"
+    region: US-KY
+    type: state
+    status: planned
+    url: "https://khsaa.org"
+    adapter_class: "KHSAADataSource"
+    adapter_module: "src.datasources.us.khsaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+    notes: "KY state championships. RankOne also covers KY schedules."
+
+  - id: wvssac
+    name: "WVSSAC"
+    full_name: "West Virginia Secondary School Activities Commission"
+    region: US-WV
+    type: state
+    status: planned
+    url: "https://wvssac.org"
+    adapter_class: "WVSSACDataSource"
+    adapter_module: "src.datasources.us.wvssac"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  # Northeast States
+  - id: ciac
+    name: "CIAC"
+    full_name: "Connecticut Interscholastic Athletic Conference"
+    region: US-CT
+    type: state
+    status: planned
+    url: "https://www.ciacsports.com"
+    adapter_class: "CIACDataSource"
+    adapter_module: "src.datasources.us.ciac"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+    notes: "CT state championships. Also covered by NEPSAC prep region."
+
+  - id: diaa
+    name: "DIAA"
+    full_name: "Delaware Interscholastic Athletic Association"
+    region: US-DE
+    type: state
+    status: planned
+    url: "https://www.diaa.org"
+    adapter_class: "DIAADataSource"
+    adapter_module: "src.datasources.us.diaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: miaa
+    name: "MIAA"
+    full_name: "Massachusetts Interscholastic Athletic Association"
+    region: US-MA
+    type: state
+    status: planned
+    url: "https://www.miaa.net"
+    adapter_class: "MIAADataSource"
+    adapter_module: "src.datasources.us.miaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+    notes: "MA state championships. Also covered by NEPSAC prep region."
+
+  - id: mpssaa
+    name: "MPSSAA"
+    full_name: "Maryland Public Secondary Schools Athletic Association"
+    region: US-MD
+    type: state
+    status: planned
+    url: "https://www.mpssaa.org"
+    adapter_class: "MPSSAADataSource"
+    adapter_module: "src.datasources.us.mpssaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: mpa
+    name: "MPA"
+    full_name: "Maine Principals' Association"
+    region: US-ME
+    type: state
+    status: planned
+    url: "https://www.mpa.cc"
+    adapter_class: "MPADataSource"
+    adapter_module: "src.datasources.us.mpa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: nhiaa
+    name: "NHIAA"
+    full_name: "New Hampshire Interscholastic Athletic Association"
+    region: US-NH
+    type: state
+    status: planned
+    url: "https://www.nhiaa.org"
+    adapter_class: "NHIAADataSource"
+    adapter_module: "src.datasources.us.nhiaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: njsiaa
+    name: "NJSIAA"
+    full_name: "New Jersey State Interscholastic Athletic Association"
+    region: US-NJ
+    type: state
+    status: planned
+    url: "https://www.njsiaa.org"
+    adapter_class: "NJSIAADataSource"
+    adapter_module: "src.datasources.us.njsiaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+    notes: "Major basketball state. Large tournament system."
+
+  - id: piaa
+    name: "PIAA"
+    full_name: "Pennsylvania Interscholastic Athletic Association"
+    region: US-PA
+    type: state
+    status: planned
+    url: "https://www.piaa.org"
+    adapter_class: "PIAADataSource"
+    adapter_module: "src.datasources.us.piaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+    notes: "Major basketball state (Kobe Bryant, etc.). Large tournament system."
+
+  - id: riil
+    name: "RIIL"
+    full_name: "Rhode Island Interscholastic League"
+    region: US-RI
+    type: state
+    status: planned
+    url: "https://www.riil.org"
+    adapter_class: "RIILDataSource"
+    adapter_module: "src.datasources.us.riil"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: vpa
+    name: "VPA"
+    full_name: "Vermont Principals' Association"
+    region: US-VT
+    type: state
+    status: planned
+    url: "https://www.vpaonline.org"
+    adapter_class: "VPADataSource"
+    adapter_module: "src.datasources.us.vpa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  # Midwest States
+  - id: ihsaa
+    name: "IHSAA"
+    full_name: "Indiana High School Athletic Association"
+    region: US-IN
+    type: state
+    status: planned
+    url: "https://www.ihsaa.org"
+    adapter_class: "IHSAADataSource"
+    adapter_module: "src.datasources.us.ihsaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+    notes: "Major basketball state (Hoosiers). RankOne also covers IN schedules."
+
+  - id: ohsaa
+    name: "OHSAA"
+    full_name: "Ohio High School Athletic Association"
+    region: US-OH
+    type: state
+    status: planned
+    url: "https://www.ohsaa.org"
+    adapter_class: "OHSAADataSource"
+    adapter_module: "src.datasources.us.ohsaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+    notes: "Major basketball state (LeBron James). RankOne also covers OH schedules."
+
+  - id: kshsaa
+    name: "KSHSAA"
+    full_name: "Kansas State High School Activities Association"
+    region: US-KS
+    type: state
+    status: planned
+    url: "https://www.kshsaa.org"
+    adapter_class: "KSHSAADataSource"
+    adapter_module: "src.datasources.us.kshsaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: mhsaa_mi
+    name: "MHSAA (MI)"
+    full_name: "Michigan High School Athletic Association"
+    region: US-MI
+    type: state
+    status: planned
+    url: "https://www.mhsaa.com"
+    adapter_class: "MHSAAMIDataSource"
+    adapter_module: "src.datasources.us.mhsaa_mi"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+    notes: "Major basketball state (Magic Johnson, etc.)."
+
+  - id: mshsaa
+    name: "MSHSAA"
+    full_name: "Missouri State High School Activities Association"
+    region: US-MO
+    type: state
+    status: planned
+    url: "https://www.mshsaa.org"
+    adapter_class: "MSHSAADataSource"
+    adapter_module: "src.datasources.us.mshsaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: ndhsaa
+    name: "NDHSAA"
+    full_name: "North Dakota High School Activities Association"
+    region: US-ND
+    type: state
+    status: planned
+    url: "https://www.ndhsaa.com"
+    adapter_class: "NDHSAADataSource"
+    adapter_module: "src.datasources.us.ndhsaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: nsaa
+    name: "NSAA"
+    full_name: "Nebraska School Activities Association"
+    region: US-NE
+    type: state
+    status: planned
+    url: "https://www.nsaahome.org"
+    adapter_class: "NSAADataSource"
+    adapter_module: "src.datasources.us.nsaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  # Southwest/West States
+  - id: chsaa
+    name: "CHSAA"
+    full_name: "Colorado High School Activities Association"
+    region: US-CO
+    type: state
+    status: planned
+    url: "https://www.chsaa.org"
+    adapter_class: "CHSAADataSource"
+    adapter_module: "src.datasources.us.chsaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: nmaa
+    name: "NMAA"
+    full_name: "New Mexico Activities Association"
+    region: US-NM
+    type: state
+    status: planned
+    url: "https://www.nmact.org"
+    adapter_class: "NMAADataSource"
+    adapter_module: "src.datasources.us.nmaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: ossaa
+    name: "OSSAA"
+    full_name: "Oklahoma Secondary School Activities Association"
+    region: US-OK
+    type: state
+    status: planned
+    url: "https://www.ossaa.com"
+    adapter_class: "OSSAADataSource"
+    adapter_module: "src.datasources.us.ossaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: uhsaa
+    name: "UHSAA"
+    full_name: "Utah High School Activities Association"
+    region: US-UT
+    type: state
+    status: planned
+    url: "https://www.uhsaa.org"
+    adapter_class: "UHSAADataSource"
+    adapter_module: "src.datasources.us.uhsaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: asaa
+    name: "ASAA"
+    full_name: "Alaska School Activities Association"
+    region: US-AK
+    type: state
+    status: planned
+    url: "https://www.asaa.org"
+    adapter_class: "ASAADataSource"
+    adapter_module: "src.datasources.us.asaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: mhsa
+    name: "MHSA"
+    full_name: "Montana High School Association"
+    region: US-MT
+    type: state
+    status: planned
+    url: "https://www.mhsa.org"
+    adapter_class: "MHSADataSource"
+    adapter_module: "src.datasources.us.mhsa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: whsaa
+    name: "WHSAA"
+    full_name: "Wyoming High School Activities Association"
+    region: US-WY
+    type: state
+    status: planned
+    url: "https://www.whsaa.org"
+    adapter_class: "WHSAADataSource"
+    adapter_module: "src.datasources.us.whsaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+
+  - id: dciaa
+    name: "DCIAA"
+    full_name: "District of Columbia Interscholastic Athletic Association"
+    region: US-DC
+    type: state
+    status: planned
+    url: "https://www.dciaa.org"
+    adapter_class: "DCIAADataSource"
+    adapter_module: "src.datasources.us.dciaa"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+    notes: "DC high school basketball. Strong talent pipeline."
+
+  - id: oia
+    name: "OIA"
+    full_name: "Oahu Interscholastic Association"
+    region: US-HI
+    type: league
+    status: planned
+    url: "https://www.oiasports.org"
+    adapter_class: "OIADataSource"
+    adapter_module: "src.datasources.us.oia"
+    capabilities:
+      schedules: true
+    rate_limit:
+      requests_per_minute: 20
+    robots_policy: "allowed"
+    notes: "Major Oahu league. Complements HHSAA state championships."
+
 # =============================================================================
 # EVENT ADAPTERS (ONE-OFF TOURNAMENTS)
 # =============================================================================
@@ -1012,25 +1606,34 @@ events:
 # =============================================================================
 
 metadata:
-  total_sources: 33
+  total_sources: 70
   active: 13
-  planned: 8
+  planned: 46
   template: 3
-  research_needed: 5
+  research_needed: 6
   event: 2
 
   by_region:
-    US: 18
+    US: 55
     GLOBAL: 2
     EUROPE: 7
     CANADA: 2
     AUSTRALIA: 1
 
   coverage:
-    us_states_covered: 15
+    us_states_covered: 50 + DC
     us_states_with_full_stats: 13
-    us_states_with_schedules_only: 7
+    us_states_with_schedules_only: 38
     has_player_stats: 24
     has_box_scores: 20
     has_leaderboards: 25
-    fixtures_only: 5
+    fixtures_only: 42
+
+  phase_5_expansion:
+    new_state_sources_added: 37
+    southeast_states: 11
+    northeast_states: 10
+    midwest_states: 7
+    southwest_west_states: 9
+    target_coverage: "100% US states (50 + DC)"
+    implementation_status: "Configuration complete, adapters in progress"
