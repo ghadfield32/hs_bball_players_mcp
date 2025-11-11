@@ -1649,6 +1649,134 @@ sources:
     notes: "Major Oahu league. Complements HHSAA state championships."
 
 # =============================================================================
+# US - EVENT PLATFORMS (GENERIC AAU / STATE PLAYOFFS)
+# =============================================================================
+
+  - id: cifsshome
+    name: "CIF-SS"
+    full_name: "California Interscholastic Federation - Southern Section"
+    region: US-CA
+    type: platform
+    status: active
+    url: "https://www.cifss.org"
+    adapter_class: "CIFSSHomeDataSource"
+    adapter_module: "src.datasources.us.cifsshome"
+    capabilities:
+      schedules: true
+      player_stats: false
+      box_scores: false
+      team_stats: false
+      standings: false
+    data_quality:
+      has_player_stats: false
+      has_box_scores: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "CIF-SS playoff schedules and brackets. Southern California section (largest CA section). JSON widget APIs."
+
+  - id: uil_brackets
+    name: "UIL Brackets"
+    full_name: "University Interscholastic League Playoffs"
+    region: US-TX
+    type: platform
+    status: active
+    url: "https://www.uiltexas.org"
+    adapter_class: "UILBracketsDataSource"
+    adapter_module: "src.datasources.us.uil_brackets"
+    capabilities:
+      schedules: true
+      player_stats: false
+      box_scores: false
+      team_stats: false
+      standings: false
+    data_quality:
+      has_player_stats: false
+      has_box_scores: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Texas UIL playoff brackets for all classifications (1A-6A). Game schedules, results, team seeds/lineage."
+
+  - id: exposure_events
+    name: "Exposure Events"
+    full_name: "Exposure Basketball Events (Generic Platform)"
+    region: US
+    type: event_platform
+    status: active
+    url: "https://exposureevents.com"
+    adapter_class: "ExposureEventsDataSource"
+    adapter_module: "src.datasources.us.exposure_events"
+    capabilities:
+      schedules: true
+      player_stats: false
+      box_scores: true
+      team_stats: false
+      standings: false
+      leaderboards: false
+    data_quality:
+      has_player_stats: false
+      has_box_scores: true
+      stat_completeness: medium
+    rate_limit:
+      requests_per_minute: 25
+      burst_capacity: 10
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      stats: 7200
+    robots_policy: "allowed"
+    url_patterns:
+      event: "https://exposureevents.com/event/{event_id}"
+      divisions: "https://exposureevents.com/event/{event_id}/divisions"
+      games: "https://exposureevents.com/event/{event_id}/games"
+    notes: "**HIGH LEVERAGE**: Generic AAU event platform. Single adapter unlocks dozens of tournaments nationwide. Parameterized by event_id."
+
+  - id: tourneymachine
+    name: "TournyMachine"
+    full_name: "TournyMachine (Generic Tournament Platform)"
+    region: US
+    type: event_platform
+    status: active
+    url: "https://www.tourneymachine.com"
+    adapter_class: "TournyMachineDataSource"
+    adapter_module: "src.datasources.us.tourneymachine"
+    capabilities:
+      schedules: true
+      player_stats: false
+      box_scores: false
+      team_stats: false
+      standings: false
+      leaderboards: false
+    data_quality:
+      has_player_stats: false
+      has_box_scores: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 25
+      burst_capacity: 10
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
+    robots_policy: "allowed"
+    url_patterns:
+      tournament: "https://www.tourneymachine.com/Public/Results/Tournament.aspx?IDTournament={tournament_id}"
+    notes: "**HIGH LEVERAGE**: Generic AAU tournament platform. Single adapter unlocks 100+ AAU tournaments (Bigfoot Hoops, various showcases). Parameterized by tournament_id."
+
+# =============================================================================
 # EVENT ADAPTERS (ONE-OFF TOURNAMENTS)
 # =============================================================================
 
@@ -1672,30 +1800,197 @@ events:
     notes: "Elite showcase event."
 
 # =============================================================================
+# RESEARCH NEEDED SOURCES (HIGH-SIGNAL, NOT YET IMPLEMENTED)
+# =============================================================================
+
+research_needed:
+  # US - Elite Prep Leagues & Circuits
+  - id: nibc
+    name: "NIBC"
+    full_name: "National Interscholastic Basketball Conference"
+    region: US
+    type: circuit
+    status: research_needed
+    url: "TBD"
+    schools: ["Montverde Academy", "Sunrise Christian", "IMG Academy", "La Lumiere"]
+    notes: "Elite prep league with top 10 national programs. Research: website URL, stats availability, schedule format."
+    priority: high
+
+  - id: wcac
+    name: "WCAC"
+    full_name: "Washington Catholic Athletic Conference"
+    region: US-MD
+    type: prep_league
+    status: research_needed
+    url: "TBD"
+    schools: ["DeMatha", "Gonzaga", "Paul VI", "St. John's"]
+    notes: "Premier DC-area prep league. Research: stats availability, game schedules, leaderboards."
+    priority: high
+
+  - id: eycl
+    name: "EYCL"
+    full_name: "Elite Youth Circuit League (Nike U16)"
+    region: US
+    type: circuit
+    status: research_needed
+    url: "TBD"
+    notes: "Nike U16 age-group circuit. Research: if public endpoint exists, mirror EYBL adapter structure."
+    priority: medium
+    related_to: "eybl"
+
+  - id: jr_eybl
+    name: "Jr. EYBL"
+    full_name: "Junior Elite Youth Basketball League (Nike U15)"
+    region: US
+    type: circuit
+    status: research_needed
+    url: "TBD"
+    notes: "Nike U15 age-group circuit. Research: public data availability, stats format."
+    priority: medium
+    related_to: "eybl"
+
+  - id: uaa_rise
+    name: "UAA Rise"
+    full_name: "Under Armour Rise (U16)"
+    region: US
+    type: circuit
+    status: research_needed
+    url: "TBD"
+    notes: "Under Armour U16 circuit. Research: if separate from main UAA or integrated."
+    priority: medium
+    related_to: "uaa"
+
+  - id: ua_future
+    name: "UA Future"
+    full_name: "Under Armour Future (U15)"
+    region: US
+    type: circuit
+    status: research_needed
+    url: "TBD"
+    notes: "Under Armour U15 circuit. Research: public endpoints, mirror UAA adapter if available."
+    priority: medium
+    related_to: "uaa"
+
+  # Europe - Pre-EuroLeague Youth Leagues
+  - id: basketball_england
+    name: "Basketball England"
+    full_name: "Basketball England Youth Leagues"
+    region: EUROPE-GB
+    type: league
+    status: research_needed
+    url: "https://www.basketballengland.co.uk"
+    leagues: ["EABL (U19 boys)", "WEABL (U19 girls)", "ABL (U18)", "NBL (U16/U18)"]
+    notes: "England national youth leagues. Research: stats availability per competition, API vs HTML."
+    priority: medium
+
+  - id: eybl_europe
+    name: "EYBL Europe"
+    full_name: "European Youth Basketball League"
+    region: EUROPE
+    type: circuit
+    status: research_needed
+    url: "TBD"
+    notes: "European circuit (NOT Nike EYBL). Research: avoid acronym collision, confirm separate organization."
+    priority: low
+
+  - id: fip_youth
+    name: "FIP Youth"
+    full_name: "Federazione Italiana Pallacanestro - Youth Leagues"
+    region: EUROPE-IT
+    type: league
+    status: research_needed
+    url: "https://www.fip.it"
+    notes: "Italy youth leagues (U16/U18/U20). Research: stats format, competition structure."
+    priority: low
+
+  - id: tbf_youth
+    name: "TBF Youth"
+    full_name: "Turkish Basketball Federation - Youth Leagues"
+    region: EUROPE-TR
+    type: league
+    status: research_needed
+    url: "https://www.tbf.org.tr"
+    notes: "Turkey youth leagues. Research: English language support, stats availability."
+    priority: low
+
+  - id: eok_youth
+    name: "EOK Youth"
+    full_name: "Hellenic Basketball Federation - Youth Leagues"
+    region: EUROPE-GR
+    type: league
+    status: research_needed
+    url: "https://www.eok.org.gr"
+    notes: "Greece youth leagues. Research: stats format, language support."
+    priority: low
+
+  # Oceania & Asia
+  - id: playhq_nationals
+    name: "PlayHQ Nationals"
+    full_name: "PlayHQ Australian National Championships"
+    region: AUSTRALIA
+    type: event
+    status: research_needed
+    url: "https://www.playhq.com"
+    notes: "Australian U16/U18 National Championships. Research: extend existing PlayHQ adapter for nationals."
+    priority: medium
+    related_to: "playhq"
+
+  - id: japan_winter_cup
+    name: "Japan Winter Cup"
+    full_name: "All-Japan High School Basketball Tournament"
+    region: ASIA-JP
+    type: event
+    status: research_needed
+    url: "TBD"
+    notes: "Premier Japanese HS tournament. Research: stats availability, English support."
+    priority: low
+
+  - id: philippines_uaap_juniors
+    name: "UAAP Juniors"
+    full_name: "University Athletic Association of the Philippines - Juniors"
+    region: ASIA-PH
+    type: league
+    status: research_needed
+    url: "TBD"
+    notes: "Philippines prep basketball. Research: stats availability, season structure."
+    priority: low
+
+  - id: philippines_ncaa_juniors
+    name: "NCAA Philippines Juniors"
+    full_name: "National Collegiate Athletic Association (Philippines) - Juniors"
+    region: ASIA-PH
+    type: league
+    status: research_needed
+    url: "TBD"
+    notes: "Philippines prep league. Research: public stats, differentiate from UAAP."
+    priority: low
+
+# =============================================================================
 # METADATA
 # =============================================================================
 
 metadata:
-  total_sources: 70
-  active: 13
-  planned: 46
-  template: 3
-  research_needed: 6
+  total_sources: 89
+  active: 33  # 29 in aggregator + 4 new Phase 10/11
+  planned: 40
+  template: 5
+  research_needed: 15
   event: 2
 
   by_region:
-    US: 55
+    US: 63  # +4 event platforms, +4 research_needed
     GLOBAL: 2
-    EUROPE: 7
+    EUROPE: 12  # +5 research_needed
     CANADA: 2
-    AUSTRALIA: 1
+    AUSTRALIA: 2  # +1 research_needed (nationals)
+    ASIA: 3  # +3 research_needed
 
   coverage:
-    us_states_covered: 50 + DC
+    us_states_covered: "50 + DC"
     us_states_with_full_stats: 13
     us_states_with_schedules_only: 38
     has_player_stats: 24
-    has_box_scores: 20
+    has_box_scores: 22  # +2 (exposure_events has box scores)
     has_leaderboards: 25
     fixtures_only: 42
 
@@ -1707,3 +2002,10 @@ metadata:
     southwest_west_states: 9
     target_coverage: "100% US states (50 + DC)"
     implementation_status: "Configuration complete, adapters in progress"
+
+  phase_12_additions:
+    event_platforms_added: 4  # cifsshome, uil_brackets, exposure_events, tourneymachine
+    research_sources_added: 15  # NIBC, WCAC, EYCL, Jr. EYBL, UAA variants, Basketball England, Europe/Asia leagues
+    high_leverage_platforms: 2  # exposure_events, tourneymachine (unlock 100+ AAU tournaments)
+    geographic_expansion: "Added Europe (GB, IT, TR, GR), Asia (JP, PH), Australia nationals"
+    status: "Phase 10/11 sources documented, template adapters ready for URL verification"
