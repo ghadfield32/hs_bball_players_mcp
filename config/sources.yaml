@@ -157,7 +157,7 @@ sources:
     full_name: "SBLive High School Sports"
     region: US
     type: multi_state
-    status: planned
+    status: active
     url: "https://www.sblive.com"
     adapter_class: "SBLiveDataSource"
     adapter_module: "src.datasources.us.sblive"
@@ -203,7 +203,7 @@ sources:
     full_name: "Bound High School Sports"
     region: US
     type: multi_state
-    status: planned
+    status: active
     url: "https://www.bound.com"
     adapter_class: "BoundDataSource"
     adapter_module: "src.datasources.us.bound"
@@ -247,7 +247,7 @@ sources:
     full_name: "Wisconsin Sports Network (WisSports)"
     region: US-WI
     type: state
-    status: planned
+    status: active
     url: "https://www.wissports.net"
     adapter_class: "WSNDataSource"
     adapter_module: "src.datasources.us.wsn"
@@ -320,6 +320,83 @@ sources:
       districts: "https://rankone.com/districts?state={state}&type=0"
       schedule: "https://rankone.com/schedule?district={id}"
     notes: "District schedules/results only. No player stats. Use for fixtures/results enrichment."
+
+  - id: texas_hoops
+    name: "TexasHoops"
+    full_name: "TexasHoops.com"
+    region: US-TX
+    type: state
+    status: research_needed
+    url: "https://www.texashoops.com"
+    adapter_class: "TexasHoopsDataSource"
+    adapter_module: "src.datasources.us.texas_hoops"
+    capabilities:
+      player_search: true
+      player_profiles: true
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: high
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "check_required"
+    notes: "Texas HS basketball coverage. Needs robots.txt and ToS review before implementation."
+
+  - id: nepsac
+    name: "NEPSAC"
+    full_name: "New England Preparatory School Athletic Council"
+    region: US
+    type: circuit
+    status: research_needed
+    url: "https://www.nepsac.org"
+    adapter_class: "NEPSACDataSource"
+    adapter_module: "src.datasources.us.nepsac"
+    states:
+      - CT
+      - MA
+      - ME
+      - NH
+      - RI
+      - VT
+    capabilities:
+      player_search: true
+      player_profiles: false
+      season_stats: true
+      game_stats: false
+      box_scores: false
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: false
+      stat_completeness: medium
+    rate_limit:
+      requests_per_minute: 15
+      burst_capacity: 5
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "check_required"
+    notes: "New England prep schools. Stats availability needs research."
 
   # =============================================================================
   # UNITED STATES - PREP/ELITE CIRCUITS
@@ -474,7 +551,7 @@ sources:
     full_name: "FIBA LiveStats v7 (Global Youth Tournaments)"
     region: GLOBAL
     type: tournament
-    status: planned
+    status: active
     url: "https://livestats.fiba.basketball"
     adapter_class: "FIBALiveStatsDataSource"
     adapter_module: "src.datasources.global.fiba_livestats"
@@ -651,6 +728,76 @@ sources:
     robots_policy: "allowed"
     notes: "Spanish junior categories. Per-game and season stats available."
 
+  - id: mkl
+    name: "Lithuanian Youth Basketball"
+    full_name: "Lithuanian Basketball League Youth Divisions"
+    region: EUROPE-LT
+    type: league
+    status: research_needed
+    url: "https://lkl.lt"
+    adapter_class: "MKLDataSource"
+    adapter_module: "src.datasources.europe.mkl"
+    capabilities:
+      player_search: true
+      player_profiles: true
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: medium
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "check_required"
+    notes: "Lithuanian youth leagues. URL and structure need research."
+
+  - id: lnb_espoirs
+    name: "LNB Espoirs"
+    full_name: "Ligue Nationale de Basket Espoirs (French U21)"
+    region: EUROPE-FR
+    type: league
+    status: research_needed
+    url: "https://www.lnb.fr/espoirs"
+    adapter_class: "LNBEspoirsDataSource"
+    adapter_module: "src.datasources.europe.lnb_espoirs"
+    capabilities:
+      player_search: true
+      player_profiles: true
+      season_stats: true
+      game_stats: true
+      box_scores: true
+      leaderboards: true
+      team_stats: true
+      schedules: true
+      standings: true
+    data_quality:
+      has_player_stats: true
+      has_box_scores: true
+      stat_completeness: high
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      players: 3600
+      stats: 3600
+      games: 1800
+      standings: 7200
+    robots_policy: "check_required"
+    notes: "French U21 league. URL and structure need research."
+
   # =============================================================================
   # CANADA
   # =============================================================================
@@ -795,21 +942,25 @@ events:
 # =============================================================================
 
 metadata:
-  total_sources: 26
-  active: 4
-  planned: 14
-  template: 5
-  event: 3
+  total_sources: 31
+  active: 10
+  planned: 11
+  template: 3
+  research_needed: 5
+  event: 2
 
   by_region:
-    US: 13
+    US: 16
     GLOBAL: 2
-    EUROPE: 5
+    EUROPE: 7
     CANADA: 2
     AUSTRALIA: 1
 
   coverage:
-    has_player_stats: 20
-    has_box_scores: 16
-    has_leaderboards: 21
+    us_states_covered: 13
+    us_states_with_full_stats: 13
+    us_states_with_schedules_only: 5
+    has_player_stats: 24
+    has_box_scores: 20
+    has_leaderboards: 25
     fixtures_only: 3
