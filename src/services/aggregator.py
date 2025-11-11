@@ -15,6 +15,12 @@ from ..datasources.europe.fiba_youth import FIBAYouthDataSource
 from ..datasources.us.eybl import EYBLDataSource
 from ..datasources.us.mn_hub import MNHubDataSource
 from ..datasources.us.psal import PSALDataSource
+# New adapters (uncomment when scraping logic is implemented):
+from ..datasources.us.grind_session import GrindSessionDataSource
+from ..datasources.us.ote import OTEDataSource
+from ..datasources.europe.angt import ANGTDataSource
+from ..datasources.canada.osba import OSBADataSource
+from ..datasources.australia.playhq import PlayHQDataSource
 from ..models import Player, PlayerSeasonStats, Team
 from ..utils.logger import get_logger
 from .duckdb_storage import get_duckdb_storage
@@ -50,16 +56,19 @@ class DataSourceAggregator:
         """Initialize all enabled datasource adapters."""
         # Map of source types to their adapter classes
         source_classes = {
+            # Fully implemented adapters:
             "eybl": EYBLDataSource,
             "fiba": FIBAYouthDataSource,
             "mn_hub": MNHubDataSource,
             "psal": PSALDataSource,
-            # Add more as implemented:
-            # "grind_session": GrindSessionDataSource,
-            # "ote": OTEDataSource,
-            # "angt": ANGTDataSource,
-            # "osba": OSBADataSource,
-            # "playhq": PlayHQDataSource,
+
+            # Template adapters (need scraping logic implementation):
+            # Uncomment these as you complete the scraping implementation for each source
+            # "grind_session": GrindSessionDataSource,  # TODO: Implement Grind Session scraping
+            # "ote": OTEDataSource,                      # TODO: Implement OTE scraping
+            # "angt": ANGTDataSource,                    # TODO: Implement ANGT scraping
+            # "osba": OSBADataSource,                    # TODO: Implement OSBA scraping
+            # "playhq": PlayHQDataSource,                # TODO: Implement PlayHQ scraping
         }
 
         for source_key, source_class in source_classes.items():

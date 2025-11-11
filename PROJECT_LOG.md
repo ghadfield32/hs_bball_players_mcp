@@ -200,6 +200,27 @@
   - Test player deduplication (exact and fuzzy)
   - Test cache management
 
+#### [2025-11-11 17:00] Phase 2.8: Global Coverage - Additional Datasource Templates
+- ✅ Created 5 new datasource adapter templates (ready for scraping implementation)
+  - **US Sources**:
+    - src/datasources/us/ote.py - Overtime Elite (professional prep league)
+    - src/datasources/us/grind_session.py - Elite prep tournaments
+  - **Europe**:
+    - src/datasources/europe/angt.py - Adidas Next Generation Tournament (U18 elite)
+  - **Canada**:
+    - src/datasources/canada/osba.py - Ontario Scholastic Basketball Association
+  - **Australia**:
+    - src/datasources/australia/playhq.py - Basketball Australia pathway programs
+- ✅ All adapters follow BaseDataSource pattern (fully structured, ready for implementation)
+- ✅ Updated aggregator imports to include new adapters (commented out until scraping logic complete)
+- ✅ Updated region __init__.py files to export new adapters
+- ⏳ Next step: Implement actual scraping logic for each adapter
+  - TODO: OTE player pages, game logs, stats
+  - TODO: Grind Session event pages, rosters, box scores
+  - TODO: ANGT tournament data via EuroLeague API
+  - TODO: OSBA league stats and schedules
+  - TODO: PlayHQ competition data and Australian championships
+
 ### Technical Highlights
 
 **DuckDB Benefits**:
@@ -235,19 +256,22 @@
 
 ### TODO - Ordered by Priority
 
-#### Phase 2: Data Source Adapters (Wave 1 - High Priority)
-- [ ] FIBA Youth adapter: Box scores, player stats extraction
-- [ ] MN Basketball Hub adapter: Player/team stats, schedules
-- [ ] PSAL adapter: NYC team pages, leaders, schedules
-
-#### Phase 3: Data Source Adapters (Wave 2)
-- [ ] Grind Session adapter: Scores, standings, player lists
-- [ ] OTE adapter: Player pages, game logs, season splits
-- [ ] ANGT adapter: NextGen EuroLeague stats
-
-#### Phase 4: Data Source Adapters (Wave 3)
-- [ ] OSBA adapter: Canada competition pages
-- [ ] PlayHQ adapter: Australia junior leagues
+#### Phase 3: Complete Datasource Adapter Scraping Logic (High Priority)
+- [ ] **Overtime Elite (OTE)**: Implement scraping for player profiles, game logs, season averages
+  - Template exists at src/datasources/us/ote.py
+  - Target: https://overtimeelite.com (player pages, stats tables)
+- [ ] **Grind Session**: Implement scraping for event rosters, box scores, leaderboards
+  - Template exists at src/datasources/us/grind_session.py
+  - Target: https://thegrindsession.com (events, teams, results)
+- [ ] **ANGT**: Implement scraping for EuroLeague Next Gen tournament data
+  - Template exists at src/datasources/europe/angt.py
+  - Target: https://www.euroleaguebasketball.net/next-generation
+- [ ] **OSBA**: Implement scraping for Ontario prep basketball stats
+  - Template exists at src/datasources/canada/osba.py
+  - Target: https://www.osba.ca (stats, schedules, standings)
+- [ ] **PlayHQ**: Implement scraping for Australian junior championships
+  - Template exists at src/datasources/australia/playhq.py
+  - Target: https://www.playhq.com (competitions, player stats)
 
 #### Phase 5: API Layer Expansion
 - [ ] Build unified API endpoints (/api/v1/players, /games, /stats, /teams)
