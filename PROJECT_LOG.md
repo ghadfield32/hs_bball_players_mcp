@@ -455,4 +455,83 @@
 
 ---
 
-*Last Updated: 2025-11-11 19:45 UTC*
+## Session Log: 2025-11-11 - National Circuits Expansion (Phase 3.6)
+
+### COMPLETED
+
+#### [2025-11-11 20:00] Phase 3.6: National Circuit Adapters
+- ✅ **Nike Girls EYBL adapter** (`src/datasources/us/eybl_girls.py`, 67 lines)
+  - **Efficient inheritance pattern**: Extends EYBLDataSource base class
+  - Zero code duplication - only URL overrides (base_url, stats_url, schedule_url, standings_url)
+  - All scraping methods inherited from boys EYBL adapter
+  - Player ID format: `eybl_girls_{name}`
+  - Source type: `DataSourceType.EYBL_GIRLS`
+
+- ✅ **Adidas 3SSB adapter** (`src/datasources/us/three_ssb.py`, 635 lines)
+  - **National grassroots circuit** with comprehensive stats and standings
+  - Base URL: https://adidas3ssb.com
+  - HTML scraping (BeautifulSoup) for stats, schedule, teams, standings
+  - Player level: GRASSROOTS | Player ID format: `3ssb_{name}` or `3ssb_{name}_{team}`
+  - Methods: search_players, get_player_season_stats, get_leaderboard, get_team, get_games
+  - Rate limit: 20 req/min | Cache TTL: 3600s (stats), 7200s (standings)
+
+#### [2025-11-11 20:15] Configuration & Integration Updates
+- ✅ Updated `.env.example` with 6 new source configurations:
+  - FIBA_LIVESTATS_* (global tournaments)
+  - SBLIVE_* (6 states: WA, OR, CA, AZ, ID, NV)
+  - BOUND_* (4 states: IA, SD, IL, MN)
+  - WSN_* (Wisconsin)
+  - EYBL_GIRLS_* (Nike Girls EYBL)
+  - THREE_SSB_* (Adidas 3SSB)
+
+- ✅ Updated `src/datasources/us/__init__.py`:
+  - Added exports: BoundDataSource, EYBLGirlsDataSource, ThreeSSBDataSource
+  - Organized imports alphabetically
+
+- ✅ Updated `src/services/aggregator.py`:
+  - Added 2 new active adapters: eybl_girls, three_ssb
+  - Reorganized source_classes: National Circuits, Multi-State, Single State, Global sections
+  - Total active adapters: 10 (3 national circuits, 2 multi-state, 3 single-state, 2 global)
+
+- ✅ Updated `config/sources.yaml`:
+  - Changed eybl_girls status: planned → active
+  - Changed three_ssb status: planned → active
+
+#### [2025-11-11 20:30] Model Updates
+- ✅ Updated `src/models/source.py` - DataSourceType enum:
+  - Reorganized into logical sections: US National Circuits, Multi-State, Single State, International
+  - Added: EYBL_GIRLS = "eybl_girls"
+  - Added: THREE_SSB = "three_ssb"
+  - Added: FIBA_LIVESTATS = "fiba_livestats" (was missing from enum)
+
+#### [2025-11-11 20:45] Test Coverage
+- ✅ Created comprehensive test suite (`tests/test_datasources/test_three_ssb.py`, 212 lines):
+  - Integration tests: 15 test cases covering all adapter methods
+  - Unit tests: 3 test cases for player ID generation
+  - Fixtures, health checks, search, stats, leaderboards, teams, games
+  - Rate limiting and metadata validation tests
+
+- ✅ Created Girls EYBL test suite (`tests/test_datasources/test_eybl_girls.py`, 143 lines):
+  - Integration tests: 10 test cases
+  - Unit tests: 2 configuration tests
+  - Validates inheritance from EYBL base class
+  - URL verification for girls-specific endpoints
+
+### Coverage Summary (Updated)
+
+**Datasource Count**: 10 active (2 new national circuits) + 5 templates = 15 total
+**US State Coverage**: 13 states (MN, NY, WA, OR, CA, AZ, ID, NV, IA, SD, IL, MN, WI)
+**US National Circuits**: 3 active (Nike EYBL boys, Nike EYBL girls, Adidas 3SSB)
+**Global Coverage**: FIBA Youth + FIBA LiveStats v7 (U16/U17/U18 worldwide)
+**Code Added**: 702+ lines (2 adapters) + 355+ lines (2 test suites)
+
+### Technical Highlights
+- **Inheritance Pattern**: Girls EYBL demonstrates efficient code reuse (67 lines vs 446+ for full implementation)
+- **Player ID Namespacing**: Unique prefixes per source (eybl_girls_, 3ssb_) prevent collisions
+- **Comprehensive Testing**: 25+ test cases for new adapters (integration + unit)
+- **Type Safety**: All new code uses Pydantic models and full type hints
+- **Documentation**: Detailed docstrings for all public methods
+
+---
+
+*Last Updated: 2025-11-11 20:45 UTC*

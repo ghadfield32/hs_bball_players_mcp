@@ -52,7 +52,7 @@ sources:
     full_name: "Nike Elite Youth Basketball League - Girls"
     region: US
     type: circuit
-    status: planned
+    status: active
     url: "https://nikeeyb.com/girls"
     adapter_class: "EYBLGirlsDataSource"
     adapter_module: "src.datasources.us.eybl_girls"
@@ -400,7 +400,7 @@ sources:
     full_name: "Adidas 3 Stripe Select Basketball"
     region: US
     type: circuit
-    status: planned
+    status: active
     url: "https://adidas3ssb.com"
     adapter_class: "ThreeSSBDataSource"
     adapter_module: "src.datasources.us.three_ssb"

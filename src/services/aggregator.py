@@ -16,9 +16,11 @@ from ..datasources.base import BaseDataSource
 from ..datasources.europe.fiba_youth import FIBAYouthDataSource
 from ..datasources.us.bound import BoundDataSource
 from ..datasources.us.eybl import EYBLDataSource
+from ..datasources.us.eybl_girls import EYBLGirlsDataSource
 from ..datasources.us.mn_hub import MNHubDataSource
 from ..datasources.us.psal import PSALDataSource
 from ..datasources.us.sblive import SBLiveDataSource
+from ..datasources.us.three_ssb import ThreeSSBDataSource
 from ..datasources.us.wsn import WSNDataSource
 
 # Import from global module (avoid 'global' keyword with import style)
@@ -69,12 +71,16 @@ class DataSourceAggregator:
         # Map of source types to their adapter classes
         source_classes = {
             # ===== ACTIVE ADAPTERS (Production Ready) =====
+            # US - National Circuits:
+            "eybl": EYBLDataSource,          # Nike EYBL (boys)
+            "eybl_girls": EYBLGirlsDataSource,  # Nike Girls EYBL
+            "three_ssb": ThreeSSBDataSource,  # Adidas 3SSB national circuit
+
             # US - Multi-State Coverage:
             "bound": BoundDataSource,        # IA, SD, IL, MN (4 states)
             "sblive": SBLiveDataSource,      # WA, OR, CA, AZ, ID, NV (6 states)
 
             # US - Single State Deep Coverage:
-            "eybl": EYBLDataSource,          # Nike EYBL circuit
             "mn_hub": MNHubDataSource,       # Minnesota (best free HS stats)
             "psal": PSALDataSource,          # NYC public schools
             "wsn": WSNDataSource,            # Wisconsin (deep stats)

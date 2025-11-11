@@ -14,18 +14,29 @@ from pydantic import BaseModel, Field, HttpUrl
 class DataSourceType(str, Enum):
     """Type of data source."""
 
-    EYBL = "eybl"  # Nike EYBL
-    FIBA = "fiba"  # FIBA Youth
+    # US - National Circuits
+    EYBL = "eybl"  # Nike EYBL (Boys)
+    EYBL_GIRLS = "eybl_girls"  # Nike Girls EYBL
+    THREE_SSB = "three_ssb"  # Adidas 3 Stripe Select Basketball
+    GRIND_SESSION = "grind_session"  # Grind Session
+    OTE = "ote"  # Overtime Elite
+
+    # US - Multi-State Coverage
+    SBLIVE = "sblive"  # SBLive Sports (Multi-state: WA, OR, CA, AZ, ID, NV)
+    BOUND = "bound"  # Bound (formerly Varsity Bound) (Multi-state: IA, SD, IL, MN)
+
+    # US - Single State
     PSAL = "psal"  # NYC PSAL
     MN_HUB = "mn_hub"  # Minnesota Basketball Hub
     WSN = "wsn"  # Wisconsin Sports Network
-    GRIND_SESSION = "grind_session"  # Grind Session
-    OTE = "ote"  # Overtime Elite
+
+    # International
+    FIBA = "fiba"  # FIBA Youth
+    FIBA_LIVESTATS = "fiba_livestats"  # FIBA LiveStats v7 (Global tournaments)
     ANGT = "angt"  # NextGen EuroLeague / ANGT
     OSBA = "osba"  # OSBA Canada
     PLAYHQ = "playhq"  # PlayHQ Australia
-    SBLIVE = "sblive"  # SBLive Sports (Multi-state: WA, OR, CA, AZ, ID, NV)
-    BOUND = "bound"  # Bound (formerly Varsity Bound) (Multi-state: IA, SD, IL, MN)
+
     UNKNOWN = "unknown"  # Unknown/other source
 
 
