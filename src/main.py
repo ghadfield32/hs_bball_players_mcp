@@ -140,9 +140,10 @@ async def get_metrics_endpoint():
     return metrics.get_summary()
 
 
-# TODO: Import and include API routers here
-# from .api.routes import router as api_router
-# app.include_router(api_router, prefix="/api/v1")
+# Import and include API routers
+from .api.routes import router as api_router
+
+app.include_router(api_router)
 
 
 if __name__ == "__main__":

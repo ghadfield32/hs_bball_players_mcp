@@ -17,23 +17,23 @@ A comprehensive, production-ready API for aggregating high school and youth bask
 ## 📊 Supported Data Sources
 
 ### United States
-- ✅ **Nike EYBL** - Elite Youth Basketball League stats, schedules, standings
-- ⏳ **PSAL NYC** - Public Schools Athletic League (New York City)
-- ⏳ **MN Basketball Hub** - Minnesota high school stats
-- ⏳ **Grind Session** - High school prep circuit
-- ⏳ **Overtime Elite (OTE)** - Professional pathway league
+- ✅ **Nike EYBL** - Elite Youth Basketball League stats, schedules, standings, leaderboards
+- ✅ **PSAL NYC** - Public Schools Athletic League (New York City) leaders and standings
+- ✅ **MN Basketball Hub** - Minnesota high school stats, teams, and leaderboards
+- ⏳ **Grind Session** - High school prep circuit (adapter ready to implement)
+- ⏳ **Overtime Elite (OTE)** - Professional pathway league (adapter ready to implement)
 
 ### Europe & Global
-- ⏳ **FIBA Youth** - U16/U17/U18 international competitions
-- ⏳ **NextGen EuroLeague (ANGT)** - European youth elite
+- ✅ **FIBA Youth** - U16/U17/U18 international competitions with box scores
+- ⏳ **NextGen EuroLeague (ANGT)** - European youth elite (adapter ready to implement)
 
 ### Canada
-- ⏳ **OSBA** - Ontario Scholastic Basketball Association
+- ⏳ **OSBA** - Ontario Scholastic Basketball Association (adapter ready to implement)
 
 ### Australia
-- ⏳ **PlayHQ** - Junior leagues and state competitions
+- ⏳ **PlayHQ** - Junior leagues and state competitions (adapter ready to implement)
 
-✅ = Implemented | ⏳ = Planned
+✅ = Fully Implemented | ⏳ = Planned
 
 ## 🚀 Quick Start
 
@@ -91,27 +91,38 @@ GET /rate-limits
 GET /metrics
 ```
 
-### Data Endpoints (Coming Soon)
+### Data Endpoints ✅ **NOW AVAILABLE**
 
 ```bash
-# Search players
-GET /api/v1/players?name=Smith&team=Lincoln
+# Search players across all sources
+GET /api/v1/players/search?name=Smith&team=Lincoln&limit=50
 
-# Get player details
-GET /api/v1/players/{player_id}
+# Search players from specific sources
+GET /api/v1/players/search?name=Johnson&sources=eybl,psal&limit=25
 
-# Get player season stats
-GET /api/v1/players/{player_id}/stats/season?season=2024-25
+# Get player details from specific source
+GET /api/v1/players/{source}/{player_id}
+# Example: GET /api/v1/players/eybl/eybl_john_smith
 
-# Get teams
-GET /api/v1/teams?league=eybl
+# Get player season stats from all sources
+GET /api/v1/players/{player_name}/stats?season=2024-25
+# Example: GET /api/v1/players/John Smith/stats
 
-# Get games
-GET /api/v1/games?team_id={team_id}&season=2024-25
+# Search teams
+GET /api/v1/teams/search?name=Lincoln&league=PSAL&limit=50
 
-# Get leaderboards
-GET /api/v1/leaderboards/{stat}?season=2024-25&limit=50
+# Get leaderboards (points, rebounds, assists, steals, blocks)
+GET /api/v1/leaderboards/points?season=2024-25&limit=50
+GET /api/v1/leaderboards/rebounds?sources=eybl,mn_hub&limit=25
+
+# Get available data sources
+GET /api/v1/sources
+
+# Check data source health
+GET /api/v1/sources/health
 ```
+
+**Try it now!** Visit http://localhost:8000/docs for interactive API documentation.
 
 ## ⚙️ Configuration
 
