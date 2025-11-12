@@ -40,7 +40,7 @@ class AlabamaAhsaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.ALABAMA_AHSAA
+    source_type = DataSourceType.AHSAA
     source_name = "Alabama AHSAA"
     base_url = "https://www.ahsaa.com"
     region = DataSourceRegion.US_AL

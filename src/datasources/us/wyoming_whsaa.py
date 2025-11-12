@@ -40,7 +40,7 @@ class WyomingWhsaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.WYOMING_WHSAA
+    source_type = DataSourceType.WHSAA
     source_name = "Wyoming WHSAA"
     base_url = "https://www.whsaa.org"
     region = DataSourceRegion.US_WY

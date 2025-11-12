@@ -40,7 +40,7 @@ class MontanaMhsaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.MONTANA_MHSA
+    source_type = DataSourceType.MHSA
     source_name = "Montana MHSA"
     base_url = "https://www.mhsa.org"
     region = DataSourceRegion.US_MT

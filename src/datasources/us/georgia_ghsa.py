@@ -40,7 +40,7 @@ class GeorgiaGhsaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.GEORGIA_GHSA
+    source_type = DataSourceType.GHSA
     source_name = "Georgia GHSA"
     base_url = "https://www.ghsa.net"
     region = DataSourceRegion.US_GA

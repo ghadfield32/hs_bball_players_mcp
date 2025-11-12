@@ -33,6 +33,7 @@ from ...utils import (
     parse_int,
     parse_record,
 )
+from ...utils.browser_client import BrowserClient
 from ...utils.scraping_helpers import (
     build_leaderboard_entry,
     extract_links_from_table,
@@ -52,6 +53,10 @@ class SBLiveDataSource(BaseDataSource):
     Provides access to high school basketball statistics across multiple states.
     Official state partner with comprehensive coverage.
 
+    **IMPORTANT**: Uses browser automation (Playwright) to bypass anti-bot protection.
+    SBLive has strong anti-bot protection (Cloudflare/Akamai) that blocks HTTP clients.
+    All requests are made via headless Chrome browser with proper headers.
+
     Supported States:
         - WA: Washington
         - OR: Oregon
@@ -61,6 +66,7 @@ class SBLiveDataSource(BaseDataSource):
         - NV: Nevada
 
     Base URL: https://www.sblive.com
+    Browser Automation: Enabled (required)
     """
 
     source_type = DataSourceType.SBLIVE
@@ -91,9 +97,20 @@ class SBLiveDataSource(BaseDataSource):
             for state in self.SUPPORTED_STATES
         }
 
+        # Initialize browser client for anti-bot protection bypass
+        # SBLive has strong anti-bot protection (Cloudflare/Akamai)
+        # that blocks HTTP clients - must use browser automation
+        self.browser_client = BrowserClient(
+            settings=self.settings,
+            browser_type=self.settings.browser_type if hasattr(self.settings, 'browser_type') else "chromium",
+            headless=self.settings.browser_headless if hasattr(self.settings, 'browser_headless') else True,
+            timeout=self.settings.browser_timeout if hasattr(self.settings, 'browser_timeout') else 30000,
+        )
+
         self.logger.info(
             f"SBLive initialized with {len(self.SUPPORTED_STATES)} states",
             states=self.SUPPORTED_STATES,
+            browser_automation=True,
         )
 
     def _validate_state(self, state: Optional[str]) -> str:
@@ -250,11 +267,31 @@ class SBLiveDataSource(BaseDataSource):
             # STEP 1: Validate state
             state = self._validate_state(state)
 
-            # STEP 2: Fetch state stats page
+            # STEP 2: Fetch state stats page with browser automation
+            # SBLive has anti-bot protection - must use browser, not HTTP client
             stats_url = self._get_state_url(state, "stats")
             self.logger.info(f"Fetching stats for state", state=state, url=stats_url)
 
-            html = await self.http_client.get_text(stats_url, cache_ttl=3600)
+            # Use browser automation to bypass anti-bot protection
+            # Try with table selector first for optimal performance
+            try:
+                html = await self.browser_client.get_rendered_html(
+                    url=stats_url,
+                    wait_for="table, .stats-table, [class*='stats']",  # Wait for stats table
+                    wait_timeout=self.browser_client.timeout,
+                    wait_for_network_idle=True,  # Wait for AJAX data loading
+                    cache_override_ttl=3600,  # Cache for 1 hour
+                )
+            except Exception as e:
+                # If table selector times out, try fetching without waiting for specific table
+                # This fallback ensures we get content even if selectors change
+                self.logger.warning(f"Table selector timeout, fetching page anyway: {e}")
+                html = await self.browser_client.get_rendered_html(
+                    url=stats_url,
+                    wait_for_network_idle=True,
+                    cache_override_ttl=3600,
+                )
+
             soup = parse_html(html)
 
             # STEP 3: Find stats table
@@ -394,9 +431,21 @@ class SBLiveDataSource(BaseDataSource):
                 self.logger.error("Could not determine state", player_id=player_id)
                 return None
 
-            # STEP 2: Fetch state stats page
+            # STEP 2: Fetch state stats page with browser automation
             stats_url = self._get_state_url(state, "stats")
-            html = await self.http_client.get_text(stats_url, cache_ttl=3600)
+            try:
+                html = await self.browser_client.get_rendered_html(
+                    url=stats_url,
+                    wait_for="table",
+                    wait_for_network_idle=True,
+                    cache_override_ttl=3600,
+                )
+            except Exception:
+                html = await self.browser_client.get_rendered_html(
+                    url=stats_url,
+                    wait_for_network_idle=True,
+                    cache_override_ttl=3600,
+                )
             soup = parse_html(html)
 
             # STEP 3: Find stats table
@@ -498,11 +547,23 @@ class SBLiveDataSource(BaseDataSource):
                 self.logger.error("Could not determine state", player_id=player_id)
                 return None
 
-            # STEP 2: Build box score URL
+            # STEP 2: Build box score URL and fetch with browser automation
             # Note: Actual box score URL format may vary
             box_score_url = self._get_state_url(state, f"boxscore/{game_id}")
 
-            html = await self.http_client.get_text(box_score_url, cache_ttl=3600)
+            try:
+                html = await self.browser_client.get_rendered_html(
+                    url=box_score_url,
+                    wait_for="table",
+                    wait_for_network_idle=True,
+                    cache_override_ttl=3600,
+                )
+            except Exception:
+                html = await self.browser_client.get_rendered_html(
+                    url=box_score_url,
+                    wait_for_network_idle=True,
+                    cache_override_ttl=3600,
+                )
             soup = parse_html(html)
 
             # STEP 3: Find box score table
@@ -628,7 +689,31 @@ class SBLiveDataSource(BaseDataSource):
 
             # STEP 2: Fetch standings page
             standings_url = self._get_state_url(state, "standings")
-            html = await self.http_client.get_text(standings_url, cache_ttl=7200)
+            try:
+
+                html = await self.browser_client.get_rendered_html(
+
+                    url=standings_url,
+
+                    wait_for="table",
+
+                    wait_for_network_idle=True,
+
+                    cache_override_ttl=7200,
+
+                )
+
+            except Exception:
+
+                html = await self.browser_client.get_rendered_html(
+
+                    url=standings_url,
+
+                    wait_for_network_idle=True,
+
+                    cache_override_ttl=7200,
+
+                )
             soup = parse_html(html)
 
             # STEP 3: Find standings table
@@ -754,7 +839,31 @@ class SBLiveDataSource(BaseDataSource):
 
             # STEP 2: Fetch schedule page
             schedule_url = self._get_state_url(state, "schedule")
-            html = await self.http_client.get_text(schedule_url, cache_ttl=3600)
+            try:
+
+                html = await self.browser_client.get_rendered_html(
+
+                    url=schedule_url,
+
+                    wait_for="table",
+
+                    wait_for_network_idle=True,
+
+                    cache_override_ttl=3600,
+
+                )
+
+            except Exception:
+
+                html = await self.browser_client.get_rendered_html(
+
+                    url=schedule_url,
+
+                    wait_for_network_idle=True,
+
+                    cache_override_ttl=3600,
+
+                )
             soup = parse_html(html)
 
             # STEP 3: Find schedule table
@@ -887,7 +996,31 @@ class SBLiveDataSource(BaseDataSource):
 
             # STEP 2: Fetch leaders/stats page
             leaders_url = self._get_state_url(state, "stats")
-            html = await self.http_client.get_text(leaders_url, cache_ttl=3600)
+            try:
+
+                html = await self.browser_client.get_rendered_html(
+
+                    url=leaders_url,
+
+                    wait_for="table",
+
+                    wait_for_network_idle=True,
+
+                    cache_override_ttl=3600,
+
+                )
+
+            except Exception:
+
+                html = await self.browser_client.get_rendered_html(
+
+                    url=leaders_url,
+
+                    wait_for_network_idle=True,
+
+                    cache_override_ttl=3600,
+
+                )
             soup = parse_html(html)
 
             # STEP 3: Find stat-specific table
@@ -1010,3 +1143,6 @@ class SBLiveDataSource(BaseDataSource):
                 results[state] = []
 
         return results
+
+    # Note: No custom close() needed - BrowserClient uses shared instances
+    # that are managed globally. BaseDataSource.close() handles http_client.

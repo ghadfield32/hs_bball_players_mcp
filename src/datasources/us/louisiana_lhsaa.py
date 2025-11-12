@@ -40,7 +40,7 @@ class LouisianaLhsaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.LOUISIANA_LHSAA
+    source_type = DataSourceType.LHSAA
     source_name = "Louisiana LHSAA"
     base_url = "https://www.lhsaa.org"
     region = DataSourceRegion.US_LA

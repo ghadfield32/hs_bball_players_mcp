@@ -40,7 +40,7 @@ class KansasKshsaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.KANSAS_KSHSAA
+    source_type = DataSourceType.KSHSAA
     source_name = "Kansas KSHSAA"
     base_url = "https://www.kshsaa.org"
     region = DataSourceRegion.US_KS

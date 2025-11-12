@@ -40,7 +40,7 @@ class WestVirginiaWvssacDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.WEST_VIRGINIA_WVSSAC
+    source_type = DataSourceType.WVSSAC
     source_name = "West Virginia WVSSAC"
     base_url = "https://wvssac.org"
     region = DataSourceRegion.US_WV

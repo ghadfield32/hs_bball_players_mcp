@@ -79,7 +79,7 @@ class MNHubDataSource(BaseDataSource):
             settings=self.settings,
             browser_type=self.settings.browser_type if hasattr(self.settings, 'browser_type') else "chromium",
             headless=self.settings.browser_headless if hasattr(self.settings, 'browser_headless') else True,
-            timeout=self.settings.browser_timeout if hasattr(self.settings, 'browser_timeout') else 30000,
+            timeout=self.settings.browser_timeout if hasattr(self.settings, 'browser_timeout') else 60000,  # 60s for Angular + data loading
             cache_enabled=self.settings.browser_cache_enabled if hasattr(self.settings, 'browser_cache_enabled') else True,
             cache_ttl=self.settings.browser_cache_ttl if hasattr(self.settings, 'browser_cache_ttl') else 7200,
         )
@@ -116,25 +116,38 @@ class MNHubDataSource(BaseDataSource):
             self.logger.info(f"Fetching MN Hub player stats (Angular rendering) - Season: {self.season}")
 
             # Use browser automation to render Angular app
-            # Wait for table element to appear (Angular renders asynchronously)
-            html = await self.browser_client.get_rendered_html(
-                url=self.leaderboards_url,
-                wait_for="table",  # Wait for stats table to render
-                wait_timeout=self.browser_client.timeout,
-                wait_for_network_idle=True,  # Wait for Angular to finish loading
-            )
+            # Note: Page may not have data during off-season (November)
+            try:
+                html = await self.browser_client.get_rendered_html(
+                    url=self.leaderboards_url,
+                    wait_for="table:not([class*='gsc']):not([class*='gss'])",  # Wait for non-Google-Search tables
+                    wait_timeout=self.browser_client.timeout,
+                    wait_for_network_idle=True,  # Wait for Angular + data loading
+                )
+            except Exception as e:
+                self.logger.warning(f"Stats table selector timeout, fetching anyway: {e}")
+                html = await self.browser_client.get_rendered_html(
+                    url=self.leaderboards_url,
+                    wait_for_network_idle=True,
+                )
 
             # Parse rendered HTML
             soup = parse_html(html)
 
-            # Find stats tables (may have multiple leaderboards)
-            stats_tables = soup.find_all("table")
+            # Find stats tables (filter out Google Search tables)
+            all_tables = soup.find_all("table")
+            stats_tables = [
+                table for table in all_tables
+                if table.get("class") and not any(
+                    cls.startswith(("gsc", "gss", "gstl")) for cls in table.get("class", [])
+                )
+            ]
+
+            self.logger.info(f"Found {len(all_tables)} total tables, {len(stats_tables)} stats tables")
 
             if not stats_tables:
                 self.logger.warning("No stats tables found on MN Hub leaderboards page after rendering")
                 return []
-
-            self.logger.info(f"Found {len(stats_tables)} stat tables")
 
             players = []
             seen_players = set()
@@ -369,7 +382,7 @@ class MNHubDataSource(BaseDataSource):
             return None
 
     async def get_leaderboard(
-        self, stat_type: str = "points", limit: int = 50
+        self, stat: str = "points", limit: int = 50
     ) -> list[dict]:
         """
         Get statistical leaderboard.
@@ -377,14 +390,14 @@ class MNHubDataSource(BaseDataSource):
         Uses browser automation to render Angular app before extracting leaderboard.
 
         Args:
-            stat_type: Type of stat (points, rebounds, assists, etc.)
+            stat: Type of stat (points, rebounds, assists, etc.)
             limit: Maximum number of leaders to return
 
         Returns:
             List of leaderboard entries
         """
         try:
-            self.logger.info(f"Fetching MN Hub {stat_type} leaderboard")
+            self.logger.info(f"Fetching MN Hub {stat} leaderboard")
 
             # Render leaderboards page
             html = await self.browser_client.get_rendered_html(
@@ -413,7 +426,7 @@ class MNHubDataSource(BaseDataSource):
                 "three_point_pct": ["3P%", "3PT%", "3PT PCT"],
             }
 
-            column_names = stat_column_map.get(stat_type, ["PPG"])
+            column_names = stat_column_map.get(stat, ["PPG"])
 
             # Search tables for matching stat column
             leaderboard = []
@@ -448,7 +461,7 @@ class MNHubDataSource(BaseDataSource):
                             "player_name": clean_player_name(player_name),
                             "team_name": row.get("Team") or row.get("TEAM") or row.get("School"),
                             "stat_value": stat_value,
-                            "stat_type": stat_type,
+                            "stat_type": stat,
                         })
 
                 # If we found data, stop searching tables
@@ -456,7 +469,7 @@ class MNHubDataSource(BaseDataSource):
                     break
 
             if not leaderboard:
-                self.logger.warning(f"No leaderboard data found for {stat_type}")
+                self.logger.warning(f"No leaderboard data found for {stat}")
                 return []
 
             # Sort by stat value descending
@@ -470,7 +483,7 @@ class MNHubDataSource(BaseDataSource):
             return leaderboard[:limit]
 
         except Exception as e:
-            self.logger.error("Failed to get leaderboard", stat_type=stat_type, error=str(e))
+            self.logger.error("Failed to get leaderboard", stat=stat, error=str(e))
             return []
 
     async def get_player_game_stats(

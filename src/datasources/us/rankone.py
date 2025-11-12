@@ -331,6 +331,35 @@ class RankOneDataSource(BaseDataSource):
             self.logger.error(f"Error fetching RankOne games: {e}", exc_info=True)
             return []
 
+    async def get_leaderboard(
+        self,
+        stat: str = "points",
+        state: Optional[str] = None,
+        season: Optional[str] = None,
+        limit: int = 50,
+    ) -> list[dict]:
+        """
+        Get statistical leaderboard.
+
+        Note: RankOne typically does NOT provide player statistics leaderboards.
+        This adapter is for schedules/fixtures only.
+
+        Args:
+            stat: Stat type (points, rebounds, assists, etc.)
+            state: State code filter
+            season: Season filter
+            limit: Maximum results
+
+        Returns:
+            Empty list - RankOne does not provide stat leaderboards
+        """
+        self.logger.warning(
+            "RankOne does not provide stat leaderboards - schedules/fixtures only",
+            stat=stat,
+            state=state,
+        )
+        return []
+
     async def health_check(self) -> bool:
         """
         Check if RankOne is accessible.

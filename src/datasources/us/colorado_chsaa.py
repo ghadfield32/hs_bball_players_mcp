@@ -40,7 +40,7 @@ class ColoradoChsaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.COLORADO_CHSAA
+    source_type = DataSourceType.CHSAA
     source_name = "Colorado CHSAA"
     base_url = "https://www.chsaa.org"
     region = DataSourceRegion.US_CO

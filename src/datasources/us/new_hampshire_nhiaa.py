@@ -40,7 +40,7 @@ class NewHampshireNhiaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.NEW_HAMPSHIRE_NHIAA
+    source_type = DataSourceType.NHIAA
     source_name = "New Hampshire NHIAA"
     base_url = "https://www.nhiaa.org"
     region = DataSourceRegion.US_NH

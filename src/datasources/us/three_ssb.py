@@ -32,6 +32,7 @@ from ...utils import (
     parse_int,
     parse_record,
 )
+from ...utils.browser_client import BrowserClient
 from ...utils.scraping_helpers import (
     build_leaderboard_entry,
     extract_links_from_table,
@@ -60,7 +61,7 @@ class ThreeSSBDataSource(BaseDataSource):
     region = DataSourceRegion.US
 
     def __init__(self):
-        """Initialize 3SSB datasource."""
+        """Initialize 3SSB datasource with browser automation."""
         super().__init__()
 
         # Circuit-level endpoints
@@ -69,7 +70,18 @@ class ThreeSSBDataSource(BaseDataSource):
         self.standings_url = f"{self.base_url}/standings"
         self.teams_url = f"{self.base_url}/teams"
 
-        self.logger.info("Adidas 3SSB datasource initialized", base_url=self.base_url)
+        # Initialize browser client for JavaScript rendering
+        # 3SSB uses DataTables.net which requires JS execution
+        self.browser_client = BrowserClient(
+            settings=self.settings,
+            browser_type=self.settings.browser_type if hasattr(self.settings, 'browser_type') else "chromium",
+            headless=self.settings.browser_headless if hasattr(self.settings, 'browser_headless') else True,
+            timeout=self.settings.browser_timeout if hasattr(self.settings, 'browser_timeout') else 60000,  # 60 seconds for DataTables
+            cache_enabled=self.settings.browser_cache_enabled if hasattr(self.settings, 'browser_cache_enabled') else True,
+            cache_ttl=self.settings.browser_cache_ttl if hasattr(self.settings, 'browser_cache_ttl') else 7200,
+        )
+
+        self.logger.info("Adidas 3SSB datasource initialized with browser automation", base_url=self.base_url)
 
     def _build_player_id(self, player_name: str, team_name: Optional[str] = None) -> str:
         """
@@ -125,12 +137,26 @@ class ThreeSSBDataSource(BaseDataSource):
                 limit=limit,
             )
 
-            # Fetch stats page which contains player roster
-            html = await self._fetch_html(self.stats_url)
+            # Fetch stats page with browser automation (DataTables.net requires JS)
+            # Note: 3SSB may not have data during off-season (November-early December)
+            try:
+                html = await self.browser_client.get_rendered_html(
+                    url=self.stats_url,
+                    wait_for="table.dataTable, table[class*='stats'], table[id*='stats']",  # Wait for stats table
+                    wait_timeout=self.browser_client.timeout,
+                    wait_for_network_idle=True,  # Wait for AJAX data loading
+                )
+            except Exception as e:
+                # If table selector times out, try fetching without waiting for specific table
+                self.logger.warning(f"Table selector timeout, fetching page anyway: {e}")
+                html = await self.browser_client.get_rendered_html(
+                    url=self.stats_url,
+                    wait_for_network_idle=True,
+                )
             soup = parse_html(html)
 
             # Find player stats table
-            stat_table = find_stat_table(soup, ["stats", "players", "roster"])
+            stat_table = find_stat_table(soup, ["stats", "players", "roster", "dataTable"])
 
             if not stat_table:
                 self.logger.warning("No player stats table found on 3SSB stats page")
@@ -189,7 +215,7 @@ class ThreeSSBDataSource(BaseDataSource):
                         team_name=team_name,
                         grad_year=player_grad_year,
                         level=PlayerLevel.GRASSROOTS,
-                        data_source=self._build_source_metadata(),
+                        data_source=self.create_data_source_metadata(url=self.stats_url, quality_flag=DataQualityFlag.COMPLETE),
                     )
 
                     players.append(player)
@@ -207,6 +233,41 @@ class ThreeSSBDataSource(BaseDataSource):
         except Exception as e:
             self.logger.error(f"Error searching 3SSB players: {e}", exc_info=True)
             return []
+
+    async def get_player(self, player_id: str) -> Optional[Player]:
+        """
+        Get player by ID.
+
+        3SSB doesn't have direct player profile pages accessible by ID.
+        Extracts player name from ID and searches through stats tables.
+
+        Args:
+            player_id: Player identifier (format: 3ssb_{name} or 3ssb_{name}_{team})
+
+        Returns:
+            Player object or None
+
+        Example:
+            player = await three_ssb.get_player("3ssb_john_doe")
+        """
+        try:
+            # Extract player name from ID
+            # Format: "3ssb_john_doe" or "3ssb_john_doe_team_elite"
+            parts = player_id.replace("3ssb_", "").split("_")
+            if len(parts) < 2:
+                self.logger.error(f"Invalid 3SSB player_id format: {player_id}")
+                return None
+
+            # Reconstruct name (first_last format)
+            player_name = " ".join(parts[:2]).title()
+
+            # Search for player in stats
+            players = await self.search_players(name=player_name, limit=1)
+            return players[0] if players else None
+
+        except Exception as e:
+            self.logger.error("Failed to get player", player_id=player_id, error=str(e))
+            return None
 
     async def get_player_season_stats(
         self,
@@ -236,11 +297,24 @@ class ThreeSSBDataSource(BaseDataSource):
             # Reconstruct name (first_last format)
             player_name = " ".join(parts[:2])
 
-            html = await self._fetch_html(self.stats_url)
+            # Fetch with browser automation
+            try:
+                html = await self.browser_client.get_rendered_html(
+                    url=self.stats_url,
+                    wait_for="table.dataTable, table[class*='stats'], table[id*='stats']",
+                    wait_timeout=self.browser_client.timeout,
+                    wait_for_network_idle=True,
+                )
+            except Exception as e:
+                self.logger.warning(f"Table selector timeout, fetching page anyway: {e}")
+                html = await self.browser_client.get_rendered_html(
+                    url=self.stats_url,
+                    wait_for_network_idle=True,
+                )
             soup = parse_html(html)
 
             # Find stats table
-            stat_table = find_stat_table(soup, ["stats", "players"])
+            stat_table = find_stat_table(soup, ["stats", "players", "dataTable"])
             if not stat_table:
                 return None
 
@@ -273,7 +347,7 @@ class ThreeSSBDataSource(BaseDataSource):
                         field_goal_percentage=stats_dict.get("fg_pct", 0.0),
                         three_point_percentage=stats_dict.get("three_pct", 0.0),
                         free_throw_percentage=stats_dict.get("ft_pct", 0.0),
-                        data_source=self._build_source_metadata(),
+                        data_source=self.create_data_source_metadata(url=self.stats_url, quality_flag=DataQualityFlag.COMPLETE),
                     )
 
             self.logger.warning(f"Player not found in 3SSB stats: {player_name}")
@@ -285,7 +359,7 @@ class ThreeSSBDataSource(BaseDataSource):
 
     async def get_leaderboard(
         self,
-        stat_category: str = "points",
+        stat: str = "points",
         season: Optional[str] = None,
         limit: int = 50,
     ) -> list[dict]:
@@ -293,7 +367,7 @@ class ThreeSSBDataSource(BaseDataSource):
         Get leaderboard for a specific stat category.
 
         Args:
-            stat_category: Stat to rank by (points, rebounds, assists, etc.)
+            stat: Stat to rank by (points, rebounds, assists, etc.)
             season: Season year
             limit: Maximum results
 
@@ -303,15 +377,15 @@ class ThreeSSBDataSource(BaseDataSource):
         try:
             self.logger.info(
                 "Fetching 3SSB leaderboard",
-                stat_category=stat_category,
+                stat=stat,
                 season=season,
                 limit=limit,
             )
 
-            html = await self._fetch_html(self.stats_url)
+            html = await self.http_client.get_text(self.stats_url)
             soup = parse_html(html)
 
-            stat_table = find_stat_table(soup, ["stats", "leaders", stat_category])
+            stat_table = find_stat_table(soup, ["stats", "leaders", stat])
             if not stat_table:
                 stat_table = find_stat_table(soup, ["stats", "players"])
 
@@ -342,8 +416,8 @@ class ThreeSSBDataSource(BaseDataSource):
                         player_id=self._build_player_id(player_name, team_name),
                         player_name=player_name,
                         team_name=team_name,
-                        stat_category=stat_category,
-                        stat_value=stats_dict.get(stat_category, 0.0),
+                        stat_category=stat,
+                        stat_value=stats_dict.get(stat, 0.0),
                         stats_dict=stats_dict,
                     )
 
@@ -373,7 +447,7 @@ class ThreeSSBDataSource(BaseDataSource):
         try:
             self.logger.info("Fetching 3SSB team", team_id=team_id)
 
-            html = await self._fetch_html(self.teams_url)
+            html = await self.http_client.get_text(self.teams_url)
             soup = parse_html(html)
 
             # Find teams table
@@ -407,7 +481,7 @@ class ThreeSSBDataSource(BaseDataSource):
                         level=TeamLevel.CLUB,
                         wins=wins,
                         losses=losses,
-                        data_source=self._build_source_metadata(),
+                        data_source=self.create_data_source_metadata(url=self.stats_url, quality_flag=DataQualityFlag.COMPLETE),
                     )
 
             self.logger.warning(f"Team not found: {team_id}")
@@ -445,7 +519,7 @@ class ThreeSSBDataSource(BaseDataSource):
                 limit=limit,
             )
 
-            html = await self._fetch_html(self.schedule_url)
+            html = await self.http_client.get_text(self.schedule_url)
             soup = parse_html(html)
 
             schedule_table = find_stat_table(soup, ["schedule", "games", "matchups"])
@@ -500,7 +574,7 @@ class ThreeSSBDataSource(BaseDataSource):
                         game_date=game_date or datetime.now(),
                         game_type=GameType.REGULAR,
                         status=GameStatus.SCHEDULED,
-                        data_source=self._build_source_metadata(),
+                        data_source=self.create_data_source_metadata(url=self.stats_url, quality_flag=DataQualityFlag.COMPLETE),
                     )
 
                     games.append(game)

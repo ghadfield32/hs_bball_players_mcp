@@ -40,7 +40,7 @@ class DcDciaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.DC_DCIAA
+    source_type = DataSourceType.DCIAA
     source_name = "DC DCIAA"
     base_url = "https://www.dciaa.org"
     region = DataSourceRegion.US_DC

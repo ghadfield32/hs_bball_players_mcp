@@ -40,7 +40,7 @@ class MissouriMshsaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.MISSOURI_MSHSAA
+    source_type = DataSourceType.MSHSAA
     source_name = "Missouri MSHSAA"
     base_url = "https://www.mshsaa.org"
     region = DataSourceRegion.US_MO

@@ -40,7 +40,7 @@ class AlaskaAsaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.ALASKA_ASAA
+    source_type = DataSourceType.ASAA
     source_name = "Alaska ASAA"
     base_url = "https://www.asaa.org"
     region = DataSourceRegion.US_AK

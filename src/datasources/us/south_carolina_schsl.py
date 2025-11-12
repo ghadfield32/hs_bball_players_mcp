@@ -40,7 +40,7 @@ class SouthCarolinaSchslDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.SOUTH_CAROLINA_SCHSL
+    source_type = DataSourceType.SCHSL
     source_name = "South Carolina SCHSL"
     base_url = "https://schsl.org"
     region = DataSourceRegion.US_SC

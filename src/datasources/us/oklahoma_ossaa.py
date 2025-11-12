@@ -40,7 +40,7 @@ class OklahomaOssaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.OKLAHOMA_OSSAA
+    source_type = DataSourceType.OSSAA
     source_name = "Oklahoma OSSAA"
     base_url = "https://www.ossaa.com"
     region = DataSourceRegion.US_OK

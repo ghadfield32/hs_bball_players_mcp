@@ -40,7 +40,7 @@ class PennsylvaniaPiaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.PENNSYLVANIA_PIAA
+    source_type = DataSourceType.PIAA
     source_name = "Pennsylvania PIAA"
     base_url = "https://www.piaa.org"
     region = DataSourceRegion.US_PA

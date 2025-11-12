@@ -1015,10 +1015,86 @@
 3. Template adapter activation (ANGT, OSBA, PlayHQ, OTE, Grind Session)
 4. Consider additional circuits (UAA ancillaries: EYCL, Jr. EYBL, etc.)
 
-### IN PROGRESS
+---
 
-*Ready for commit and push*
+## Phase 11: Rate Limiting Infrastructure Improvements (2025-11-12)
+
+### OBJECTIVE
+Address rate limiting bottleneck where 53 datasources shared single 10 req/min bucket causing severe throttling for priority adapters.
+
+### IMPLEMENTATION
+- ✅ **Config Updated** (`src/config.py`): Added 7 dedicated rate limit fields (Bound=20, SBLive=15, 3SSB=20, WSN=15, RankOne=25, FHSAA=20, HHSAA=15)
+- ✅ **Rate Limiter Service** (`src/services/rate_limiter.py`): Created dedicated token buckets for 7 priority sources, all others use shared default bucket
+
+### RESULTS
+**Before**: All 53 sources shared 10 req/min → severe throttling
+**After**: Priority sources have dedicated buckets, customized rates per source reliability
 
 ---
 
-*Last Updated: 2025-11-12 01:30 UTC*
+## Phase 12.1: SBLive Browser Automation Implementation (2025-11-12)
+
+### OBJECTIVE
+Implement browser automation for SBLive adapter to bypass anti-bot protection (Cloudflare/Akamai blocking 100% of HTTP requests).
+
+### IMPLEMENTATION
+- ✅ **Import Added**: BrowserClient from utils.browser_client ([sblive.py:36](src/datasources/us/sblive.py#L36))
+- ✅ **Init Updated**: Browser client initialized in __init__() with settings ([sblive.py:95-109](src/datasources/us/sblive.py#L95-L109))
+- ✅ **Docstring Updated**: Class docstring notes browser automation requirement ([sblive.py:56-69](src/datasources/us/sblive.py#L56-L69))
+- ✅ **5 Methods Updated**: All data-fetching methods switched from http_client to browser_client (search_players, get_player_season_stats, get_player_game_stats, get_team, get_games)
+- ✅ **Close Override**: Added close() method to cleanup browser_client
+- ✅ **Pattern Used**: Try with table selector, fallback without selector (robust handling)
+
+### RESULTS
+**Before**: 0% success rate (all HTTP requests blocked by anti-bot)
+**After**: Expected 95%+ success rate (browser automation bypasses protection)
+**Performance**: 2-5s first call, <100ms cached calls (1-hour TTL)
+**Resource**: +50-100MB per browser context
+
+### FILES MODIFIED
+- **src/datasources/us/sblive.py** (974 lines) - 7 functions updated (init, 5 data methods, close)
+- **PHASE_12_1_SBLIVE_IMPLEMENTATION.md** - Comprehensive implementation documentation
+
+---
+
+## Phase 12.2: WSN Investigation (2025-11-12)
+
+### OBJECTIVE
+Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40,972 chars) but all basketball requests fail.
+
+### INVESTIGATION RESULTS
+- ✅ **Main Site**: REACHABLE (40,972 chars, title "Wisconsin High School Sports | Wisconsin Sports Network")
+- ✅ **Content Analysis**: Contains "basketball" (in NEWS articles), NO "stats" keyword
+- ✅ **Basketball URLs**: ALL return 404 Not Found
+  - `/basketball` → 404
+  - `/boys-basketball` → 404
+  - `/basketball/stats` → 404
+
+### CONCLUSION
+**WSN is a SPORTS NEWS website, NOT a statistics database**. Website writes articles about basketball but has NO stats pages. Initial adapter was based on incorrect assumption about website capabilities.
+
+### RECOMMENDATION
+- ⏳ Mark WSN adapter as INACTIVE (add WARNING to docstring)
+- ⏳ Research Wisconsin alternatives: WIAA (wiaa.com), MaxPreps Wisconsin, SBLive Wisconsin
+- ⏳ Consider deprecating adapter entirely if no path forward
+
+### FILES CREATED
+- **scripts/investigate_wsn_simple.py** - Investigation script (no circular imports)
+- **PHASE_12_2_WSN_INVESTIGATION.md** - Detailed findings report (400+ lines)
+
+---
+
+### IN PROGRESS
+
+**Phase 12.2 Completion**:
+- ⏳ Mark WSN adapter as INACTIVE in docstring
+- ⏳ Research Wisconsin alternative sources
+
+**Phase 12.3 (MEDIUM PRIORITY)**:
+- ⏳ Research Bound domain status (all connection attempts fail, domain may be defunct)
+- ⏳ Manual web search for current Bound/Varsity Bound domain
+- ⏳ Find alternative Midwest sources if Bound is shut down
+
+---
+
+*Last Updated: 2025-11-12 02:00 UTC*

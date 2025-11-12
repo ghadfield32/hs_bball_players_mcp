@@ -1,9 +1,20 @@
 """
 Wisconsin Sports Network (WSN / WisSports) DataSource Adapter
 
-Scrapes player and team statistics from Wisconsin Sports Network.
-Deep Wisconsin-only high school basketball coverage.
-One of the premier free high school basketball stats sources in Wisconsin.
+⚠️  WARNING - ADAPTER INACTIVE ⚠️
+WSN (wissports.net) is a SPORTS NEWS website, NOT a statistics database.
+Investigation (Phase 12.2) confirmed:
+- Website EXISTS and is active (40k+ chars)
+- Contains basketball NEWS articles
+- Has NO statistics pages (all /basketball/* URLs return 404)
+- Never had player/team stats - wrong site type for this adapter
+
+Alternative Wisconsin Sources:
+- WIAA (wiaa.com) - Official state association
+- MaxPreps Wisconsin
+- SBLive Wisconsin
+
+See: PHASE_12_2_WSN_INVESTIGATION.md for full investigation details
 """
 
 from datetime import datetime
@@ -48,11 +59,20 @@ class WSNDataSource(BaseDataSource):
     """
     Wisconsin Sports Network (WSN / WisSports) data source adapter.
 
-    Provides access to comprehensive Wisconsin high school basketball statistics.
-    Public stats at https://www.wissports.net
+    ⚠️  ADAPTER STATUS: INACTIVE - NOT A STATS SITE ⚠️
 
-    Coverage: Wisconsin only (single-state, deep coverage similar to MN Hub)
-    Quality: High (comprehensive player profiles, leaders, team stats)
+    Investigation (Phase 12.2, 2025-11-12) found that wissports.net is a SPORTS NEWS
+    website, not a statistics database. All basketball stats URLs return 404.
+
+    Original intent: Access Wisconsin high school basketball statistics
+    Actual website: Sports news articles, no player/team stats pages
+
+    Recommendation: Use alternative Wisconsin sources:
+    - WIAA (wiaa.com) - Official Wisconsin Interscholastic Athletic Association
+    - MaxPreps Wisconsin coverage
+    - SBLive Wisconsin section
+
+    See PHASE_12_2_WSN_INVESTIGATION.md for full investigation details.
     """
 
     source_type = DataSourceType.WSN

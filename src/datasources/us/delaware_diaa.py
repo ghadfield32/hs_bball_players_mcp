@@ -40,7 +40,7 @@ class DelawareDiaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.DELAWARE_DIAA
+    source_type = DataSourceType.DIAA
     source_name = "Delaware DIAA"
     base_url = "https://www.diaa.org"
     region = DataSourceRegion.US_DE

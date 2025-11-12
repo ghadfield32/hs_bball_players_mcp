@@ -40,7 +40,7 @@ class MichiganMhsaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.MICHIGAN_MHSAA
+    source_type = DataSourceType.MHSAA_MI
     source_name = "Michigan MHSAA"
     base_url = "https://www.mhsaa.com"
     region = DataSourceRegion.US_MI

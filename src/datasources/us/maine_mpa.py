@@ -40,7 +40,7 @@ class MaineMpaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.MAINE_MPA
+    source_type = DataSourceType.MPA
     source_name = "Maine MPA"
     base_url = "https://www.mpa.cc"
     region = DataSourceRegion.US_ME

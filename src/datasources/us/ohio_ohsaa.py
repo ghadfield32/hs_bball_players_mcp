@@ -40,7 +40,7 @@ class OhioOhsaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.OHIO_OHSAA
+    source_type = DataSourceType.OHSAA
     source_name = "Ohio OHSAA"
     base_url = "https://www.ohsaa.org"
     region = DataSourceRegion.US_OH

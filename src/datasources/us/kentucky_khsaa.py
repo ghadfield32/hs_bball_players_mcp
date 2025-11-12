@@ -40,7 +40,7 @@ class KentuckyKhsaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.KENTUCKY_KHSAA
+    source_type = DataSourceType.KHSAA
     source_name = "Kentucky KHSAA"
     base_url = "https://khsaa.org"
     region = DataSourceRegion.US_KY

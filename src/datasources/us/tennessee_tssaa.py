@@ -40,7 +40,7 @@ class TennesseeTssaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.TENNESSEE_TSSAA
+    source_type = DataSourceType.TSSAA
     source_name = "Tennessee TSSAA"
     base_url = "https://tssaa.org"
     region = DataSourceRegion.US_TN

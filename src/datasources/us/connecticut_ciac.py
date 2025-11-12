@@ -40,7 +40,7 @@ class ConnecticutCiacDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.CONNECTICUT_CIAC
+    source_type = DataSourceType.CIAC
     source_name = "Connecticut CIAC"
     base_url = "https://www.ciacsports.com"
     region = DataSourceRegion.US_CT

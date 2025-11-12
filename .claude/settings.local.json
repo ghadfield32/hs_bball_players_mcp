@@ -13,7 +13,13 @@
       "Bash(.venv/Scripts/python.exe:*)",
       "Bash(python scripts/inspect_website.py:*)",
       "Bash(=1.40.0)",
-      "Bash(uv pip install:*)"
+      "Bash(uv pip install:*)",
+      "Bash(python -c:*)",
+      "Bash(timeout 30 .venv/Scripts/python.exe:*)",
+      "Bash(timeout 180 .venv/Scripts/python.exe:*)",
+      "Bash(done)",
+      "Bash(timeout 60 .venv/Scripts/python.exe:*)",
+      "Bash(timeout 45 .venv/Scripts/python.exe:*)"
     ],
     "deny": [],
     "ask": []

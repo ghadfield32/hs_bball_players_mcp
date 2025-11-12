@@ -40,7 +40,7 @@ class MassachusettsMiaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.MASSACHUSETTS_MIAA
+    source_type = DataSourceType.MIAA
     source_name = "Massachusetts MIAA"
     base_url = "https://www.miaa.net"
     region = DataSourceRegion.US_MA

@@ -40,7 +40,7 @@ class RhodeIslandRiilDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.RHODE_ISLAND_RIIL
+    source_type = DataSourceType.RIIL
     source_name = "Rhode Island RIIL"
     base_url = "https://www.riil.org"
     region = DataSourceRegion.US_RI

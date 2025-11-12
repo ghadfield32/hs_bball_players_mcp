@@ -48,6 +48,18 @@ class Settings(BaseSettings):
     rate_limit_angt: int = Field(default=20, ge=1, description="ANGT rate limit")
     rate_limit_osba: int = Field(default=15, ge=1, description="OSBA rate limit")
     rate_limit_playhq: int = Field(default=25, ge=1, description="PlayHQ rate limit")
+
+    # Stats Adapters (High Priority)
+    rate_limit_bound: int = Field(default=20, ge=1, description="Bound (Varsity Bound) rate limit")
+    rate_limit_sblive: int = Field(default=15, ge=1, description="SBLive Sports rate limit")
+    rate_limit_three_ssb: int = Field(default=20, ge=1, description="Adidas 3SSB rate limit")
+    rate_limit_wsn: int = Field(default=15, ge=1, description="Wisconsin Sports Network rate limit")
+
+    # Fixtures Adapters
+    rate_limit_rankone: int = Field(default=20, ge=1, description="RankOne Sport rate limit")
+    rate_limit_fhsaa: int = Field(default=15, ge=1, description="FHSAA (Florida) rate limit")
+    rate_limit_hhsaa: int = Field(default=15, ge=1, description="HHSAA (Hawaii) rate limit")
+
     rate_limit_default: int = Field(default=10, ge=1, description="Default rate limit")
 
     # Global rate limiting

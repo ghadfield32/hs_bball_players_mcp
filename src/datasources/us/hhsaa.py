@@ -361,6 +361,35 @@ class HHSAADataSource(BaseDataSource):
             self.logger.error(f"Error fetching HHSAA games: {e}", exc_info=True)
             return []
 
+    async def get_leaderboard(
+        self,
+        stat: str = "points",
+        season: Optional[str] = None,
+        gender: str = "boys",
+        limit: int = 50,
+    ) -> list[dict]:
+        """
+        Get statistical leaderboard.
+
+        Note: HHSAA focuses on tournament brackets and team results.
+        Individual player stat leaderboards typically not available.
+
+        Args:
+            stat: Stat type (points, rebounds, assists, etc.)
+            season: Season filter
+            gender: "boys" or "girls" division
+            limit: Maximum results
+
+        Returns:
+            Empty list - HHSAA does not provide stat leaderboards
+        """
+        self.logger.warning(
+            "HHSAA does not provide player stat leaderboards - tournament brackets/results only",
+            stat=stat,
+            season=season,
+        )
+        return []
+
     async def health_check(self) -> bool:
         """
         Check if HHSAA is accessible.

@@ -40,7 +40,7 @@ class VirginiaVhslDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.VIRGINIA_VHSL
+    source_type = DataSourceType.VHSL
     source_name = "Virginia VHSL"
     base_url = "https://www.vhsl.org"
     region = DataSourceRegion.US_VA

@@ -40,7 +40,7 @@ class UtahUhsaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.UTAH_UHSAA
+    source_type = DataSourceType.UHSAA
     source_name = "Utah UHSAA"
     base_url = "https://www.uhsaa.org"
     region = DataSourceRegion.US_UT

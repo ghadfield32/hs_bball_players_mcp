@@ -40,7 +40,7 @@ class IndianaIhsaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.INDIANA_IHSAA
+    source_type = DataSourceType.IHSAA
     source_name = "Indiana IHSAA"
     base_url = "https://www.ihsaa.org"
     region = DataSourceRegion.US_IN

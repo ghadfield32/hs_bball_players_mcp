@@ -40,7 +40,7 @@ class NewJerseyNjsiaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.NEW_JERSEY_NJSIAA
+    source_type = DataSourceType.NJSIAA
     source_name = "New Jersey NJSIAA"
     base_url = "https://www.njsiaa.org"
     region = DataSourceRegion.US_NJ

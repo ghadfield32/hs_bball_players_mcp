@@ -40,7 +40,7 @@ class NorthDakotaNdhsaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.NORTH_DAKOTA_NDHSAA
+    source_type = DataSourceType.NDHSAA
     source_name = "North Dakota NDHSAA"
     base_url = "https://www.ndhsaa.com"
     region = DataSourceRegion.US_ND

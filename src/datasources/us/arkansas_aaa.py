@@ -40,7 +40,7 @@ class ArkansasAaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.ARKANSAS_AAA
+    source_type = DataSourceType.AAA_AR
     source_name = "Arkansas AAA"
     base_url = "https://www.ahsaa.org"
     region = DataSourceRegion.US_AR

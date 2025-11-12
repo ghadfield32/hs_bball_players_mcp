@@ -40,7 +40,7 @@ class NewMexicoNmaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.NEW_MEXICO_NMAA
+    source_type = DataSourceType.NMAA
     source_name = "New Mexico NMAA"
     base_url = "https://www.nmact.org"
     region = DataSourceRegion.US_NM

@@ -128,6 +128,15 @@ class RateLimiter:
             DataSourceType.ANGT: self.settings.rate_limit_angt,
             DataSourceType.OSBA: self.settings.rate_limit_osba,
             DataSourceType.PLAYHQ: self.settings.rate_limit_playhq,
+            # Stats Adapters (High Priority)
+            DataSourceType.BOUND: self.settings.rate_limit_bound,
+            DataSourceType.SBLIVE: self.settings.rate_limit_sblive,
+            DataSourceType.THREE_SSB: self.settings.rate_limit_three_ssb,
+            DataSourceType.WSN: self.settings.rate_limit_wsn,
+            # Fixtures Adapters
+            DataSourceType.RANKONE: self.settings.rate_limit_rankone,
+            DataSourceType.FHSAA: self.settings.rate_limit_fhsaa,
+            DataSourceType.HHSAA: self.settings.rate_limit_hhsaa,
         }
 
         for source_type, limit_per_minute in source_limits.items():

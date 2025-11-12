@@ -40,7 +40,7 @@ class NebraskaNsaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.NEBRASKA_NSAA
+    source_type = DataSourceType.NSAA
     source_name = "Nebraska NSAA"
     base_url = "https://www.nsaahome.org"
     region = DataSourceRegion.US_NE

@@ -21,52 +21,51 @@ from .psal import PSALDataSource
 from .wsn import WSNDataSource
 
 # State associations - Southeast
-from .alabama_ahsaa import AHSAADataSource
-from .arkansas_aaa import AAADataSource
-from .georgia_ghsa import GHSADataSource
-from .kentucky_khsaa import KHSAADataSource
-from .louisiana_lhsaa import LHSAADataSource
-from .mississippi_mhsaa import MHSAAMSDataSource
+from .alabama_ahsaa import AlabamaAhsaaDataSource
+from .arkansas_aaa import ArkansasAaaDataSource
+from .georgia_ghsa import GeorgiaGhsaDataSource
+from .kentucky_khsaa import KentuckyKhsaaDataSource
+from .louisiana_lhsaa import LouisianaLhsaaDataSource
+from .mississippi_mhsaa import MississippiMhsaaDataSource
 from .nchsaa import NCHSAADataSource
-from .south_carolina_schsl import SCHSLDataSource
-from .tennessee_tssaa import TSSAADataSource
-from .virginia_vhsl import VHSLDataSource
-from .west_virginia_wvssac import WVSSACDataSource
+from .south_carolina_schsl import SouthCarolinaSchslDataSource
+from .tennessee_tssaa import TennesseeTssaaDataSource
+from .virginia_vhsl import VirginiaVhslDataSource
+from .west_virginia_wvssac import WestVirginiaWvssacDataSource
 
 # State associations - Northeast
-from .connecticut_ciac import CIACDataSource
-from .delaware_diaa import DIAADataSource
-from .maine_mpa import MPADataSource
-from .maryland_mpssaa import MPSSAADataSource
-from .massachusetts_miaa import MIAADataSource
+from .connecticut_ciac import ConnecticutCiacDataSource
+from .delaware_diaa import DelawareDiaaDataSource
+from .maine_mpa import MaineMpaDataSource
+from .maryland_mpssaa import MarylandMpssaaDataSource
+from .massachusetts_miaa import MassachusettsMiaaDataSource
 from .nepsac import NEPSACDataSource
-from .new_hampshire_nhiaa import NHIAADataSource
-from .new_jersey_njsiaa import NJSIAADataSource
-from .pennsylvania_piaa import PIAADataSource
-from .rhode_island_riil import RIILDataSource
-from .vermont_vpa import VPADataSource
+from .new_hampshire_nhiaa import NewHampshireNhiaaDataSource
+from .new_jersey_njsiaa import NewJerseyNjsiaaDataSource
+from .pennsylvania_piaa import PennsylvaniaPiaaDataSource
+from .rhode_island_riil import RhodeIslandRiilDataSource
+from .vermont_vpa import VermontVpaDataSource
 
 # State associations - Midwest
-from .indiana_ihsaa import IHSAADataSource
-from .kansas_kshsaa import KSHSAADataSource
-from .michigan_mhsaa import MHSAAMIDataSource
-from .missouri_mshsaa import MSHSAADataSource
-from .nebraska_nsaa import NSAADataSource
-from .north_dakota_ndhsaa import NDHSAADataSource
-from .ohio_ohsaa import OHSAADataSource
+from .indiana_ihsaa import IndianaIhsaaDataSource
+from .kansas_kshsaa import KansasKshsaaDataSource
+from .michigan_mhsaa import MichiganMhsaaDataSource
+from .missouri_mshsaa import MissouriMshsaaDataSource
+from .nebraska_nsaa import NebraskaNsaaDataSource
+from .north_dakota_ndhsaa import NorthDakotaNdhsaaDataSource
+from .ohio_ohsaa import OhioOhsaaDataSource
 
 # State associations - Southwest/West
-from .alaska_asaa import ASAADataSource
-from .colorado_chsaa import CHSAADataSource
-from .dc_dciaa import DCIAADataSource
-from .montana_mhsa import MHSADataSource
-from .new_mexico_nmaa import NMAADataSource
-from .oklahoma_ossaa import OSSAADataSource
-from .utah_uhsaa import UHSAADataSource
-from .wyoming_whsaa import WHSAADataSource
+from .alaska_asaa import AlaskaAsaaDataSource
+from .colorado_chsaa import ColoradoChsaaDataSource
+from .dc_dciaa import DcDciaaDataSource
+from .montana_mhsa import MontanaMhsaDataSource
+from .new_mexico_nmaa import NewMexicoNmaaDataSource
+from .oklahoma_ossaa import OklahomaOssaaDataSource
+from .utah_uhsaa import UtahUhsaaDataSource
+from .wyoming_whsaa import WyomingWhsaaDataSource
 
 __all__ = [
-    # National circuits
     "BoundDataSource",
     "EYBLDataSource",
     "EYBLGirlsDataSource",
@@ -78,51 +77,46 @@ __all__ = [
     "ThreeSSBGirlsDataSource",
     "UAADataSource",
     "UAAGirlsDataSource",
-    # Regional/State platforms
     "FHSAADataSource",
     "HHSAADataSource",
     "MNHubDataSource",
     "PSALDataSource",
     "WSNDataSource",
-    # State associations - Southeast
-    "AAADataSource",
-    "AHSAADataSource",
-    "GHSADataSource",
-    "KHSAADataSource",
-    "LHSAADataSource",
-    "MHSAAMSDataSource",
+    "AlabamaAhsaaDataSource",
+    "ArkansasAaaDataSource",
+    "GeorgiaGhsaDataSource",
+    "KentuckyKhsaaDataSource",
+    "LouisianaLhsaaDataSource",
+    "MississippiMhsaaDataSource",
     "NCHSAADataSource",
-    "SCHSLDataSource",
-    "TSSAADataSource",
-    "VHSLDataSource",
-    "WVSSACDataSource",
-    # State associations - Northeast
-    "CIACDataSource",
-    "DIAADataSource",
-    "MIAADataSource",
-    "MPADataSource",
-    "MPSSAADataSource",
+    "SouthCarolinaSchslDataSource",
+    "TennesseeTssaaDataSource",
+    "VirginiaVhslDataSource",
+    "WestVirginiaWvssacDataSource",
+    "ConnecticutCiacDataSource",
+    "DelawareDiaaDataSource",
+    "MaineMpaDataSource",
+    "MarylandMpssaaDataSource",
+    "MassachusettsMiaaDataSource",
     "NEPSACDataSource",
-    "NHIAADataSource",
-    "NJSIAADataSource",
-    "PIAADataSource",
-    "RIILDataSource",
-    "VPADataSource",
-    # State associations - Midwest
-    "IHSAADataSource",
-    "KSHSAADataSource",
-    "MHSAAMIDataSource",
-    "MSHSAADataSource",
-    "NDHSAADataSource",
-    "NSAADataSource",
-    "OHSAADataSource",
-    # State associations - Southwest/West
-    "ASAADataSource",
-    "CHSAADataSource",
-    "DCIAADataSource",
-    "MHSADataSource",
-    "NMAADataSource",
-    "OSSAADataSource",
-    "UHSAADataSource",
-    "WHSAADataSource",
+    "NewHampshireNhiaaDataSource",
+    "NewJerseyNjsiaaDataSource",
+    "PennsylvaniaPiaaDataSource",
+    "RhodeIslandRiilDataSource",
+    "VermontVpaDataSource",
+    "IndianaIhsaaDataSource",
+    "KansasKshsaaDataSource",
+    "MichiganMhsaaDataSource",
+    "MissouriMshsaaDataSource",
+    "NebraskaNsaaDataSource",
+    "NorthDakotaNdhsaaDataSource",
+    "OhioOhsaaDataSource",
+    "AlaskaAsaaDataSource",
+    "ColoradoChsaaDataSource",
+    "DcDciaaDataSource",
+    "MontanaMhsaDataSource",
+    "NewMexicoNmaaDataSource",
+    "OklahomaOssaaDataSource",
+    "UtahUhsaaDataSource",
+    "WyomingWhsaaDataSource",
 ]

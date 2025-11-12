@@ -40,7 +40,7 @@ class VermontVpaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.VERMONT_VPA
+    source_type = DataSourceType.VPA
     source_name = "Vermont VPA"
     base_url = "https://www.vpaonline.org"
     region = DataSourceRegion.US_VT

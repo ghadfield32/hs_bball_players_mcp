@@ -9,6 +9,8 @@ Excellent player pages and comprehensive stats coverage.
 from datetime import datetime
 from typing import Optional
 
+from bs4 import BeautifulSoup
+
 from ...models import (
     DataQualityFlag,
     DataSourceRegion,
@@ -64,6 +66,7 @@ class BoundDataSource(BaseDataSource):
 
     source_type = DataSourceType.BOUND
     source_name = "Bound"
+    base_url = "https://www.bound.com"  # Generic URL (state-specific URLs in __init__)
     region = DataSourceRegion.US
 
     # Multi-state support (Midwest focus)

@@ -40,7 +40,7 @@ class MarylandMpssaaDataSource(AssociationAdapterBase):
     - Regular season schedules may be limited
     """
 
-    source_type = DataSourceType.MARYLAND_MPSSAA
+    source_type = DataSourceType.MPSSAA
     source_name = "Maryland MPSSAA"
     base_url = "https://www.mpssaa.org"
     region = DataSourceRegion.US_MD
