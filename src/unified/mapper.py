@@ -47,16 +47,22 @@ def competition_uid(source_key: str, name: str, season: str) -> str:
     return uid[:128]
 
 
-def team_uid(source_key: str, team_name: str, season: str) -> str:
+def team_uid(
+    source_key: str, team_name: str, season: str, organizer: str | None = None
+) -> str:
     """
     Generate unique team identifier.
 
-    Format: {source_key}:{season}:{team_name}
+    Format: {source_key}:{season}:{team_name}[:{organizer}]
+
+    For AAU events, including the organizer prevents collisions when the same
+    team competes in multiple events during the same week.
 
     Args:
         source_key: Source identifier
         team_name: Team name
         season: Season identifier
+        organizer: Event organizer (for AAU events, e.g., "Exposure", "TournyMachine")
 
     Returns:
         Unique team UID (max 128 chars)
@@ -64,19 +70,32 @@ def team_uid(source_key: str, team_name: str, season: str) -> str:
     Example:
         >>> team_uid("eybl", "Team Takeover", "2024")
         'eybl:2024:team_takeover'
+        >>> team_uid("exposure_events", "Team Takeover", "2024", "Exposure")
+        'exposure_events:2024:team_takeover:exposure'
     """
     normalized_name = normalize_string(team_name)
     uid = f"{source_key}:{season}:{normalized_name}"
+    if organizer:
+        normalized_organizer = normalize_string(organizer)
+        uid = f"{uid}:{normalized_organizer}"
     return uid[:128]
 
 
 def game_uid(
-    source_key: str, season: str, home: str, away: str, date_iso: str
+    source_key: str,
+    season: str,
+    home: str,
+    away: str,
+    date_iso: str,
+    event_id: str | None = None,
 ) -> str:
     """
     Generate unique game identifier.
 
-    Format: {source_key}:{season}:{date}:{home}|{away}
+    Format: {source_key}:{season}:{date}:{home}|{away}[:{event_id}]
+
+    For AAU events, including the event_id prevents collisions when the same
+    teams play multiple times in different tournaments during the same week.
 
     Args:
         source_key: Source identifier
@@ -84,6 +103,7 @@ def game_uid(
         home: Home team name
         away: Away team name
         date_iso: ISO date string (YYYY-MM-DD)
+        event_id: Event identifier (for AAU tournaments, e.g., "boo_williams_2024")
 
     Returns:
         Unique game UID (max 160 chars)
@@ -91,10 +111,15 @@ def game_uid(
     Example:
         >>> game_uid("eybl", "2024", "Team Takeover", "Expressions Elite", "2024-04-15")
         'eybl:2024:2024-04-15:team_takeover|expressions_elite'
+        >>> game_uid("exposure_events", "2024", "Team Takeover", "Expressions", "2024-04-15", "spring_showcase")
+        'exposure_events:2024:2024-04-15:team_takeover|expressions:spring_showcase'
     """
     home_norm = normalize_string(home)
     away_norm = normalize_string(away)
     uid = f"{source_key}:{season}:{date_iso}:{home_norm}|{away_norm}"
+    if event_id:
+        normalized_event = normalize_string(event_id)
+        uid = f"{uid}:{normalized_event}"
     return uid[:160]
 
 

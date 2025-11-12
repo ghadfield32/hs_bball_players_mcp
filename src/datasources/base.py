@@ -5,11 +5,20 @@ Abstract base class for all data source adapters.
 Provides common interface and shared functionality.
 """
 
+import asyncio
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Optional
+from urllib.parse import urlparse
 
 from pydantic import ValidationError
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
+import httpx
 
 from ..config import get_settings
 from ..models import (
@@ -26,6 +35,13 @@ from ..models import (
 from ..utils import create_http_client, get_logger
 
 logger = get_logger(__name__)
+
+# Global per-domain semaphores for rate limiting
+_domain_semaphores: dict[str, asyncio.Semaphore] = {}
+_semaphore_lock = asyncio.Lock()
+
+# Simple in-memory cache for ETag/IMS caching
+_http_cache: dict[str, dict] = {}
 
 
 class BaseDataSource(ABC):
@@ -64,6 +80,113 @@ class BaseDataSource(ABC):
             type=self.source_type.value,
             region=self.region.value,
         )
+
+    async def _get_domain_semaphore(self, url: str, max_concurrent: int = 5) -> asyncio.Semaphore:
+        """
+        Get or create a semaphore for the domain of the given URL.
+        Prevents overwhelming servers with concurrent requests.
+
+        Args:
+            url: URL to extract domain from
+            max_concurrent: Max concurrent requests per domain
+
+        Returns:
+            Semaphore for the domain
+        """
+        domain = urlparse(url).netloc
+        async with _semaphore_lock:
+            if domain not in _domain_semaphores:
+                _domain_semaphores[domain] = asyncio.Semaphore(max_concurrent)
+            return _domain_semaphores[domain]
+
+    @retry(
+        retry=retry_if_exception_type((httpx.TimeoutException, httpx.NetworkError)),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+    )
+    async def http_get(
+        self,
+        url: str,
+        headers: Optional[dict] = None,
+        timeout: float = 20.0,
+        use_cache: bool = True,
+    ) -> tuple[int, bytes, dict]:
+        """
+        Centralized HTTP GET with ETag/If-Modified-Since caching, retry, and concurrency control.
+
+        Args:
+            url: URL to fetch
+            headers: Additional headers
+            timeout: Request timeout in seconds
+            use_cache: Whether to use ETag/IMS caching
+
+        Returns:
+            Tuple of (status_code, content, response_headers)
+            - status_code 304 means cached content is still valid (content will be from cache)
+            - status_code 200 means new content fetched
+        """
+        # Get per-domain semaphore for rate limiting
+        semaphore = await self._get_domain_semaphore(url)
+
+        # Prepare headers
+        request_headers = headers or {}
+
+        # Add ETag/If-Modified-Since from cache if available
+        if use_cache and url in _http_cache:
+            cached = _http_cache[url]
+            if "etag" in cached:
+                request_headers["If-None-Match"] = cached["etag"]
+            if "last_modified" in cached:
+                request_headers["If-Modified-Since"] = cached["last_modified"]
+
+        # Acquire semaphore to limit concurrent requests per domain
+        async with semaphore:
+            try:
+                response = await self.http_client.get(
+                    url,
+                    headers=request_headers,
+                    timeout=timeout,
+                )
+
+                status = response.status_code
+                response_headers = dict(response.headers)
+
+                # Handle 304 Not Modified - return cached content
+                if status == 304 and url in _http_cache:
+                    self.logger.debug(f"Cache hit (304): {url}")
+                    cached = _http_cache[url]
+                    return (304, cached["content"], cached["headers"])
+
+                # Handle 200 OK - cache and return new content
+                if status == 200:
+                    content = response.content
+
+                    # Update cache with new ETag/Last-Modified
+                    if use_cache:
+                        cache_entry = {
+                            "content": content,
+                            "headers": response_headers,
+                        }
+                        if "etag" in response_headers:
+                            cache_entry["etag"] = response_headers["etag"]
+                        if "last-modified" in response_headers:
+                            cache_entry["last_modified"] = response_headers["last-modified"]
+
+                        _http_cache[url] = cache_entry
+                        self.logger.debug(f"Cached: {url}")
+
+                    return (status, content, response_headers)
+
+                # Other status codes - return as-is
+                return (status, response.content, response_headers)
+
+            except (httpx.TimeoutException, httpx.NetworkError) as e:
+                self.logger.warning(f"HTTP request failed (will retry): {url}", error=str(e))
+                raise  # Let tenacity retry
+            except Exception as e:
+                self.logger.error(f"HTTP request failed: {url}", error=str(e))
+                # Return error status
+                return (500, b"", {})
 
     def create_data_source_metadata(
         self,

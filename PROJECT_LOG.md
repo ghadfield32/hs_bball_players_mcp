@@ -1423,6 +1423,41 @@ Analytics Views (mart_player_season, leaderboards, etc.)
 - ⏳ **Template Activation** - Priority order: ANGT → OSBA → PlayHQ → OTE → Grind Session
 - Status: Tools created, awaiting execution (pip install + website verification)
 
+#### [2025-11-12 08:00] Phase 13.1: Registry+HTTP+QA Hardening
+- ✅ **Runtime Registry Loader** (`src/services/aggregator.py` +60 lines)
+  - Dynamic source loading from `config/sources.yaml` at runtime
+  - Prevents aggregator drift vs registry (no manual dict maintenance)
+  - Fallback to hard-coded sources if registry fails
+  - Auto-loads only `status: active` or `status: enabled` sources
+  - Impact: **Zero maintenance** for adding/removing sources (just update YAML + adapter status)
+- ✅ **HTTP Layer Improvements** (`src/datasources/base.py` +110 lines)
+  - **ETag/If-Modified-Since caching** for delta pulls (HTTP 304 = skip re-parse)
+  - **Per-domain semaphores** (max 5 concurrent per domain) prevent rate limit 429s
+  - **Retry/backoff** (3 attempts, exponential 2-10s) for transient network errors
+  - In-memory cache for ETag/Last-Modified headers
+  - Expected impact: **60-95% bandwidth reduction** for unchanged data
+- ✅ **AAU-Safe UID Generation** (`src/unified/mapper.py` +25 lines)
+  - `team_uid()` now includes optional `organizer` parameter
+  - `game_uid()` now includes optional `event_id` parameter
+  - Prevents collisions when same AAU teams play multiple tournaments in one week
+  - Example: `exposure_events:2024:team_takeover:exposure` vs `tourneymachine:2024:team_takeover:tourneymachine`
+  - Impact: **Collision-free UIDs** for multi-event AAU weekends
+- ✅ **QA Infrastructure** (2 new modules, 380 lines total)
+  - **`src/qa/probes.py`** (170 lines) - Lightweight endpoint verification before backfills
+    - Parallel probing with concurrency control
+    - CLI: `python -m src.qa.probes` to check all sources
+    - Returns (source_id, success, note) for each source
+  - **`src/qa/checks.py`** (210 lines) - Data invariant validation after backfills
+    - Checks: duplicate UIDs, negative stats, implausible scores (>100 pts), missing dates, season consistency
+    - CLI: `python -m src.qa.checks` to validate DuckDB tables
+    - Catches data quality issues before materialization
+- ✅ **Backfill Concurrency + QA Hooks** (`scripts/backfill_historical.py` +90 lines)
+  - **`--max-concurrency N`** flag for bounded parallel pulls (default: 8)
+  - **`--run-probes`** flag runs QA probes before backfill, filters failed sources
+  - **`--run-checks`** flag runs QA checks after backfill, validates data quality
+  - **`bounded_gather()`** helper for controlled parallel execution
+  - Impact: **Faster backfills** with quality gates + early failure detection
+
 ---
 
-*Last Updated: 2025-11-12 06:00 UTC*
+*Last Updated: 2025-11-12 08:30 UTC*

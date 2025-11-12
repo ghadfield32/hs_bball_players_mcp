@@ -22,6 +22,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.services.aggregator import get_aggregator
 from src.unified.build import build_unified_dataset
 from src.utils.logger import get_logger
+from src.qa.probes import probe_all_sources, print_probe_results
+from src.qa.checks import run_all_checks, print_check_results
 
 import duckdb
 import pandas as pd
@@ -68,6 +70,26 @@ STATE_BY_SOURCE = {
     "ossaa": "OK", "uhsaa": "UT", "asaa": "AK", "mhsa": "MT", "whsaa": "WY",
     "dciaa": "DC", "oia": "HI", "osba": "ON",
 }
+
+
+async def bounded_gather(coros, max_concurrency: int = 8):
+    """
+    Run coroutines with bounded concurrency.
+
+    Args:
+        coros: List of coroutines
+        max_concurrency: Maximum concurrent tasks
+
+    Returns:
+        List of results
+    """
+    semaphore = asyncio.Semaphore(max_concurrency)
+
+    async def bounded_coro(coro):
+        async with semaphore:
+            return await coro
+
+    return await asyncio.gather(*[bounded_coro(c) for c in coros], return_exceptions=True)
 
 
 def parse_seasons(seasons_arg: str) -> list[str]:
@@ -141,6 +163,9 @@ async def main(
     start_year: int | None = None,
     end_year: int | None = None,
     parallel: bool = True,
+    max_concurrency: int = 8,
+    run_probes: bool = False,
+    run_checks: bool = False,
 ):
     """
     Main backfill workflow.
@@ -151,6 +176,9 @@ async def main(
         start_year: Start year for range backfill
         end_year: End year for range backfill
         parallel: Run backfills in parallel (default: True)
+        max_concurrency: Max concurrent backfills (default: 8)
+        run_probes: Run QA probes before backfill (default: False)
+        run_checks: Run QA checks after backfill (default: False)
     """
     logger.info("Starting historical backfill...")
 
@@ -167,6 +195,25 @@ async def main(
     if not backfill_sources:
         logger.error("No valid sources to backfill")
         return
+
+    # Run probes if requested
+    if run_probes:
+        logger.info("Running QA probes before backfill...")
+        probe_results = await probe_all_sources(backfill_sources, max_concurrency)
+        print_probe_results(probe_results)
+
+        # Filter out failed sources
+        failed_sources = [src for src, (ok, _) in probe_results.items() if not ok]
+        if failed_sources:
+            logger.warning(
+                f"Excluding {len(failed_sources)} sources that failed probes",
+                failed=failed_sources,
+            )
+            backfill_sources = [s for s in backfill_sources if s not in failed_sources]
+
+        if not backfill_sources:
+            logger.error("All sources failed probes, aborting backfill")
+            return
 
     # Determine which seasons to backfill
     if seasons:
@@ -187,22 +234,28 @@ async def main(
     all_pulled = {}
 
     if parallel:
-        # Parallel backfill
+        # Parallel backfill with bounded concurrency
         tasks = []
+        task_metadata = []
+
         for source_key in backfill_sources:
             for season in backfill_seasons:
                 task = backfill_source_season(aggregator, source_key, season)
-                tasks.append((source_key, season, task))
+                tasks.append(task)
+                task_metadata.append((source_key, season))
 
-        # Gather results
-        for source_key, season, task in tasks:
-            try:
-                data = await task
+        # Gather results with concurrency limit
+        logger.info(f"Running {len(tasks)} backfills with max_concurrency={max_concurrency}")
+        results = await bounded_gather(tasks, max_concurrency=max_concurrency)
+
+        # Process results
+        for (source_key, season), result in zip(task_metadata, results):
+            if isinstance(result, Exception):
+                logger.error(f"Failed to backfill {source_key} {season}", error=str(result))
+            else:
                 key = f"{source_key}_{season}"
-                all_pulled[key] = data
+                all_pulled[key] = result
                 logger.info(f"Completed backfill: {source_key} {season}")
-            except Exception as e:
-                logger.error(f"Failed to backfill {source_key} {season}", error=str(e))
     else:
         # Sequential backfill
         for source_key in backfill_sources:
@@ -285,6 +338,17 @@ async def main(
 
     logger.info(f"Historical backfill complete! Data saved to {output_dir}")
 
+    # Run QA checks if requested
+    if run_checks:
+        logger.info("Running QA checks on backfilled data...")
+        check_results = run_all_checks(db_path)
+        print_check_results(check_results)
+
+        # Log warning if any checks failed
+        failed_checks = sum(1 for errors in check_results.values() if errors)
+        if failed_checks > 0:
+            logger.warning(f"{failed_checks} QA checks failed - review output above")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Historical data backfill")
@@ -317,6 +381,22 @@ if __name__ == "__main__":
         action="store_true",
         help="Run backfills sequentially (default: parallel)",
     )
+    parser.add_argument(
+        "--max-concurrency",
+        type=int,
+        default=8,
+        help="Maximum concurrent backfills (default: 8)",
+    )
+    parser.add_argument(
+        "--run-probes",
+        action="store_true",
+        help="Run QA probes before backfill to verify sources are accessible",
+    )
+    parser.add_argument(
+        "--run-checks",
+        action="store_true",
+        help="Run QA checks after backfill to validate data quality",
+    )
 
     args = parser.parse_args()
 
@@ -331,5 +411,8 @@ if __name__ == "__main__":
             start_year=args.start_year,
             end_year=args.end_year,
             parallel=not args.sequential,
+            max_concurrency=args.max_concurrency,
+            run_probes=args.run_probes,
+            run_checks=args.run_checks,
         )
     )
