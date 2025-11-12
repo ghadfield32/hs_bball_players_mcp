@@ -7,27 +7,54 @@ Handles parallel queries, deduplication, and result merging.
 
 import asyncio
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
+import yaml
 
 from ..config import get_settings
 from ..datasources.base import BaseDataSource
 
 # Active adapters (fully implemented):
-from ..datasources.europe.fiba_youth import FIBAYouthDataSource
+# US - National Circuits
 from ..datasources.us.bound import BoundDataSource
 from ..datasources.us.eybl import EYBLDataSource
 from ..datasources.us.eybl_girls import EYBLGirlsDataSource
+from ..datasources.us.three_ssb import ThreeSSBDataSource
+from ..datasources.us.three_ssb_girls import ThreeSSBGirlsDataSource
+from ..datasources.us.uaa import UAADataSource
+from ..datasources.us.uaa_girls import UAAGirlsDataSource
+
+# US - State/Regional Platforms
 from ..datasources.us.fhsaa import FHSAADataSource
 from ..datasources.us.hhsaa import HHSAADataSource
 from ..datasources.us.mn_hub import MNHubDataSource
 from ..datasources.us.psal import PSALDataSource
 from ..datasources.us.rankone import RankOneDataSource
 from ..datasources.us.sblive import SBLiveDataSource
-from ..datasources.us.three_ssb import ThreeSSBDataSource
-from ..datasources.us.three_ssb_girls import ThreeSSBGirlsDataSource
-from ..datasources.us.uaa import UAADataSource
-from ..datasources.us.uaa_girls import UAAGirlsDataSource
 from ..datasources.us.wsn import WSNDataSource
+
+# US - Event Platforms (Phase 10/11)
+from ..datasources.us.cifsshome import CIFSSHomeDataSource
+from ..datasources.us.uil_brackets import UILBracketsDataSource
+from ..datasources.us.exposure_events import ExposureEventsDataSource
+from ..datasources.us.tourneymachine import TournyMachineDataSource
+
+# US - State Association Adapters (Phase 14.5)
+from ..datasources.us.nchsaa import NCHSAADataSource
+from ..datasources.us.ghsa import GHSAADataSource
+
+# Europe - Youth Leagues (Phase 7)
+from ..datasources.europe.fiba_youth import FIBAYouthDataSource
+from ..datasources.europe.nbbl import NBBLDataSource
+from ..datasources.europe.feb import FEBDataSource
+from ..datasources.europe.mkl import MKLDataSource
+from ..datasources.europe.lnb_espoirs import LNBEspoirsDataSource
+
+# Canada - Youth Leagues (Phase 7)
+from ..datasources.canada.npa import NPADataSource
+
+# Canada - Provincial Associations (Phase 14.5)
+from ..datasources.canada.ofsaa import OFSAADataSource
 
 # Import from global module (avoid 'global' keyword with import style)
 import importlib
@@ -41,6 +68,10 @@ from ..datasources.europe.angt import ANGTDataSource
 from ..datasources.us.grind_session import GrindSessionDataSource
 from ..datasources.us.ote import OTEDataSource
 
+# Vendor Generics (Phase 14 - Global expansion):
+from ..datasources.vendors.fiba_federation_events import FibaFederationEventsDataSource
+from ..datasources.vendors.gameday import GameDayDataSource
+
 from ..models import Player, PlayerSeasonStats, Team
 from ..utils.logger import get_logger
 from .duckdb_storage import get_duckdb_storage
@@ -50,6 +81,62 @@ from .parquet_exporter import get_parquet_exporter
 logger = get_logger(__name__)
 
 
+def load_from_registry(yaml_path: str | Path = "config/sources.yaml") -> dict[str, type]:
+    """
+    Build the source id -> DataSourceClass map from config/sources.yaml.
+    Only include entries with status in {'active', 'enabled'} and
+    with a resolvable adapter module/class.
+    Prevents aggregator drift vs registry.
+
+    Args:
+        yaml_path: Path to sources.yaml registry file
+
+    Returns:
+        Dictionary mapping source_id to DataSource class
+    """
+    from importlib import import_module
+
+    path = Path(yaml_path)
+    if not path.exists():
+        logger.warning(f"Registry file not found: {yaml_path}, falling back to hard-coded sources")
+        return {}
+
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception as e:
+        logger.error(f"Failed to load registry: {e}, falling back to hard-coded sources")
+        return {}
+
+    sources_list = data.get("sources", [])
+    source_classes = {}
+
+    for src in sources_list:
+        src_id = src.get("id")
+        status = src.get("status", "")
+        adapter_module = src.get("adapter_module")
+        adapter_class = src.get("adapter_class")
+
+        # Only load active/enabled sources
+        if status not in {"active", "enabled"}:
+            continue
+
+        # Must have module + class
+        if not adapter_module or not adapter_class:
+            logger.warning(f"Source {src_id} missing adapter_module or adapter_class, skipping")
+            continue
+
+        try:
+            mod = import_module(adapter_module)
+            cls = getattr(mod, adapter_class)
+            source_classes[src_id] = cls
+            logger.debug(f"Loaded {src_id} → {adapter_class}")
+        except (ModuleNotFoundError, AttributeError) as e:
+            logger.warning(f"Could not load {src_id}: {e}")
+
+    logger.info(f"Registry loader found {len(source_classes)} active sources")
+    return source_classes
+
+
 class DataSourceAggregator:
     """
     Multi-source data aggregator.
@@ -57,10 +144,15 @@ class DataSourceAggregator:
     Manages multiple datasource adapters and provides unified query interface.
     """
 
-    def __init__(self):
-        """Initialize aggregator with all enabled datasources."""
+    def __init__(self, registry_path: str | Path = "config/sources.yaml"):
+        """Initialize aggregator with all enabled datasources.
+
+        Args:
+            registry_path: Path to sources.yaml registry file (default: config/sources.yaml)
+        """
         self.settings = get_settings()
         self.sources: dict[str, BaseDataSource] = {}
+        self.registry_path = registry_path
         self._initialize_sources()
 
         # Initialize storage and export services
@@ -74,43 +166,64 @@ class DataSourceAggregator:
 
     def _initialize_sources(self) -> None:
         """Initialize all enabled datasource adapters."""
-        # Map of source types to their adapter classes
-        source_classes = {
-            # ===== ACTIVE ADAPTERS (Production Ready) =====
-            # US - National Circuits (Big 3 complete):
-            "eybl": EYBLDataSource,                      # Nike EYBL (boys)
-            "eybl_girls": EYBLGirlsDataSource,          # Nike Girls EYBL
-            "three_ssb": ThreeSSBDataSource,            # Adidas 3SSB (boys)
-            "three_ssb_girls": ThreeSSBGirlsDataSource, # Adidas 3SSB Girls
-            "uaa": UAADataSource,                        # Under Armour Association (boys)
-            "uaa_girls": UAAGirlsDataSource,            # UA Next (girls)
+        # Try to load from registry first
+        source_classes = load_from_registry(self.registry_path)
 
-            # US - Multi-State Coverage:
-            "bound": BoundDataSource,        # IA, SD, IL, MN (4 states)
-            "sblive": SBLiveDataSource,      # WA, OR, CA, AZ, ID, NV (6 states)
-            "rankone": RankOneDataSource,    # TX, KY, IN, OH, TN (schedules/fixtures)
+        # Fallback to hard-coded sources if registry loading fails
+        if not source_classes:
+            logger.warning("Registry loader returned empty, using hard-coded source list")
+            # Map of source types to their adapter classes
+            source_classes = {
+                # ===== ACTIVE ADAPTERS (Production Ready) =====
+                # US - National Circuits (Big 3 complete):
+                "eybl": EYBLDataSource,                      # Nike EYBL (boys)
+                "eybl_girls": EYBLGirlsDataSource,          # Nike Girls EYBL
+                "three_ssb": ThreeSSBDataSource,            # Adidas 3SSB (boys)
+                "three_ssb_girls": ThreeSSBGirlsDataSource, # Adidas 3SSB Girls
+                "uaa": UAADataSource,                        # Under Armour Association (boys)
+                "uaa_girls": UAAGirlsDataSource,            # UA Next (girls)
 
-            # US - Single State Deep Coverage:
-            "mn_hub": MNHubDataSource,       # Minnesota (best free HS stats)
-            "psal": PSALDataSource,          # NYC public schools
-            "wsn": WSNDataSource,            # Wisconsin (deep stats)
+                # US - Multi-State Coverage:
+                "bound": BoundDataSource,        # IA, SD, IL, MN (4 states)
+                "sblive": SBLiveDataSource,      # WA, OR, CA, AZ, ID, NV (6 states)
+                "rankone": RankOneDataSource,    # TX, KY, IN, OH, TN (schedules/fixtures)
 
-            # US - State Associations (Tournaments/Brackets):
-            "fhsaa": FHSAADataSource,        # Florida (Southeast anchor)
-            "hhsaa": HHSAADataSource,        # Hawaii (excellent historical data)
+                # US - Single State Deep Coverage:
+                "mn_hub": MNHubDataSource,       # Minnesota (best free HS stats)
+                "psal": PSALDataSource,          # NYC public schools
+                "wsn": WSNDataSource,            # Wisconsin (deep stats)
 
-            # Global/International:
-            "fiba": FIBAYouthDataSource,           # FIBA Youth competitions
-            "fiba_livestats": FIBALiveStatsDataSource,  # FIBA LiveStats v7 global
+                # US - State Associations (Tournaments/Brackets):
+                "fhsaa": FHSAADataSource,        # Florida (Southeast anchor)
+                "hhsaa": HHSAADataSource,        # Hawaii (excellent historical data)
 
-            # ===== TEMPLATE ADAPTERS (Need URL Updates) =====
-            # These have complete code structure but need actual website URLs:
-            # "grind_session": GrindSessionDataSource,  # TODO: Update URLs after inspection
-            # "ote": OTEDataSource,                      # TODO: Update URLs after inspection
-            # "angt": ANGTDataSource,                    # TODO: Update URLs after inspection
-            # "osba": OSBADataSource,                    # TODO: Update URLs after inspection
-            # "playhq": PlayHQDataSource,                # TODO: Update URLs after inspection
-        }
+                # US - Event Platforms (Phase 10/11 - Generic AAU):
+                "cifsshome": CIFSSHomeDataSource,     # California CIF-SS sections
+                "uil_brackets": UILBracketsDataSource, # Texas UIL playoffs
+                "exposure_events": ExposureEventsDataSource,  # Exposure Events (generic)
+                "tourneymachine": TournyMachineDataSource,    # TournyMachine (generic)
+
+                # Europe - Youth Leagues (Phase 7):
+                "nbbl": NBBLDataSource,                # Germany NBBL/JBBL (U19/U16)
+                "feb": FEBDataSource,                  # Spain FEB Junior (U16/U18/U20)
+                "mkl": MKLDataSource,                  # Lithuania MKL Youth (U16/U18/U20)
+                "lnb_espoirs": LNBEspoirsDataSource,  # France LNB Espoirs (U21)
+
+                # Canada - Youth Leagues (Phase 7):
+                "npa": NPADataSource,                  # National Preparatory Association
+
+                # Global/International:
+                "fiba": FIBAYouthDataSource,           # FIBA Youth competitions
+                "fiba_livestats": FIBALiveStatsDataSource,  # FIBA LiveStats v7 global
+
+                # ===== TEMPLATE ADAPTERS (Need URL Updates) =====
+                # These have complete code structure but need actual website URLs:
+                # "grind_session": GrindSessionDataSource,  # TODO: Update URLs after inspection
+                # "ote": OTEDataSource,                      # TODO: Update URLs after inspection
+                # "angt": ANGTDataSource,                    # TODO: Update URLs after inspection
+                # "osba": OSBADataSource,                    # TODO: Update URLs after inspection
+                # "playhq": PlayHQDataSource,                # TODO: Update URLs after inspection
+            }
 
         for source_key, source_class in source_classes.items():
             if self.settings.is_datasource_enabled(source_key):
