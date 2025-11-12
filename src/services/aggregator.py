@@ -39,6 +39,10 @@ from ..datasources.us.uil_brackets import UILBracketsDataSource
 from ..datasources.us.exposure_events import ExposureEventsDataSource
 from ..datasources.us.tourneymachine import TournyMachineDataSource
 
+# US - State Association Adapters (Phase 14.5)
+from ..datasources.us.nchsaa import NCHSAADataSource
+from ..datasources.us.ghsa import GHSAADataSource
+
 # Europe - Youth Leagues (Phase 7)
 from ..datasources.europe.fiba_youth import FIBAYouthDataSource
 from ..datasources.europe.nbbl import NBBLDataSource
@@ -48,6 +52,9 @@ from ..datasources.europe.lnb_espoirs import LNBEspoirsDataSource
 
 # Canada - Youth Leagues (Phase 7)
 from ..datasources.canada.npa import NPADataSource
+
+# Canada - Provincial Associations (Phase 14.5)
+from ..datasources.canada.ofsaa import OFSAADataSource
 
 # Import from global module (avoid 'global' keyword with import style)
 import importlib

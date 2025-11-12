@@ -103,6 +103,7 @@ CIRCUIT_KEYS = {
     "uil_brackets": "UIL_BRACKETS",  # Texas UIL
     # Canada
     "npa": "NPA",
+    "ofsaa": "OFSAA",
 }
 
 
@@ -183,6 +184,7 @@ SOURCE_TYPES = {
     "fiba": "LEAGUE",
     "fiba_livestats": "LEAGUE",
     "npa": "PREP",
+    "ofsaa": "ASSOCIATION",
     "texas_hoops": "PLATFORM",
 }
 
@@ -309,6 +311,7 @@ def normalize_level(source_key: str, age_group: str | None) -> str:
         "dciaa",
         "hhsaa",
         "oia",
+        "ofsaa",  # Canada - Ontario provincial
     }:
         return "HS"
 

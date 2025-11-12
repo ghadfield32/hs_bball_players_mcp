@@ -1489,6 +1489,36 @@ Analytics Views (mart_player_season, leaderboards, etc.)
   - Prevents fake/test data and catches scraping errors
 - Impact: **30+ sources**, **5 new regions**, **2 vendor generics unlock dozens of leagues with zero per-league code**
 
+#### [2025-11-12 12:00] Phase 14.5: Registry Merge + HTML Schedule Adapters Activation
+- ✅ **Registry Consolidation** (`config/sources.yaml` merged from 2011 → 2334 lines)
+  - Merged all 30+ Phase 14 sources from `sources_phase14_additions.yaml` into main registry
+  - Updated metadata: `total_sources: 119` (+30), `active: 35` (+2), `research_needed: 42` (+27)
+  - New regions: Africa (4), Oceania (2), Asia expanded (+9), Canada provincial (+4), US prep (+3)
+  - Metadata tracks: `phase_14_global_expansion` with vendor generic impact metrics
+  - Clean merge at line 1779 (before EVENT ADAPTERS section)
+- ✅ **HTML Schedule Adapters Registered** (3 adapters activated)
+  - **`src/datasources/canada/ofsaa.py`** (249 lines) - Ontario Federation of School Athletic Associations
+    - Inherits from `AssociationAdapterBase` (JSON + HTML parsing)
+    - Supports provincial championship brackets, schedules, tournament lineage
+    - Template methods: `_parse_json_data()`, `_parse_html_data()`, `_parse_game_from_row()`
+    - Registered in aggregator + categories (OFSAA → ASSOCIATION → HS level)
+  - **`src/datasources/us/nchsaa.py`** (246 lines) - North Carolina HS Athletic Association
+    - Already existed from Phase 5; now registered in aggregator
+    - Supports state championship brackets + schedules
+  - **`src/datasources/us/ghsa.py`** (279 lines) - Georgia HS Association
+    - Already existed from Phase 5; now registered in aggregator
+    - Supports state championship brackets + schedules
+  - All three use `AssociationAdapterBase` pattern: JSON-first with HTML fallback
+- ✅ **Categories Updated** (`src/unified/categories.py` +3 lines)
+  - Added `"ofsaa": "OFSAA"` to CIRCUIT_KEYS
+  - Added `"ofsaa": "ASSOCIATION"` to SOURCE_TYPES
+  - Added `"ofsaa"` to state associations set in `normalize_level()` (returns "HS")
+- ✅ **Aggregator Registration** (`src/services/aggregator.py` +5 lines)
+  - Added imports: `NCHSAADataSource`, `GHSADataSource` (US State Association Adapters)
+  - Added import: `OFSAADataSource` (Canada Provincial Associations)
+  - All three now available for dynamic instantiation via registry loader
+- Impact: **Registry fully consolidated**, **3 HTML schedule adapters activated**, **OFSAA pattern template** for remaining provincial bodies (RSEQ, BCSS, ASAA)
+
 ---
 
-*Last Updated: 2025-11-12 10:30 UTC*
+*Last Updated: 2025-11-12 12:15 UTC*

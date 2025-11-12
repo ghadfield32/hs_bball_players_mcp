@@ -3,7 +3,7 @@
 # capabilities, rate limits, and URL patterns.
 
 version: "1.0"
-last_updated: "2025-11-11"
+last_updated: "2025-11-12"  # Phase 14: Global expansion merged
 
 # =============================================================================
 # UNITED STATES - STATE/REGIONAL
@@ -1777,6 +1777,330 @@ sources:
     notes: "**HIGH LEVERAGE**: Generic AAU tournament platform. Single adapter unlocks 100+ AAU tournaments (Bigfoot Hoops, various showcases). Parameterized by tournament_id."
 
 # =============================================================================
+
+# =============================================================================
+# PHASE 14: GLOBAL EXPANSION - VENDOR GENERICS & NEW REGIONS
+# =============================================================================
+
+- id: fiba_federation_events
+  name: "FIBA Federation Events"
+  full_name: "FIBA LiveStats / Federation-Run Youth & Junior Competitions"
+  region: GLOBAL
+  type: platform
+  status: active
+  url: "https://www.fiba.basketball/livestats"
+  adapter_class: "FibaFederationEventsDataSource"
+  adapter_module: "src.datasources.vendors.fiba_federation_events"
+  capabilities:
+    schedules: true
+    box_scores: true
+    player_stats: true
+    team_stats: true
+  rate_limit:
+    requests_per_minute: 20
+    burst_capacity: 8
+    safety_margin: 0.5
+  cache_ttl:
+    players: 7200
+    stats: 3600
+    games: 1800
+  robots_policy: "allowed"
+  notes: "Parameterized by federation_code + season; covers many U16/U18/U20/U22/U23 comps worldwide."
+
+- id: gameday
+  name: "GameDay"
+  full_name: "GameDay / Sportstg Competitions"
+  region: GLOBAL
+  type: platform
+  status: active
+  url: "https://websites.sportstg.com"
+  adapter_class: "GameDayDataSource"
+  adapter_module: "src.datasources.vendors.gameday"
+  capabilities:
+    schedules: true
+    box_scores: true
+    player_stats: true
+    team_stats: true
+  rate_limit:
+    requests_per_minute: 25
+    burst_capacity: 10
+    safety_margin: 0.5
+  cache_ttl:
+    players: 3600
+    stats: 3600
+    games: 1800
+  robots_policy: "allowed"
+  notes: "Used by BBNZ Secondary Schools + pockets in AU/Asia. Parameterized by base_url + comp_id."
+
+# =============================================================================
+# AFRICA (RESEARCH NEEDED; PRIMARY ROUTE = fiba_federation_events)
+# =============================================================================
+
+- id: egy_fed_youth
+  name: "Egypt Youth"
+  full_name: "Egypt Basketball Federation Youth Competitions"
+  region: AFRICA
+  type: league
+  family: AFRICA_YOUTH
+  status: research_needed
+  routed_by: fiba_federation_events
+  params:
+    federation_code: "EGY"
+  notes: "U16/U18 national comps + juniors; FIBA LS where available."
+
+- id: nga_fed_youth
+  name: "Nigeria Youth"
+  full_name: "Nigeria Basketball Federation Youth Competitions"
+  region: AFRICA
+  type: league
+  family: AFRICA_YOUTH
+  status: research_needed
+  routed_by: fiba_federation_events
+  params:
+    federation_code: "NGA"
+  notes: "Strong basketball nation; U16/U18 development leagues."
+
+- id: sen_fed_youth
+  name: "Senegal Youth"
+  full_name: "Senegal Basketball Federation Youth Competitions"
+  region: AFRICA
+  type: league
+  family: AFRICA_YOUTH
+  status: research_needed
+  routed_by: fiba_federation_events
+  params:
+    federation_code: "SEN"
+  notes: "Elite African basketball; youth development programs."
+
+- id: rsa_fed_youth
+  name: "South Africa Youth"
+  full_name: "Basketball South Africa Youth Competitions"
+  region: AFRICA
+  type: league
+  family: AFRICA_YOUTH
+  status: research_needed
+  routed_by: fiba_federation_events
+  params:
+    federation_code: "RSA"
+  notes: "Provincial championships + national youth leagues."
+
+# =============================================================================
+# ASIA (MIX: federation route + HTML)
+# =============================================================================
+
+- id: jpn_bleague_u18
+  name: "B.League U18"
+  full_name: "Japan B.League U18/U15 Youth"
+  region: ASIA
+  type: league
+  family: ASIA_SCHOOL
+  status: research_needed
+  routed_by: fiba_federation_events
+  params:
+    federation_code: "JPN"
+  notes: "Use FIBA LS when present; fallback to HTML pages."
+
+- id: jpn_winter_cup
+  name: "Japan Winter Cup"
+  full_name: "Japan Winter Cup (HS Nationals)"
+  region: ASIA
+  type: event
+  family: ASIA_SCHOOL
+  status: research_needed
+  routed_by: gameday
+  params:
+    base_url: "TBD"
+    comp_id: "TBD"
+  notes: "Annual HS championship; needs URL discovery."
+
+- id: chn_cuba
+  name: "CUBA"
+  full_name: "China University Basketball Association"
+  region: ASIA
+  type: league
+  family: ASIA_UNI
+  status: research_needed
+  routed_by: html
+  params: {}
+  notes: "Public pages; JSON-in-script patterns likely."
+
+- id: chn_chbl
+  name: "CHBL"
+  full_name: "China High School Basketball League"
+  region: ASIA
+  type: league
+  family: ASIA_SCHOOL
+  status: research_needed
+  routed_by: html
+  params: {}
+  notes: "HS league; schedules + standings available."
+
+- id: kor_u_league
+  name: "Korea U-League"
+  full_name: "Korea University Basketball U-League"
+  region: ASIA
+  type: league
+  family: ASIA_UNI
+  status: research_needed
+  routed_by: fiba_federation_events
+  params:
+    federation_code: "KOR"
+  notes: "University league; FIBA LS integration possible."
+
+- id: twn_hbl
+  name: "Taiwan HBL"
+  full_name: "Taiwan High School Basketball League"
+  region: ASIA
+  type: league
+  family: ASIA_SCHOOL
+  status: research_needed
+  routed_by: html
+  params: {}
+  notes: "Popular HS league; public schedules/stats."
+
+- id: twn_uba
+  name: "Taiwan UBA"
+  full_name: "Taiwan University Basketball Association"
+  region: ASIA
+  type: league
+  family: ASIA_UNI
+  status: research_needed
+  routed_by: html
+  params: {}
+  notes: "University league; box scores available."
+
+- id: ph_uaap_juniors
+  name: "UAAP Juniors"
+  full_name: "UAAP Juniors (Philippines)"
+  region: ASIA
+  type: league
+  family: ASIA_SCHOOL
+  status: research_needed
+  routed_by: fiba_federation_events
+  params:
+    federation_code: "PHI"
+  notes: "HS division of UAAP; passionate following."
+
+- id: ph_ncaa_juniors
+  name: "NCAA Juniors"
+  full_name: "NCAA Juniors (Philippines)"
+  region: ASIA
+  type: league
+  family: ASIA_SCHOOL
+  status: research_needed
+  routed_by: html
+  params: {}
+  notes: "HS division of Philippines NCAA."
+
+# =============================================================================
+# OCEANIA
+# =============================================================================
+
+- id: nz_secondary_schools
+  name: "BBNZ Secondary Schools"
+  full_name: "Basketball New Zealand Secondary Schools"
+  region: OCEANIA
+  type: league
+  family: OCEANIA_SCHOOL
+  status: research_needed
+  routed_by: gameday
+  params:
+    base_url: "TBD"
+    comp_id: "TBD"
+  notes: "National HS championships; GameDay platform likely."
+
+- id: au_state_playhq
+  name: "Australia State Pathways"
+  full_name: "Australia State Pathways (PlayHQ)"
+  region: OCEANIA
+  type: platform
+  family: OCEANIA_SCHOOL
+  status: template
+  routed_by: playhq
+  params:
+    org_slug: "TBD"
+    comp_id: "TBD"
+    season: "TBD"
+  notes: "Template adapter ready; activate after URL inspection."
+
+# =============================================================================
+# CANADA (PROVINCIAL HS BODIES - SCHEDULE/BRACKETS)
+# =============================================================================
+
+- id: ca_ofsaa
+  name: "OFSAA"
+  full_name: "Ontario Federation of School Athletic Associations"
+  region: CANADA-ON
+  type: association
+  family: CANADA_PROV
+  status: research_needed
+  routed_by: html
+  notes: "Ontario HS championships; schedule-first adapter."
+
+- id: ca_rseq_scolaire
+  name: "RSEQ Scolaire"
+  full_name: "RSEQ Scolaire (Québec)"
+  region: CANADA-QC
+  type: association
+  family: CANADA_PROV
+  status: research_needed
+  routed_by: html
+  notes: "Quebec school sports; schedules + brackets."
+
+- id: ca_bcss
+  name: "BCSS"
+  full_name: "BC School Sports (British Columbia)"
+  region: CANADA-BC
+  type: association
+  family: CANADA_PROV
+  status: research_needed
+  routed_by: html
+  notes: "BC HS athletics; provincial championships."
+
+- id: ca_asaa
+  name: "ASAA"
+  full_name: "Alberta Schools' Athletic Association"
+  region: CANADA-AB
+  type: association
+  family: CANADA_PROV
+  status: research_needed
+  routed_by: html
+  notes: "Alberta HS sports; playoff brackets available."
+
+# =============================================================================
+# US – ELITE PREP & STATE ASSOCIATIONS (SCHEDULE-FIRST)
+# =============================================================================
+
+- id: nibc
+  name: "NIBC"
+  full_name: "National Interscholastic Basketball Conference"
+  region: US
+  type: circuit
+  family: PREP_LEAGUE
+  status: research_needed
+  routed_by: html
+  notes: "Montverde, Sunrise, IMG; elite prep; schedule-first."
+
+- id: wcac
+  name: "WCAC"
+  full_name: "Washington Catholic Athletic Conference"
+  region: US
+  type: league
+  family: PREP_LEAGUE
+  status: research_needed
+  routed_by: html
+  notes: "DC/MD area Catholic schools; elite prep."
+
+- id: pcl
+  name: "PCL"
+  full_name: "Philadelphia Catholic League"
+  region: US-PA
+  type: league
+  family: PREP_LEAGUE
+  status: research_needed
+  routed_by: html
+  notes: "PA Catholic league; strong basketball tradition."
+
 # EVENT ADAPTERS (ONE-OFF TOURNAMENTS)
 # =============================================================================
 
@@ -1970,20 +2294,22 @@ research_needed:
 # =============================================================================
 
 metadata:
-  total_sources: 89
-  active: 33  # 29 in aggregator + 4 new Phase 10/11
+  total_sources: 119  # +30 from Phase 14
+  active: 35  # 29 original + 4 Phase 10/11 + 2 vendor generics (fiba_federation_events, gameday)
   planned: 40
-  template: 5
-  research_needed: 15
+  template: 6  # +1 (au_state_playhq)
+  research_needed: 42  # +27 from Phase 14 (4 Africa, 9 Asia, 2 Oceania, 4 Canada, 3 US prep, 5 previous research)
   event: 2
 
   by_region:
-    US: 63  # +4 event platforms, +4 research_needed
-    GLOBAL: 2
-    EUROPE: 12  # +5 research_needed
-    CANADA: 2
-    AUSTRALIA: 2  # +1 research_needed (nationals)
-    ASIA: 3  # +3 research_needed
+    US: 66  # +3 elite prep (NIBC, WCAC, PCL)
+    GLOBAL: 4  # +2 vendor generics (fiba_federation_events, gameday)
+    EUROPE: 12
+    CANADA: 6  # +4 provincial (OFSAA, RSEQ, BCSS, ASAA)
+    AUSTRALIA: 2
+    OCEANIA: 2  # New: BBNZ, AU PlayHQ
+    ASIA: 12  # +9 (Japan, China, Korea, Taiwan, Philippines)
+    AFRICA: 4  # New: Egypt, Nigeria, Senegal, South Africa
 
   coverage:
     us_states_covered: "50 + DC"
@@ -2009,3 +2335,15 @@ metadata:
     high_leverage_platforms: 2  # exposure_events, tourneymachine (unlock 100+ AAU tournaments)
     geographic_expansion: "Added Europe (GB, IT, TR, GR), Asia (JP, PH), Australia nationals"
     status: "Phase 10/11 sources documented, template adapters ready for URL verification"
+
+  phase_14_global_expansion:
+    vendor_generics_added: 2  # fiba_federation_events (global federations), gameday (NZ/AU/Asia)
+    new_regions: 2  # Africa (4), Oceania (2)
+    regional_expansion:
+      africa: 4  # Egypt, Nigeria, Senegal, South Africa (routed via fiba_federation_events)
+      asia: "+9"  # Japan, China, Korea, Taiwan, Philippines (mix FIBA + HTML)
+      oceania: 2  # BBNZ Secondary Schools (GameDay), AU PlayHQ (template)
+      canada_provincial: 4  # OFSAA, RSEQ, BCSS, ASAA (schedule-first)
+      us_elite_prep: 3  # NIBC, WCAC, PCL (schedule-first)
+    high_leverage_impact: "2 vendor generics unlock 20+ countries with zero per-country code"
+    status: "Vendor generics active (skeleton), 27 research_needed sources ready for URL discovery"
