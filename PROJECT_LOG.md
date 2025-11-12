@@ -1458,6 +1458,37 @@ Analytics Views (mart_player_season, leaderboards, etc.)
   - **`bounded_gather()`** helper for controlled parallel execution
   - Impact: **Faster backfills** with quality gates + early failure detection
 
+#### [2025-11-12 10:00] Phase 14: Global Expansion Scaffolding
+- ✅ **Vendor Generics (HIGH LEVERAGE)** (2 adapters, 500+ lines) - One adapter unlocks entire regions
+  - **`src/datasources/vendors/fiba_federation_events.py`** (250 lines) - FIBA LiveStats / Federation youth/junior comps
+    - Parameterized by `federation_code` (e.g., "EGY", "NGA", "JPN", "BRA", "KOR", "PHI")
+    - Covers U16/U18/U20/U22/U23 across Africa, Asia, Europe, LatAm, Oceania
+    - Status: skeleton (research_needed); ready for per-federation activation
+  - **`src/datasources/vendors/gameday.py`** (250 lines) - GameDay/Sportstg competitions
+    - Parameterized by `base_url` + `comp_id` + `season`
+    - Used by BBNZ Secondary Schools (NZ) + pockets in AU/Asia
+    - Status: skeleton (research_needed); ready for URL discovery
+  - Registered in aggregator: `fiba_federation_events`, `gameday` (ACTIVE adapters, parameterized)
+- ✅ **Sources Registry** (`config/sources_phase14_additions.yaml` 260 lines) - 30+ new sources across 5 regions
+  - **AFRICA_YOUTH** (4 sources): Egypt, Nigeria, Senegal, South Africa → route via `fiba_federation_events`
+  - **ASIA_SCHOOL** (6 sources): Japan B.League U18, Winter Cup, China CHBL, Taiwan HBL, Philippines UAAP/NCAA Juniors
+  - **ASIA_UNI** (3 sources): China CUBA, Taiwan UBA, Korea U-League → mix of FIBA LS + HTML
+  - **OCEANIA_SCHOOL** (2 sources): BBNZ Secondary Schools (GameDay), AU State PlayHQ (template ready)
+  - **CANADA_PROV** (4 sources): OFSAA (ON), RSEQ (QC), BCSS (BC), ASAA (AB) → HTML schedule adapters
+  - **US PREP_LEAGUE** (3 sources): NIBC, WCAC, PCL → elite prep, schedule-first
+  - All marked `research_needed` except vendor generics (active); ready for URL discovery + activation
+- ✅ **Categories Extension** (`src/unified/categories.py` +50 lines) - Support new levels + families
+  - **LEAGUE_FAMILY** set: Added `AFRICA_YOUTH`, `ASIA_SCHOOL`, `ASIA_UNI`, `CANADA_PROV`, `OCEANIA_SCHOOL`
+  - **`normalize_level()`** extended: Now handles U14-U23 (was U14-U21), UNI/COLLEGE/CUBA/UBA aliases
+  - Supports HS keywords: HBL, WINTER_CUP, INTER-HIGH for Asia leagues
+  - Prep schools: added `nibc`, `wcac`, `pcl` to prep detection
+- ✅ **Data Quality Verification** (`src/unified/quality.py` 280 lines) - "Real data" integrity gates
+  - **`verify_boxscore_integrity()`** - 6 checks: points balance, minutes reasonable, no duplicates, both teams, non-negative stats, plausible ranges
+  - **`verify_game_metadata()`** - Validates required fields, date validity, distinct teams
+  - Returns `accept` flag; log failures to quarantine table before materialization
+  - Prevents fake/test data and catches scraping errors
+- Impact: **30+ sources**, **5 new regions**, **2 vendor generics unlock dozens of leagues with zero per-league code**
+
 ---
 
-*Last Updated: 2025-11-12 08:30 UTC*
+*Last Updated: 2025-11-12 10:30 UTC*

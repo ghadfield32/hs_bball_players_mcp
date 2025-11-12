@@ -187,6 +187,27 @@ SOURCE_TYPES = {
 }
 
 
+# League family classifications (for partitioning and organization)
+LEAGUE_FAMILY = {
+    # US
+    "AAU_EVENT",      # Exposure Events, TournyMachine, etc.
+    "PREP_LEAGUE",    # NEPSAC, NPA, NIBC, WCAC, etc.
+    "STATE_ASSOC",    # FHSAA, GHSA, NCHSAA, etc.
+    "CIRCUIT",        # EYBL, 3SSB, UAA, etc.
+    "HS_STATE",       # State-specific platforms
+    # International
+    "GLOBAL_YOUTH",   # FIBA Youth, FIBA LiveStats
+    "AFRICA_YOUTH",   # Egypt, Nigeria, Senegal, RSA, etc.
+    "ASIA_SCHOOL",    # Japan Winter Cup, HBL Taiwan, UAAP Juniors, etc.
+    "ASIA_UNI",       # CUBA China, UBA Taiwan, U-League Korea, etc.
+    "CANADA_PROV",    # OFSAA, RSEQ, BCSS, ASAA, etc.
+    "OCEANIA_SCHOOL", # BBNZ Secondary Schools, AU PlayHQ, etc.
+    "EUROPE_YOUTH",   # ANGT, NBBL, FEB, LNB Espoirs, MKL
+    # Other
+    "OTHER",
+}
+
+
 def normalize_gender(raw: str | None) -> str:
     """
     Normalize gender string to canonical M/F.
@@ -211,17 +232,38 @@ def normalize_level(source_key: str, age_group: str | None) -> str:
 
     Args:
         source_key: Source identifier (e.g., "eybl", "nepsac")
-        age_group: Age group string (e.g., "U17", "U18")
+        age_group: Age group string (e.g., "U17", "U18", "U22", "University")
 
     Returns:
-        Normalized level: HS, PREP, U14, U15, U16, U17, U18, U21
+        Normalized level: HS, PREP, UNI, U14, U15, U16, U17, U18, U19, U20, U21, U22, U23
     """
-    # Age group takes priority if present
-    if age_group and age_group.upper().startswith("U"):
-        return age_group.upper()
+    if not age_group:
+        age_group = ""
+
+    # Normalize age_group string
+    g = age_group.upper().strip()
+
+    # Age group takes priority if present - check for U14-U23
+    if g.startswith("U") and len(g) >= 3:
+        # Extract numeric part (e.g., "U18" -> "U18", "U-18" -> "U18")
+        num_part = g[1:].replace("-", "").replace(" ", "")
+        if num_part.isdigit():
+            age = int(num_part)
+            if 14 <= age <= 23:
+                return f"U{age}"
+
+    # University/College keywords
+    uni_keywords = ["UNI", "UNIV", "UNIVERSITY", "COLLEGE", "UBA", "CUBA", "U-LEAGUE"]
+    if any(keyword in g for keyword in uni_keywords):
+        return "UNI"
+
+    # Secondary/HS keywords
+    hs_keywords = ["HS", "HIGH SCHOOL", "SECONDARY", "HBL", "WINTER CUP", "INTER-HIGH"]
+    if any(keyword in g for keyword in hs_keywords):
+        return "HS"
 
     # Prep schools
-    if source_key in {"nepsac", "npa"}:
+    if source_key in {"nepsac", "npa", "nibc", "wcac", "pcl"}:
         return "PREP"
 
     # State associations are HS

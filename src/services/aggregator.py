@@ -61,6 +61,10 @@ from ..datasources.europe.angt import ANGTDataSource
 from ..datasources.us.grind_session import GrindSessionDataSource
 from ..datasources.us.ote import OTEDataSource
 
+# Vendor Generics (Phase 14 - Global expansion):
+from ..datasources.vendors.fiba_federation_events import FibaFederationEventsDataSource
+from ..datasources.vendors.gameday import GameDayDataSource
+
 from ..models import Player, PlayerSeasonStats, Team
 from ..utils.logger import get_logger
 from .duckdb_storage import get_duckdb_storage
