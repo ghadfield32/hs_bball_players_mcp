@@ -1519,6 +1519,25 @@ Analytics Views (mart_player_season, leaderboards, etc.)
   - All three now available for dynamic instantiation via registry loader
 - Impact: **Registry fully consolidated**, **3 HTML schedule adapters activated**, **OFSAA pattern template** for remaining provincial bodies (RSEQ, BCSS, ASAA)
 
+#### [2025-11-12 12:30] Phase 14.6: Global Expansion - Status Assessment & URL Discovery Guide
+- ✅ **Scaffolding Status: 100% Complete** - All Phase 14 infrastructure production-ready
+  - Vendor generics: `fiba_federation_events` (154 lines), `gameday` (195 lines) - both **active**
+  - Both registered in aggregator.py + sources.yaml
+  - 30+ research_needed sources added with routing (Africa 4, Asia 9, Oceania 2, Canada 4, US 3)
+  - Quality infrastructure: `verify_boxscore_integrity()` with 6 checks
+  - Categories: all new families added (AFRICA_YOUTH, ASIA_SCHOOL, ASIA_UNI, CANADA_PROV, OCEANIA_SCHOOL)
+- 📋 **URL Discovery Guide Created** (`PHASE_14_URL_DISCOVERY_GUIDE.md` 400+ lines)
+  - Step-by-step URL discovery process for FIBA/GameDay/PlayHQ/State Associations
+  - Testing commands and validation scripts
+  - Priority order: FIBA (high leverage) → GameDay (NZ/AU) → State associations (schedule/lineage)
+  - Activation checklist: URL discovery → implementation → validation → activation
+- ⏳ **Next Steps**: URL research task (non-coding)
+  - FIBA LiveStats endpoint discovery (EGY, JPN, NGA, BRA, KOR, PHI)
+  - GameDay comp_id discovery (BBNZ Secondary Schools)
+  - PlayHQ org_slug/comp_id discovery (AU state pathways)
+  - HTML structure inspection (OFSAA, NCHSAA, GHSA championship brackets)
+- Impact: **Phase 14 code complete**, **URL discovery documented**, **clear activation path** for 30+ sources
+
 ---
 
-*Last Updated: 2025-11-12 12:15 UTC*
+*Last Updated: 2025-11-12 12:30 UTC*
