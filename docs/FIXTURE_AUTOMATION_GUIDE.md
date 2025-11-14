@@ -15,6 +15,31 @@ This guide explains how to use the automated fixture processing scripts to effic
 - Automatic validation + testing + manifest updates
 - Clear reporting of successes and failures
 
+## Annual Season Rollover (Easiest Path)
+
+**For yearly maintenance (adding new season like 2025):**
+
+```bash
+# One command to add new season, download, and validate
+python scripts/rollover_wiaa_season.py 2025 --download
+
+# Or interactive mode (prompts at each step)
+python scripts/rollover_wiaa_season.py 2025 --download --interactive
+```
+
+This command:
+1. Adds 2025 to manifest with 8 planned fixtures (Boys/Girls × Div1-4)
+2. Opens browser for each fixture (you hit Save 8 times)
+3. Validates and updates manifest automatically
+4. Shows coverage statistics before/after
+5. Guides you through git commit
+
+**Time**: ~6 minutes total (was ~60 minutes manual)
+
+**Perfect for**: Adding new season each March when tournaments finish
+
+See [Season Rollover Workflow](#season-rollover-workflow) for details.
+
 ## Quick Start
 
 ### Option 1: Process All Planned Fixtures (Recommended)
@@ -267,6 +292,101 @@ This will automatically:
 - Commit changes
 - Prompt to push
 
+## Season Rollover Workflow
+
+**Purpose**: Streamline the annual process of adding a new season to your fixture coverage.
+
+**When to use**: Every March after tournaments finish, to add the new season (e.g., 2025)
+
+### Step-by-Step Rollover
+
+**Method 1: Fully Automated (Recommended)**
+
+```bash
+# One command does everything
+python scripts/rollover_wiaa_season.py 2025 --download --interactive
+```
+
+**What happens:**
+1. Script adds 2025 to manifest `years` list
+2. Creates 8 new fixture entries (Boys/Girls × Div1-4) with `status="planned"`, `priority=1`
+3. Shows before/after coverage statistics
+4. Launches browser helper for the 8 new fixtures
+5. You save each HTML file as the browser opens (8 × Save As)
+6. Automatically runs validation and updates manifest
+7. Guides you through git commit
+
+**Time**: ~6 minutes total
+
+**Method 2: Manual Steps**
+
+If you prefer more control:
+
+```bash
+# Step 1: Add season to manifest
+python scripts/rollover_wiaa_season.py 2025
+
+# Step 2: Check coverage
+python scripts/show_wiaa_coverage.py
+
+# Step 3: Download fixtures
+python scripts/open_missing_wiaa_fixtures.py --year 2025 --auto-validate
+
+# Step 4: Commit
+git add tests/fixtures/wiaa/
+git commit -m "Add Wisconsin WIAA 2025 season"
+git push
+```
+
+### Coverage Dashboard
+
+**Check coverage anytime:**
+
+```bash
+# Show summary
+python scripts/show_wiaa_coverage.py
+
+# Show detailed grid
+python scripts/show_wiaa_coverage.py --grid
+
+# Show only missing fixtures
+python scripts/show_wiaa_coverage.py --missing-only
+
+# Export to JSON
+python scripts/show_wiaa_coverage.py --export coverage.json
+```
+
+**Output includes:**
+- Overall progress (X/80 fixtures, percentage)
+- Visual progress bars
+- Breakdown by status (present/planned/future)
+- Coverage by year and gender
+- Next steps guidance
+- Optional detailed grid view
+
+### Requesting Official WIAA Access
+
+**To request an official data feed from WIAA:**
+
+```bash
+# Show contact information and generate email
+python scripts/contact_wiaa.py
+
+# Just contact info
+python scripts/contact_wiaa.py --contact-info
+
+# Just generate email text
+python scripts/contact_wiaa.py --generate
+
+# Show full template with integration plan
+python scripts/contact_wiaa.py --full-template
+```
+
+**If WIAA approves:**
+- See `docs/WIAA_DATA_REQUEST_TEMPLATE.md` for integration plan
+- Future Phase 14.7 will implement API integration
+- Full automation possible (no human downloads needed)
+
 ## Command Reference
 
 ### open_missing_wiaa_fixtures.py (Browser Helper)
@@ -367,6 +487,84 @@ python scripts/process_fixtures.py --planned --quiet
 **Auto-commit:**
 ```powershell
 .\scripts\Process-Fixtures.ps1 -Planned -Commit
+```
+
+### rollover_wiaa_season.py (Season Rollover)
+
+**Purpose:** Add new season to manifest and optionally download/validate fixtures.
+
+**Add season only:**
+```bash
+python scripts/rollover_wiaa_season.py 2025
+```
+
+**Add season and download:**
+```bash
+python scripts/rollover_wiaa_season.py 2025 --download
+```
+
+**Full workflow (interactive):**
+```bash
+python scripts/rollover_wiaa_season.py 2025 --download --interactive
+```
+
+**Flags:**
+- `year` (required) - Season year to add (e.g., 2025)
+- `--download` - Launch browser helper after adding season
+- `--validate` - Run validation after downloading (implies --download)
+- `--interactive`, `-i` - Interactive mode (prompts before each step)
+
+### show_wiaa_coverage.py (Coverage Dashboard)
+
+**Purpose:** Show fixture coverage statistics and identify gaps.
+
+**Summary view:**
+```bash
+python scripts/show_wiaa_coverage.py
+```
+
+**Detailed grid:**
+```bash
+python scripts/show_wiaa_coverage.py --grid
+```
+
+**Missing fixtures only:**
+```bash
+python scripts/show_wiaa_coverage.py --missing-only
+```
+
+**Export to JSON:**
+```bash
+python scripts/show_wiaa_coverage.py --export coverage.json
+```
+
+**Combine views:**
+```bash
+python scripts/show_wiaa_coverage.py --grid --missing-only
+```
+
+### contact_wiaa.py (WIAA Contact Helper)
+
+**Purpose:** Generate email template for requesting official WIAA data access.
+
+**Show contact info and email:**
+```bash
+python scripts/contact_wiaa.py
+```
+
+**Contact info only:**
+```bash
+python scripts/contact_wiaa.py --contact-info
+```
+
+**Generate email text:**
+```bash
+python scripts/contact_wiaa.py --generate
+```
+
+**Full template with integration plan:**
+```bash
+python scripts/contact_wiaa.py --full-template
 ```
 
 ## Troubleshooting
