@@ -37,7 +37,7 @@ from src.datasources.us.virginia_vhsl import VirginiaVHSLDataSource
 from src.datasources.us.washington_wiaa import WashingtonWIAADataSource
 from src.datasources.us.massachusetts_miaa import MassachusettsMiaaDataSource
 from src.datasources.us.indiana_ihsaa import IndianaIHSAADataSource
-from src.datasources.us.wisconsin_wiaa import WisconsinWIAADataSource
+from src.datasources.us.wisconsin_wiaa import WisconsinWiaaDataSource
 from src.datasources.us.missouri_mshsaa import MissouriMSHSAADataSource
 from src.datasources.us.maryland_mpssaa import MarylandMPSSAADataSource
 from src.datasources.us.minnesota_mshsl import MinnesotaMSHSLDataSource
@@ -191,7 +191,7 @@ STATE_ADAPTERS = [
         id="indiana_ihsaa"
     ),
     pytest.param(
-        WisconsinWIAADataSource,
+        WisconsinWiaaDataSource,
         "wiaa",
         "WIAA",
         "Division 1",

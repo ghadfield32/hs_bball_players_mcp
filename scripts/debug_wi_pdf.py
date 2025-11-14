@@ -16,10 +16,10 @@ sys.path.insert(0, str(project_root))
 async def inspect_pdf():
     """Inspect a sample Wisconsin PDF."""
     import pdfplumber
-    from src.datasources.us.wisconsin_wiaa import WisconsinWIAADataSource
+    from src.datasources.us.wisconsin_wiaa import WisconsinWiaaDataSource
 
     # Initialize adapter
-    adapter = WisconsinWIAADataSource()
+    adapter = WisconsinWiaaDataSource()
 
     # Test PDF URL - Division 1, Sections 1-2
     pdf_url = "https://halftime.wiaawi.org/CustomApps/Tournaments/Brackets/PDF/2024_Basketball_Boys_Div1_Sec1_2.pdf"

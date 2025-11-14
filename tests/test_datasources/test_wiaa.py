@@ -7,7 +7,7 @@ Official Wisconsin state association for postseason data.
 
 import pytest
 
-from src.datasources.us.wisconsin_wiaa import WIAADataSource
+from src.datasources.us.wisconsin_wiaa import WisconsinWiaaDataSource
 from src.models import DataSourceType, DataSourceRegion, Game
 
 
@@ -18,7 +18,7 @@ class TestWIAADataSource:
     @pytest.fixture
     def wiaa_source(self):
         """Create WIAA datasource instance."""
-        return WIAADataSource()
+        return WisconsinWiaaDataSource()
 
     def test_initialization(self, wiaa_source):
         """Test WIAA datasource initializes correctly."""

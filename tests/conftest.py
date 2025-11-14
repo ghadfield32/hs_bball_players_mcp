@@ -24,7 +24,6 @@ from src.datasources.us.bound import BoundDataSource
 from src.datasources.us.three_ssb import ThreeSSBDataSource
 from src.datasources.us.wisconsin_wiaa import WisconsinWiaaDataSource
 from src.datasources.us.wsn import WSNDataSource
-from src.datasources.us.wisconsin_wiaa import WisconsinWIAADataSource
 from src.datasources.us.wisconsin_maxpreps import MaxPrepsWisconsinDataSource
 from src.datasources.us import IHSADataSource
 from src.datasources.us.south_dakota_sdhsaa import SouthDakotaSDHSAADataSource
@@ -108,9 +107,9 @@ async def fhsaa_source() -> AsyncGenerator[FHSAADataSource, None]:
 
 
 @pytest_asyncio.fixture(scope="module")
-async def wiaa_source() -> AsyncGenerator[WisconsinWIAADataSource, None]:
+async def wiaa_source() -> AsyncGenerator[WisconsinWiaaDataSource, None]:
     """Create Wisconsin WIAA datasource for testing."""
-    source = WisconsinWIAADataSource()
+    source = WisconsinWiaaDataSource()
     yield source
     await source.close()
 
@@ -181,8 +180,30 @@ async def wsn_source() -> AsyncGenerator[WSNDataSource, None]:
 
 @pytest_asyncio.fixture(scope="module")
 async def wisconsin_wiaa_source() -> AsyncGenerator[WisconsinWiaaDataSource, None]:
-    """Create Wisconsin WIAA datasource for testing."""
+    """Create Wisconsin WIAA datasource for testing (LIVE mode by default).
+
+    Note: Uses LIVE mode which may hit real WIAA website and get HTTP 403s.
+    For stable CI tests, use wisconsin_wiaa_fixture_source instead.
+    """
     source = WisconsinWiaaDataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def wisconsin_wiaa_fixture_source() -> AsyncGenerator[WisconsinWiaaDataSource, None]:
+    """Create Wisconsin WIAA datasource in FIXTURE mode for stable testing.
+
+    Uses local fixture files from tests/fixtures/wiaa/ instead of live HTTP.
+    Currently supports: 2024 Boys/Girls Div1
+    """
+    from pathlib import Path
+    from src.datasources.us.wisconsin_wiaa import DataMode
+
+    source = WisconsinWiaaDataSource(
+        data_mode=DataMode.FIXTURE,
+        fixtures_dir=Path("tests/fixtures/wiaa")
+    )
     yield source
     await source.close()
 

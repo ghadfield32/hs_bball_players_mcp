@@ -27,7 +27,7 @@ from src.datasources.base import BaseDataSource
 from src.datasources.us.illinois_ihsa import IllinoisIHSADataSource
 from src.datasources.us.iowa_ihsaa import IowaIHSAADataSource
 from src.datasources.us.south_dakota_sdhsaa import SouthDakotaSdhsaaDataSource
-from src.datasources.us.wisconsin_wiaa import WIAADataSource
+from src.datasources.us.wisconsin_wiaa import WisconsinWiaaDataSource
 from src.datasources.us.wisconsin_maxpreps import MaxPrepsWisconsinDataSource
 from src.utils import get_logger
 
@@ -532,11 +532,11 @@ async def main():
     elif args.source == "sdhsaa":
         sources = [SouthDakotaSdhsaaDataSource()]
     elif args.source == "wiaa":
-        sources = [WIAADataSource()]
+        sources = [WisconsinWiaaDataSource()]
     elif args.source == "maxpreps_wi":
         sources = [MaxPrepsWisconsinDataSource()]
     elif args.source == "all":
-        sources = [IllinoisIHSADataSource(), IowaIHSAADataSource(), SouthDakotaSdhsaaDataSource(), WIAADataSource(), MaxPrepsWisconsinDataSource()]
+        sources = [IllinoisIHSADataSource(), IowaIHSAADataSource(), SouthDakotaSdhsaaDataSource(), WisconsinWiaaDataSource(), MaxPrepsWisconsinDataSource()]
     else:
         print("Please specify a datasource to test with --source")
         return

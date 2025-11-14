@@ -1,0 +1,294 @@
+# Wisconsin WIAA Fixture Manifest
+#
+# This file defines the complete coverage grid for Wisconsin WIAA basketball fixtures.
+# It serves as the single source of truth for:
+# - What years/genders/divisions we want to cover (coverage goals)
+# - Which fixtures are present (have HTML files)
+# - Which fixtures are planned (Priority 1/2 expansion)
+# - Which fixtures are unavailable or out of scope
+#
+# Fixture file naming convention:
+#   {year}_Basketball_{gender}_{division}.html
+#
+# Example:
+#   2024_Basketball_Boys_Div1.html
+#
+# Status values:
+#   - present: Fixture file exists and is validated
+#   - planned: Scheduled for acquisition (Priority 1 or 2)
+#   - future: Not yet scheduled but within coverage scope
+#   - unavailable: Outside coverage scope or doesn't exist on WIAA site
+#
+
+# Coverage Grid Definition
+years: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+genders: ["Boys", "Girls"]
+divisions: ["Div1", "Div2", "Div3", "Div4"]
+
+# NOTE: Division 5 exists for some years but is currently out of scope
+# To add Div5: extend divisions list and add corresponding fixture entries
+
+# Fixture Status
+# Total coverage grid: 10 years × 2 genders × 4 divisions = 80 combinations
+
+fixtures:
+  # ========== 2024 Season (Current Priority) ==========
+
+  # PRESENT - Already validated (Phase 14.3)
+  - year: 2024
+    gender: "Boys"
+    division: "Div1"
+    status: "present"
+    notes: "Validated in Phase 14.3 - 15 games, all rounds parsing correctly"
+
+  - year: 2024
+    gender: "Girls"
+    division: "Div1"
+    status: "present"
+    notes: "Validated in Phase 14.3 - 15 games, all rounds parsing correctly"
+
+  # PLANNED - Priority 1 (Complete 2024)
+  - year: 2024
+    gender: "Boys"
+    division: "Div2"
+    status: "planned"
+    priority: 1
+    notes: "Priority 1: Complete 2024 coverage"
+
+  - year: 2024
+    gender: "Boys"
+    division: "Div3"
+    status: "planned"
+    priority: 1
+    notes: "Priority 1: Complete 2024 coverage"
+
+  - year: 2024
+    gender: "Boys"
+    division: "Div4"
+    status: "planned"
+    priority: 1
+    notes: "Priority 1: Complete 2024 coverage"
+
+  - year: 2024
+    gender: "Girls"
+    division: "Div2"
+    status: "planned"
+    priority: 1
+    notes: "Priority 1: Complete 2024 coverage"
+
+  - year: 2024
+    gender: "Girls"
+    division: "Div3"
+    status: "planned"
+    priority: 1
+    notes: "Priority 1: Complete 2024 coverage"
+
+  - year: 2024
+    gender: "Girls"
+    division: "Div4"
+    status: "planned"
+    priority: 1
+    notes: "Priority 1: Complete 2024 coverage"
+
+  # ========== 2023 Season ==========
+
+  # PLANNED - Priority 2 (Historical coverage)
+  - year: 2023
+    gender: "Boys"
+    division: "Div1"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2023 historical data"
+
+  - year: 2023
+    gender: "Boys"
+    division: "Div2"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2023 historical data"
+
+  - year: 2023
+    gender: "Boys"
+    division: "Div3"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2023 historical data"
+
+  - year: 2023
+    gender: "Boys"
+    division: "Div4"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2023 historical data"
+
+  - year: 2023
+    gender: "Girls"
+    division: "Div1"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2023 historical data"
+
+  - year: 2023
+    gender: "Girls"
+    division: "Div2"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2023 historical data"
+
+  - year: 2023
+    gender: "Girls"
+    division: "Div3"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2023 historical data"
+
+  - year: 2023
+    gender: "Girls"
+    division: "Div4"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2023 historical data"
+
+  # ========== 2022 Season ==========
+
+  # PLANNED - Priority 2 (Historical coverage)
+  - year: 2022
+    gender: "Boys"
+    division: "Div1"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2022 historical data"
+
+  - year: 2022
+    gender: "Boys"
+    division: "Div2"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2022 historical data"
+
+  - year: 2022
+    gender: "Boys"
+    division: "Div3"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2022 historical data"
+
+  - year: 2022
+    gender: "Boys"
+    division: "Div4"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2022 historical data"
+
+  - year: 2022
+    gender: "Girls"
+    division: "Div1"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2022 historical data"
+
+  - year: 2022
+    gender: "Girls"
+    division: "Div2"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2022 historical data"
+
+  - year: 2022
+    gender: "Girls"
+    division: "Div3"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2022 historical data"
+
+  - year: 2022
+    gender: "Girls"
+    division: "Div4"
+    status: "planned"
+    priority: 2
+    notes: "Priority 2: Add 2022 historical data"
+
+  # ========== 2015-2021 Seasons ==========
+  #
+  # Marked as "future" - will be added after 2022-2024 are complete
+  # Total: 7 years × 2 genders × 4 divisions = 56 fixtures
+  #
+  # To add these: change status from "future" to "planned", acquire fixtures,
+  # validate with inspect_wiaa_fixture.py, update status to "present"
+
+  # 2021
+  - {year: 2021, gender: "Boys", division: "Div1", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2021, gender: "Boys", division: "Div2", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2021, gender: "Boys", division: "Div3", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2021, gender: "Boys", division: "Div4", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2021, gender: "Girls", division: "Div1", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2021, gender: "Girls", division: "Div2", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2021, gender: "Girls", division: "Div3", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2021, gender: "Girls", division: "Div4", status: "future", notes: "Add after 2022-2024 complete"}
+
+  # 2020
+  - {year: 2020, gender: "Boys", division: "Div1", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2020, gender: "Boys", division: "Div2", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2020, gender: "Boys", division: "Div3", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2020, gender: "Boys", division: "Div4", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2020, gender: "Girls", division: "Div1", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2020, gender: "Girls", division: "Div2", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2020, gender: "Girls", division: "Div3", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2020, gender: "Girls", division: "Div4", status: "future", notes: "Add after 2022-2024 complete"}
+
+  # 2019
+  - {year: 2019, gender: "Boys", division: "Div1", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2019, gender: "Boys", division: "Div2", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2019, gender: "Boys", division: "Div3", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2019, gender: "Boys", division: "Div4", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2019, gender: "Girls", division: "Div1", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2019, gender: "Girls", division: "Div2", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2019, gender: "Girls", division: "Div3", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2019, gender: "Girls", division: "Div4", status: "future", notes: "Add after 2022-2024 complete"}
+
+  # 2018
+  - {year: 2018, gender: "Boys", division: "Div1", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2018, gender: "Boys", division: "Div2", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2018, gender: "Boys", division: "Div3", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2018, gender: "Boys", division: "Div4", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2018, gender: "Girls", division: "Div1", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2018, gender: "Girls", division: "Div2", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2018, gender: "Girls", division: "Div3", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2018, gender: "Girls", division: "Div4", status: "future", notes: "Add after 2022-2024 complete"}
+
+  # 2017
+  - {year: 2017, gender: "Boys", division: "Div1", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2017, gender: "Boys", division: "Div2", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2017, gender: "Boys", division: "Div3", status: "future", notes: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2017, gender: "Boys", division: "Div4", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2017, gender: "Girls", division: "Div1", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2017, gender: "Girls", division: "Div2", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2017, gender: "Girls", division: "Div3", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2017, gender: "Girls", division: "Div4", status: "future", notes: "Add after 2022-2024 complete"}
+
+  # 2016
+  - {year: 2016, gender: "Boys", division: "Div1", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2016, gender: "Boys", division: "Div2", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2016, gender: "Boys", division: "Div3", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2016, gender: "Boys", division: "Div4", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2016, gender: "Girls", division: "Div1", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2016, gender: "Girls", division: "Div2", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2016, gender: "Girls", division: "Div3", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2016, gender: "Girls", division: "Div4", status: "future", notes: "Add after 2022-2024 complete"}
+
+  # 2015
+  - {year: 2015, gender: "Boys", division: "Div1", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2015, gender: "Boys", division: "Div2", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2015, gender: "Boys", division: "Div3", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2015, gender: "Boys", division: "Div4", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2015, gender: "Girls", division: "Div1", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2015, gender: "Girls", division: "Div2", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2015, gender: "Girls", division: "Div3", status: "future", notes: "Add after 2022-2024 complete"}
+  - {year: 2015, gender: "Girls", division: "Div4", status: "future", notes: "Add after 2022-2024 complete"}
+
+# Summary:
+# - Present: 2 fixtures (2.5%)
+# - Planned Priority 1: 6 fixtures (2024 Div2-4)
+# - Planned Priority 2: 16 fixtures (2022-2023 all divisions)
+# - Future: 56 fixtures (2015-2021 all divisions)
+# - Total: 80 fixtures

@@ -1,72 +1,54 @@
-"""US DataSource Adapters."""
+"""
+US DataSource Adapters
 
-# National circuits
-from .bound import BoundDataSource
-from .eybl import EYBLDataSource
-from .eybl_girls import EYBLGirlsDataSource
-from .grind_session import GrindSessionDataSource
-from .ote import OTEDataSource
-from .rankone import RankOneDataSource
-from .sblive import SBLiveDataSource
-from .three_ssb import ThreeSSBDataSource
-from .three_ssb_girls import ThreeSSBGirlsDataSource
-from .uaa import UAADataSource
-from .uaa_girls import UAAGirlsDataSource
+This module uses lazy loading to avoid importing all 44 adapters at once.
+Import failures in one adapter (e.g., missing bs4 in bound.py) do NOT break other adapters.
 
-# Regional/State platforms
-from .fhsaa import FHSAADataSource
-from .hhsaa import HHSAADataSource
-from .mn_hub import MNHubDataSource
-from .psal import PSALDataSource
-from .wsn import WSNDataSource
+Recommended Usage (fastest, most explicit):
+    from src.datasources.us.wisconsin_wiaa import WisconsinWiaaDataSource
 
-# State associations - Southeast
-from .alabama_ahsaa import AlabamaAhsaaDataSource
-from .arkansas_aaa import ArkansasAaaDataSource
-from .georgia_ghsa import GeorgiaGhsaDataSource
-from .kentucky_khsaa import KentuckyKhsaaDataSource
-from .louisiana_lhsaa import LouisianaLhsaaDataSource
-from .mississippi_mhsaa import MississippiMhsaaDataSource
-from .nchsaa import NCHSAADataSource
-from .south_carolina_schsl import SouthCarolinaSchslDataSource
-from .tennessee_tssaa import TennesseeTssaaDataSource
-from .virginia_vhsl import VirginiaVhslDataSource
-from .west_virginia_wvssac import WestVirginiaWvssacDataSource
+Registry Usage (dynamic loading):
+    from src.datasources.us.registry import get_adapter_class, create_state_adapter
+    WisconsinWiaaDataSource = get_adapter_class("WisconsinWiaaDataSource")
+    source = create_state_adapter("WI")
 
-# State associations - Northeast
-from .connecticut_ciac import ConnecticutCiacDataSource
-from .delaware_diaa import DelawareDiaaDataSource
-from .maine_mpa import MaineMpaDataSource
-from .maryland_mpssaa import MarylandMpssaaDataSource
-from .massachusetts_miaa import MassachusettsMiaaDataSource
-from .nepsac import NEPSACDataSource
-from .new_hampshire_nhiaa import NewHampshireNhiaaDataSource
-from .new_jersey_njsiaa import NewJerseyNjsiaaDataSource
-from .pennsylvania_piaa import PennsylvaniaPiaaDataSource
-from .rhode_island_riil import RhodeIslandRiilDataSource
-from .vermont_vpa import VermontVpaDataSource
+Backwards Compatible (lazy via __getattr__):
+    from src.datasources.us import WisconsinWiaaDataSource, BoundDataSource
 
-# State associations - Midwest
-from .indiana_ihsaa import IndianaIhsaaDataSource
-from .kansas_kshsaa import KansasKshsaaDataSource
-from .michigan_mhsaa import MichiganMhsaaDataSource
-from .missouri_mshsaa import MissouriMshsaaDataSource
-from .nebraska_nsaa import NebraskaNsaaDataSource
-from .north_dakota_ndhsaa import NorthDakotaNdhsaaDataSource
-from .ohio_ohsaa import OhioOhsaaDataSource
-from .wisconsin_wiaa import WisconsinWiaaDataSource
+Design Benefits:
+- Only imports adapters you actually use (1 module vs 44 modules)
+- Clear error messages with full tracebacks when imports fail
+- Isolated failures (broken adapter doesn't break others)
+- Backwards compatible with existing code
+"""
 
-# State associations - Southwest/West
-from .alaska_asaa import AlaskaAsaaDataSource
-from .colorado_chsaa import ColoradoChsaaDataSource
-from .dc_dciaa import DcDciaaDataSource
-from .montana_mhsa import MontanaMhsaDataSource
-from .new_mexico_nmaa import NewMexicoNmaaDataSource
-from .oklahoma_ossaa import OklahomaOssaaDataSource
-from .utah_uhsaa import UtahUhsaaDataSource
-from .wyoming_whsaa import WyomingWhsaaDataSource
+from typing import Any
 
+from .registry import ADAPTERS, get_adapter_class
+
+# Export registry functions for convenience
+from .registry import (  # noqa: F401
+    STATE_TO_ADAPTER,
+    create_adapter,
+    create_state_adapter,
+    get_state_adapter_class,
+    list_adapters,
+    list_states,
+)
+
+# __all__ maintained for IDE autocomplete and explicit exports
+# Note: These are lazily loaded via __getattr__ below, NOT eagerly imported
 __all__ = [
+    # Registry functions
+    "ADAPTERS",
+    "STATE_TO_ADAPTER",
+    "get_adapter_class",
+    "get_state_adapter_class",
+    "create_adapter",
+    "create_state_adapter",
+    "list_adapters",
+    "list_states",
+    # National circuits (11 adapters)
     "BoundDataSource",
     "EYBLDataSource",
     "EYBLGirlsDataSource",
@@ -78,11 +60,13 @@ __all__ = [
     "ThreeSSBGirlsDataSource",
     "UAADataSource",
     "UAAGirlsDataSource",
+    # Regional/State platforms (5 adapters)
     "FHSAADataSource",
     "HHSAADataSource",
     "MNHubDataSource",
     "PSALDataSource",
     "WSNDataSource",
+    # State associations - Southeast (11 adapters)
     "AlabamaAhsaaDataSource",
     "ArkansasAaaDataSource",
     "GeorgiaGhsaDataSource",
@@ -94,6 +78,7 @@ __all__ = [
     "TennesseeTssaaDataSource",
     "VirginiaVhslDataSource",
     "WestVirginiaWvssacDataSource",
+    # State associations - Northeast (11 adapters)
     "ConnecticutCiacDataSource",
     "DelawareDiaaDataSource",
     "MaineMpaDataSource",
@@ -105,6 +90,7 @@ __all__ = [
     "PennsylvaniaPiaaDataSource",
     "RhodeIslandRiilDataSource",
     "VermontVpaDataSource",
+    # State associations - Midwest (8 adapters)
     "IndianaIhsaaDataSource",
     "KansasKshsaaDataSource",
     "MichiganMhsaaDataSource",
@@ -113,6 +99,7 @@ __all__ = [
     "NorthDakotaNdhsaaDataSource",
     "OhioOhsaaDataSource",
     "WisconsinWiaaDataSource",
+    # State associations - Southwest/West (8 adapters)
     "AlaskaAsaaDataSource",
     "ColoradoChsaaDataSource",
     "DcDciaaDataSource",
@@ -122,3 +109,50 @@ __all__ = [
     "UtahUhsaaDataSource",
     "WyomingWhsaaDataSource",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    """
+    Lazy import mechanism for backwards compatibility.
+
+    When you do: from src.datasources.us import WisconsinWiaaDataSource
+    Python calls: __getattr__("WisconsinWiaaDataSource")
+
+    This function then imports ONLY that adapter (not all 44).
+
+    Benefits:
+    - Backwards compatible with existing code
+    - Only imports what you use
+    - Clear error messages if adapter fails to import
+
+    Args:
+        name: Adapter class name being requested
+
+    Returns:
+        The adapter class
+
+    Raises:
+        AttributeError: If adapter not in registry
+        ImportError: If adapter module cannot be imported
+    """
+    if name in ADAPTERS:
+        try:
+            return get_adapter_class(name)
+        except (ImportError, AttributeError) as e:
+            # Re-raise with context that this came from lazy loading
+            raise ImportError(
+                f"Failed to lazy-load adapter '{name}' from src.datasources.us. "
+                f"Original error: {e}"
+            ) from e
+
+    # Standard behavior for unknown attributes
+    raise AttributeError(f"module 'src.datasources.us' has no attribute '{name}'")
+
+
+def __dir__() -> list[str]:
+    """
+    Custom dir() for better IDE autocomplete.
+
+    Returns all available adapter names plus registry functions.
+    """
+    return __all__

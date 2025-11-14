@@ -20,10 +20,13 @@ Implementation Phases:
 - Phase 4: Historical backfill (2015-2025)
 - Phase 5: Validation and diagnostics
 - Phase 6: Metadata enhancements (venues, neutral courts, etc.)
+- Phase 7: Fixture-based testing mode (avoids HTTP 403s)
 """
 
 import re
 from datetime import datetime
+from enum import Enum
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from ...models import (
@@ -38,6 +41,18 @@ from ...models import (
 )
 from ...utils import get_text_or_none, parse_html, parse_int
 from ..base_association import AssociationAdapterBase
+
+
+class DataMode(str, Enum):
+    """
+    Data fetching mode for Wisconsin WIAA adapter.
+
+    LIVE: Fetch bracket data from halftime.wiaawi.org via HTTP (production mode)
+    FIXTURE: Load bracket data from local HTML files (testing mode, avoids HTTP 403s)
+    """
+
+    LIVE = "live"
+    FIXTURE = "fixture"
 
 
 class WisconsinWiaaDataSource(AssociationAdapterBase):
@@ -60,14 +75,31 @@ class WisconsinWiaaDataSource(AssociationAdapterBase):
     DIVISIONS = ["Div1", "Div2", "Div3", "Div4", "Div5"]
     GENDERS = ["Boys", "Girls"]
 
-    def __init__(self):
-        """Initialize Wisconsin WIAA datasource."""
+    def __init__(
+        self,
+        data_mode: DataMode = DataMode.LIVE,
+        fixtures_dir: Optional[Path] = None
+    ):
+        """
+        Initialize Wisconsin WIAA datasource.
+
+        Args:
+            data_mode: Data fetching mode (LIVE or FIXTURE)
+                - LIVE: Fetch from halftime.wiaawi.org via HTTP (default, production mode)
+                - FIXTURE: Load from local HTML files (testing mode, no network calls)
+            fixtures_dir: Directory containing fixture HTML files (only used in FIXTURE mode)
+                Defaults to tests/fixtures/wiaa if not specified
+        """
         super().__init__()
         self.state_code = "WI"
         self.league_name = "Wisconsin High School"
         self.league_abbrev = "WIAA"
 
-        # HTTP statistics tracking
+        # Data fetching mode
+        self.data_mode = data_mode
+        self.fixtures_dir = fixtures_dir or Path("tests/fixtures/wiaa")
+
+        # HTTP statistics tracking (only relevant in LIVE mode)
         self.http_stats = {
             "brackets_requested": 0,
             "brackets_successful": 0,
@@ -259,6 +291,108 @@ class WisconsinWiaaDataSource(AssociationAdapterBase):
 
         return stats
 
+    def _load_bracket_fixture(
+        self,
+        year: int,
+        gender: str,
+        division: str
+    ) -> Optional[str]:
+        """
+        Load bracket HTML from local fixture file (FIXTURE mode only).
+
+        Constructs filename from year, gender, and division, then loads HTML from
+        fixtures_dir. This enables testing without network calls and avoids HTTP 403s.
+
+        Args:
+            year: Tournament year (e.g., 2024)
+            gender: "Boys" or "Girls"
+            division: Division string (e.g., "Div1", "Div2")
+
+        Returns:
+            HTML content as string, or None if fixture file not found
+
+        Raises:
+            FileNotFoundError: If fixture file doesn't exist
+            IOError: If file cannot be read
+
+        Example:
+            For year=2024, gender="Boys", division="Div1":
+            Loads from: tests/fixtures/wiaa/2024_Basketball_Boys_Div1.html
+        """
+        # Construct fixture filename matching WIAA URL pattern
+        filename = f"{year}_Basketball_{gender}_{division}.html"
+        fixture_path = self.fixtures_dir / filename
+
+        try:
+            if not fixture_path.exists():
+                self.logger.debug(
+                    f"Fixture file not found",
+                    path=str(fixture_path),
+                    year=year,
+                    gender=gender,
+                    division=division
+                )
+                return None
+
+            # Load HTML from fixture file
+            html = fixture_path.read_text(encoding="utf-8")
+
+            self.logger.debug(
+                f"Loaded bracket fixture",
+                path=str(fixture_path),
+                html_length=len(html)
+            )
+
+            return html
+
+        except FileNotFoundError:
+            self.logger.warning(
+                f"Fixture file not found",
+                path=str(fixture_path)
+            )
+            return None
+        except Exception as e:
+            self.logger.error(
+                f"Error loading fixture file",
+                path=str(fixture_path),
+                error=str(e)
+            )
+            return None
+
+    async def _fetch_or_load_bracket(
+        self,
+        url: str,
+        year: int,
+        gender: str,
+        division: Optional[str]
+    ) -> Optional[str]:
+        """
+        Fetch bracket HTML from live source or load from fixture based on data_mode.
+
+        This is the unified entry point for bracket data retrieval. Routes to:
+        - LIVE mode: _fetch_bracket_with_retry() with HTTP retries/backoff
+        - FIXTURE mode: _load_bracket_fixture() from local HTML files
+
+        Args:
+            url: Bracket URL (only used in LIVE mode)
+            year: Tournament year
+            gender: "Boys" or "Girls"
+            division: Division string (e.g., "Div1")
+
+        Returns:
+            HTML content as string, or None if unavailable
+        """
+        if self.data_mode == DataMode.FIXTURE:
+            # Load from fixture file (no network call)
+            if division is None:
+                self.logger.warning("Division required for FIXTURE mode")
+                return None
+            return self._load_bracket_fixture(year, gender, division)
+
+        else:  # DataMode.LIVE
+            # Fetch from live HTTP source with retries
+            return await self._fetch_bracket_with_retry(url)
+
     def _get_season_url(self, season: str, gender: str = "Boys") -> str:
         """
         Get URL for Wisconsin basketball season data.
@@ -305,26 +439,35 @@ class WisconsinWiaaDataSource(AssociationAdapterBase):
             division=division
         )
 
-        # Discover bracket URLs
-        bracket_urls = await self._discover_bracket_urls(year, gender, division)
+        # In FIXTURE mode, use simplified URL generation (no discovery, no HTTP calls)
+        if self.data_mode == DataMode.FIXTURE:
+            bracket_urls = self._generate_fixture_urls(year, gender, division)
+        else:
+            # LIVE mode: Discover bracket URLs via HTTP
+            bracket_urls = await self._discover_bracket_urls(year, gender, division)
 
-        if not bracket_urls:
-            self.logger.warning(
-                f"No bracket URLs discovered for Wisconsin WIAA",
-                year=year,
-                gender=gender
-            )
-            # Fall back to pattern-based URL generation
-            bracket_urls = self._generate_bracket_urls(year, gender, division)
+            if not bracket_urls:
+                self.logger.warning(
+                    f"No bracket URLs discovered for Wisconsin WIAA",
+                    year=year,
+                    gender=gender
+                )
+                # Fall back to pattern-based URL generation
+                bracket_urls = self._generate_bracket_urls(year, gender, division)
 
         # Parse all discovered brackets
         all_games: List[Game] = []
         for url_info in bracket_urls:
-            # Fetch HTML with robust error handling
-            html = await self._fetch_bracket_with_retry(url_info["url"])
+            # Fetch HTML (LIVE mode) or load fixture (FIXTURE mode)
+            html = await self._fetch_or_load_bracket(
+                url=url_info["url"],
+                year=year,
+                gender=gender,
+                division=url_info.get("division")
+            )
 
             if html is None:
-                # Bracket fetch failed or doesn't exist (404) - skip silently
+                # Bracket fetch/load failed or doesn't exist - skip silently
                 continue
 
             try:
@@ -362,6 +505,165 @@ class WisconsinWiaaDataSource(AssociationAdapterBase):
         )
 
         return all_games
+
+    async def get_season_data(self, season: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get season-level data for Wisconsin WIAA basketball.
+
+        In FIXTURE mode: Aggregates tournament games from available fixtures for the season.
+        In LIVE mode: Delegates to base class implementation (may query WIAA APIs).
+
+        Args:
+            season: Season string (e.g., "2023-24", "2024-25"), None for current
+
+        Returns:
+            Dict with season data:
+                - games: List[Game] - All tournament games for the season
+                - teams: List[Team] - Unique teams participating
+                - metadata: Dict - Season info (year, divisions covered, etc.)
+
+        Example:
+            # FIXTURE mode - aggregates from local HTML fixtures
+            source = WisconsinWiaaDataSource(data_mode=DataMode.FIXTURE)
+            season_data = await source.get_season_data("2023-24")
+            # Returns games from all available 2024 Boys/Girls Div1-4 fixtures
+
+            # LIVE mode - queries WIAA website
+            source = WisconsinWiaaDataSource(data_mode=DataMode.LIVE)
+            season_data = await source.get_season_data("2023-24")
+        """
+        # In FIXTURE mode, aggregate from available fixtures
+        if self.data_mode == DataMode.FIXTURE:
+            return await self._get_season_data_from_fixtures(season)
+
+        # LIVE mode: delegate to base class
+        return await super().get_season_data(season)
+
+    async def _get_season_data_from_fixtures(self, season: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get season data by aggregating from available fixture files.
+
+        This method is only called in FIXTURE mode. It loads all available
+        fixtures for the given season and aggregates them into season-level data.
+
+        Args:
+            season: Season string (e.g., "2023-24"), None for current
+
+        Returns:
+            Dict with games, teams, and metadata
+        """
+        # Parse season to get tournament year
+        # Season "2023-24" -> tournament year 2024 (spring year)
+        if season is None:
+            now = datetime.now()
+            year = now.year + 1 if now.month >= 8 else now.year
+        else:
+            # Parse season like "2023-24" -> 2024
+            parts = season.split("-")
+            if len(parts) == 2:
+                year = int(parts[1]) + 2000 if len(parts[1]) == 2 else int(parts[1])
+            else:
+                # Single year format
+                year = int(parts[0])
+
+        self.logger.info(
+            f"Getting season data from fixtures",
+            season=season,
+            year=year,
+            mode="FIXTURE"
+        )
+
+        # Collect all games from available fixtures for this year
+        all_games: List[Game] = []
+        divisions_covered = set()
+
+        for gender in self.GENDERS:
+            for division in self.DIVISIONS:
+                # Check if fixture exists
+                fixture_path = self.fixtures_dir / f"{year}_Basketball_{gender}_{division}.html"
+                if not fixture_path.exists():
+                    self.logger.debug(
+                        f"Fixture not found, skipping",
+                        year=year,
+                        gender=gender,
+                        division=division
+                    )
+                    continue
+
+                try:
+                    games = await self.get_tournament_brackets(
+                        year=year,
+                        gender=gender,
+                        division=division
+                    )
+
+                    all_games.extend(games)
+                    divisions_covered.add(f"{gender}_{division}")
+
+                    self.logger.info(
+                        f"Loaded games from fixture",
+                        year=year,
+                        gender=gender,
+                        division=division,
+                        games_count=len(games)
+                    )
+
+                except Exception as e:
+                    self.logger.warning(
+                        f"Failed to load fixture",
+                        year=year,
+                        gender=gender,
+                        division=division,
+                        error=str(e)
+                    )
+
+        # Extract unique teams
+        teams_dict: Dict[str, Team] = {}
+        for game in all_games:
+            # Home team
+            if game.home_team_id not in teams_dict:
+                teams_dict[game.home_team_id] = Team(
+                    team_id=game.home_team_id,
+                    team_name=game.home_team_name,
+                    state=self.state_code,
+                    level=TeamLevel.HIGH_SCHOOL_VARSITY,
+                    conference=f"WIAA {self.state_code}",
+                    data_source=game.data_source
+                )
+
+            # Away team
+            if game.away_team_id not in teams_dict:
+                teams_dict[game.away_team_id] = Team(
+                    team_id=game.away_team_id,
+                    team_name=game.away_team_name,
+                    state=self.state_code,
+                    level=TeamLevel.HIGH_SCHOOL_VARSITY,
+                    conference=f"WIAA {self.state_code}",
+                    data_source=game.data_source
+                )
+
+        teams = list(teams_dict.values())
+
+        self.logger.info(
+            f"Season data aggregated from fixtures",
+            season=season,
+            year=year,
+            total_games=len(all_games),
+            total_teams=len(teams),
+            divisions_covered=sorted(divisions_covered)
+        )
+
+        return {
+            "games": all_games,
+            "teams": teams,
+            "metadata": {
+                "season": season or f"{year-1}-{str(year)[-2:]}",
+                "year": year,
+                "divisions_covered": sorted(divisions_covered),
+                "fixture_count": len(divisions_covered),
+                "data_mode": "FIXTURE"
+            }
+        }
 
     async def _discover_bracket_urls(
         self,
@@ -501,6 +803,43 @@ class WisconsinWiaaDataSource(AssociationAdapterBase):
                     "year": str(year),
                     "gender": gender
                 })
+
+        return urls
+
+    def _generate_fixture_urls(
+        self,
+        year: int,
+        gender: str,
+        division: Optional[str] = None
+    ) -> List[Dict[str, str]]:
+        """
+        Generate fixture URLs for FIXTURE mode.
+
+        Uses simplified URL pattern matching fixture file naming:
+        {year}_Basketball_{gender}_{division}.html
+
+        Args:
+            year: Tournament year
+            gender: "Boys" or "Girls"
+            division: Optional specific division
+
+        Returns:
+            List of dicts with {"url": str, "division": str}
+        """
+        urls: List[Dict[str, str]] = []
+        divisions = [division] if division else self.DIVISIONS
+
+        for div in divisions:
+            # Simple fixture filename (no sectional suffix)
+            filename = f"{year}_Basketball_{gender}_{div}.html"
+            url = f"{self.brackets_url}/{filename}"
+
+            urls.append({
+                "url": url,
+                "division": div,
+                "year": str(year),
+                "gender": gender
+            })
 
         return urls
 
@@ -673,6 +1012,10 @@ class WisconsinWiaaDataSource(AssociationAdapterBase):
                     )
 
                     # Create Game object
+                    # Use placeholder date if current_date is None (TODO: full date parsing)
+                    if current_date is None:
+                        current_date = datetime(year, 3, 1)  # Default to March 1st for tournament games
+
                     game = Game(
                         game_id=game_id,
                         home_team_name=home_team,
@@ -683,7 +1026,7 @@ class WisconsinWiaaDataSource(AssociationAdapterBase):
                         away_score=away_score,
                         game_date=current_date,
                         game_type=GameType.TOURNAMENT,
-                        status=GameStatus.COMPLETED,
+                        status=GameStatus.FINAL,
                         season=f"{year-1}-{str(year)[-2:]}",
                         round=current_round,
                         location=current_location,

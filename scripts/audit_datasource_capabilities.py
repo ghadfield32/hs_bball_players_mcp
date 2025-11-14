@@ -26,7 +26,7 @@ from src.datasources.base import BaseDataSource
 from src.datasources.us.illinois_ihsa import IllinoisIHSADataSource
 from src.datasources.us.iowa_ihsaa import IowaIHSAADataSource
 from src.datasources.us.south_dakota_sdhsaa import SouthDakotaSdhsaaDataSource
-from src.datasources.us.wisconsin_wiaa import WIAADataSource
+from src.datasources.us.wisconsin_wiaa import WisconsinWiaaDataSource
 from src.datasources.us.wisconsin_maxpreps import MaxPrepsWisconsinDataSource
 
 # Phase 16 adapters
@@ -459,7 +459,7 @@ async def main():
     elif args.source == "sdhsaa":
         sources = [SouthDakotaSdhsaaDataSource()]
     elif args.source == "wiaa":
-        sources = [WIAADataSource()]
+        sources = [WisconsinWiaaDataSource()]
     elif args.source == "maxpreps_wi":
         sources = [MaxPrepsWisconsinDataSource()]
     # Phase 16 adapters
@@ -491,7 +491,7 @@ async def main():
             IllinoisIHSADataSource(),
             IowaIHSAADataSource(),
             SouthDakotaSdhsaaDataSource(),
-            WIAADataSource(),
+            WisconsinWiaaDataSource(),
             MaxPrepsWisconsinDataSource(),
             # Phase 16
             ArizonaAIADataSource(),
