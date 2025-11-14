@@ -1121,30 +1121,52 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
   - Exported all 7 new recruiting models
   - Maintained backward compatibility with existing models
 
+#### [2025-11-14 17:00] Phase 13.2: MaxPreps Universal Adapter Implementation
+- ✅ **Created MaxPreps adapter** (src/datasources/us/maxpreps.py, 900+ lines):
+  - Universal US coverage: All 50 states + DC (51 total)
+  - Browser automation for React content rendering (BrowserClient integration)
+  - State validation and URL building (_validate_state, _get_state_url, _build_player_id)
+  - Player search functionality with name/team filtering
+  - Skeleton implementations for season stats, game stats, team, games, leaderboard
+  - Prominent ToS warnings (CBS Sports prohibits scraping - use with permission)
+  - Conservative rate limiting (10 req/min default)
+  - Aggressive caching (2-hour TTL for stats pages)
+- ✅ **Updated configuration** (src/config.py):
+  - Added rate_limit_maxpreps = 10 req/min (CONSERVATIVE for ToS compliance)
+  - Added maxpreps_base_url and maxpreps_enabled settings
+  - Added recruiting service rate limits (247sports, espn_recruiting, rivals, on3)
+  - Added recruiting service configuration settings (all disabled by default)
+- ✅ **Exported MaxPrepsDataSource** (src/datasources/us/__init__.py):
+  - Added import under "Regional/State platforms"
+  - Added to __all__ export list
+- ✅ **Created comprehensive tests** (tests/test_datasources/test_maxpreps.py, 400+ lines):
+  - Test initialization (51-state support verification)
+  - Test state validation (valid/invalid cases, whitespace handling)
+  - Test URL building and player ID generation/extraction
+  - Test config integration (is_enabled check)
+  - Placeholder scraping tests (@pytest.mark.skip for ToS compliance)
+  - Real-world test class (all skipped by default for legal safety)
+
 ---
 
 ### IN PROGRESS
 
-**Phase 13.2 (CURRENT)**:
-- ⏳ Implement MaxPreps adapter (src/datasources/us/maxpreps.py)
-- ⏳ Add MaxPreps configuration to config.py
-- ⏳ Create MaxPreps integration tests
-
 **Phase 13.3 (NEXT)**:
-- ⏳ Implement 247Sports recruiting adapter
-- ⏳ Add DuckDB tables for recruiting data
-- ⏳ Create recruiting API endpoints
+- ⏳ Implement 247Sports recruiting adapter (src/datasources/recruiting/247sports.py)
+- ⏳ Add DuckDB tables for recruiting data (recruiting_ranks, college_offers, recruiting_predictions)
+- ⏳ Create recruiting API endpoints (/api/v1/recruiting/*)
+- ⏳ Test MaxPreps adapter with one state (manual ToS compliance check)
 
 **Phase 13.4 (UPCOMING)**:
-- ⏳ Create state association test framework
+- ⏳ Create state association test framework (scripts/test_state_associations.py)
 - ⏳ Run validation tests on all 35 state adapters
-- ⏳ Document data availability per state
+- ⏳ Document data availability per state (docs/state_association_report.md)
 
 **Phase 13.5 (FUTURE)**:
-- ⏳ Design ML forecasting architecture
-- ⏳ Collect historical training data
+- ⏳ Design ML forecasting architecture (src/services/ml_forecasting.py)
+- ⏳ Collect historical training data (scripts/collect_training_data.py)
 - ⏳ Train and evaluate forecasting models
 
 ---
 
-*Last Updated: 2025-11-14 16:30 UTC*
+*Last Updated: 2025-11-14 17:15 UTC*

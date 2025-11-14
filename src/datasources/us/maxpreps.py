@@ -1,0 +1,802 @@
+"""
+MaxPreps DataSource Adapter
+
+Scrapes player and team statistics from MaxPreps.
+UNIVERSAL COVERAGE: All 50 US states + DC.
+
+**LEGAL WARNING**:
+MaxPreps (CBS Sports Interactive) Terms of Service prohibit automated scraping.
+This adapter is provided for:
+1. Educational purposes
+2. Research and analysis
+3. With explicit permission from MaxPreps/CBS Sports
+
+RECOMMENDED: Contact MaxPreps for commercial data licensing
+Email: coachsupport@maxpreps.com | Phone: 800-329-7324
+
+**DO NOT use this adapter for commercial purposes without authorization.**
+
+Base URL: https://www.maxpreps.com
+Data Available:
+    - Player season stats (PPG, RPG, APG, FG%, 3P%, FT%, etc.)
+    - Player game logs
+    - Team schedules and scores
+    - State rankings and leaderboards
+    - Grad year, height, weight, position
+
+Browser Automation: Required (MaxPreps uses React/dynamic content)
+"""
+
+from datetime import datetime
+from typing import List, Optional
+
+from ...models import (
+    DataQualityFlag,
+    DataSourceRegion,
+    DataSourceType,
+    Game,
+    Player,
+    PlayerGameStats,
+    PlayerLevel,
+    PlayerSeasonStats,
+    Position,
+    Team,
+)
+from ...utils import (
+    clean_player_name,
+    extract_table_data,
+    get_text_or_none,
+    parse_float,
+    parse_html,
+    parse_int,
+)
+from ...utils.browser_client import BrowserClient
+from ...utils.scraping_helpers import (
+    find_stat_table,
+    parse_grad_year,
+    standardize_stat_columns,
+)
+from ..base import BaseDataSource
+
+
+class MaxPrepsDataSource(BaseDataSource):
+    """
+    MaxPreps data source adapter with universal US state coverage.
+
+    Provides access to high school basketball statistics across all 50 US states + DC.
+    Uses browser automation to handle React-based dynamic content.
+
+    **IMPORTANT - LEGAL COMPLIANCE**:
+    - MaxPreps Terms of Service prohibit scraping
+    - This adapter should only be used with explicit permission
+    - Recommended: Purchase commercial data license from MaxPreps
+    - Alternative: Use for educational/research purposes only
+
+    **Supported States**: All 50 US states + DC (51 total)
+
+    **Data Quality**: High (official state stats partner in many states)
+
+    **Rate Limiting**: Conservative (10 req/min default)
+
+    **Caching**: Aggressive (2-hour TTL) to minimize network requests
+
+    Base URL: https://www.maxpreps.com
+    Browser Automation: Required (React rendering)
+    """
+
+    source_type = DataSourceType.MAXPREPS
+    source_name = "MaxPreps"
+    base_url = "https://www.maxpreps.com"
+    region = DataSourceRegion.US
+
+    # All US states + DC (51 total)
+    ALL_US_STATES = [
+        "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+        "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+        "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+        "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+        "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "DC"
+    ]
+
+    # State full names for metadata and logging
+    STATE_NAMES = {
+        "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas",
+        "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware",
+        "FL": "Florida", "GA": "Georgia", "HI": "Hawaii", "ID": "Idaho",
+        "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas",
+        "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
+        "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi",
+        "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada",
+        "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York",
+        "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma",
+        "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina",
+        "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah",
+        "VT": "Vermont", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia",
+        "WI": "Wisconsin", "WY": "Wyoming", "DC": "District of Columbia"
+    }
+
+    def __init__(self):
+        """
+        Initialize MaxPreps datasource with universal US coverage.
+
+        Sets up:
+        - Browser automation client (required for React content)
+        - State-specific URL patterns for all 51 states
+        - Aggressive caching to minimize network requests
+        - Conservative rate limiting for ToS compliance
+        """
+        super().__init__()
+
+        # Build state-specific URL patterns for all 51 states
+        # URL Pattern: https://www.maxpreps.com/{state}/basketball/
+        self.state_urls = {
+            state: f"{self.base_url}/{state.lower()}/basketball"
+            for state in self.ALL_US_STATES
+        }
+
+        # Initialize browser client for React content rendering
+        # MaxPreps uses React for stats tables and dynamic content
+        self.browser_client = BrowserClient(
+            settings=self.settings,
+            browser_type=getattr(self.settings, 'browser_type', "chromium"),
+            headless=getattr(self.settings, 'browser_headless', True),
+            timeout=getattr(self.settings, 'browser_timeout', 30000),
+            cache_enabled=getattr(self.settings, 'browser_cache_enabled', True),
+            cache_ttl=getattr(self.settings, 'browser_cache_ttl', 7200),  # 2 hours
+        )
+
+        self.logger.info(
+            f"MaxPreps initialized with {len(self.ALL_US_STATES)} states",
+            states_count=len(self.ALL_US_STATES),
+            browser_automation=True,
+            cache_ttl_hours=2,
+        )
+
+        # Log legal warning
+        self.logger.warning(
+            "MaxPreps ToS prohibits scraping - use with explicit permission only",
+            recommendation="Contact MaxPreps for commercial data licensing",
+        )
+
+    def _validate_state(self, state: Optional[str]) -> str:
+        """
+        Validate and normalize state parameter.
+
+        Ensures state is valid 2-letter US state code.
+        Fails fast to avoid unnecessary network calls.
+
+        Args:
+            state: State code (e.g., "CA", "TX", "NY")
+
+        Returns:
+            Uppercase state code
+
+        Raises:
+            ValueError: If state is None, empty, or not in ALL_US_STATES
+
+        Example:
+            >>> self._validate_state("ca")
+            "CA"
+            >>> self._validate_state("ZZ")
+            ValueError: State 'ZZ' not supported
+        """
+        if not state:
+            raise ValueError(
+                f"State parameter required. Supported: {', '.join(self.ALL_US_STATES)}"
+            )
+
+        state = state.upper().strip()
+
+        if state not in self.ALL_US_STATES:
+            raise ValueError(
+                f"State '{state}' not supported. "
+                f"Supported: {', '.join(self.ALL_US_STATES)}"
+            )
+
+        return state
+
+    def _get_state_url(self, state: str, endpoint: str = "") -> str:
+        """
+        Build state-specific URL for MaxPreps endpoints.
+
+        Constructs URLs for different MaxPreps pages (stats, rankings, teams, etc.)
+
+        Args:
+            state: Validated state code (must call _validate_state first)
+            endpoint: Additional path segment (e.g., "stat-leaders", "rankings")
+
+        Returns:
+            Full URL for the requested state endpoint
+
+        Example:
+            >>> self._get_state_url("CA", "stat-leaders")
+            "https://www.maxpreps.com/ca/basketball/stat-leaders"
+
+            >>> self._get_state_url("TX")
+            "https://www.maxpreps.com/tx/basketball"
+        """
+        base = self.state_urls[state]
+        if endpoint:
+            return f"{base}/{endpoint.lstrip('/')}"
+        return base
+
+    def _build_player_id(self, state: str, player_name: str, player_school: Optional[str] = None) -> str:
+        """
+        Build MaxPreps player ID with state and school context.
+
+        Creates unique identifier for cross-referencing players.
+        Format: maxpreps_{state}_{school}_{name} (all lowercase, underscores)
+
+        Args:
+            state: State code
+            player_name: Player full name
+            player_school: School name (optional but recommended for uniqueness)
+
+        Returns:
+            Player ID string
+
+        Example:
+            >>> self._build_player_id("CA", "John Doe", "Lincoln High")
+            "maxpreps_ca_lincoln_high_john_doe"
+
+            >>> self._build_player_id("TX", "Jane Smith")
+            "maxpreps_tx_jane_smith"
+        """
+        clean_name = clean_player_name(player_name).lower().replace(" ", "_")
+
+        if player_school:
+            clean_school = player_school.lower().replace(" ", "_").replace("high_school", "hs")
+            return f"maxpreps_{state.lower()}_{clean_school}_{clean_name}"
+
+        return f"maxpreps_{state.lower()}_{clean_name}"
+
+    def _extract_state_from_player_id(self, player_id: str) -> Optional[str]:
+        """
+        Extract state code from MaxPreps player ID.
+
+        Parses player ID to determine which state the player is from.
+
+        Args:
+            player_id: Player ID (format: maxpreps_{state}_{school}_{name})
+
+        Returns:
+            State code or None if invalid format
+
+        Example:
+            >>> self._extract_state_from_player_id("maxpreps_ca_lincoln_hs_john_doe")
+            "CA"
+
+            >>> self._extract_state_from_player_id("invalid_id")
+            None
+        """
+        parts = player_id.split("_")
+        if len(parts) >= 2 and parts[0] == "maxpreps":
+            state = parts[1].upper()
+            return state if state in self.ALL_US_STATES else None
+        return None
+
+    async def get_player(self, player_id: str) -> Optional[Player]:
+        """
+        Get player by MaxPreps player ID.
+
+        MaxPreps doesn't have direct player profile pages accessible by simple ID.
+        This method extracts state from player_id and searches through stats tables.
+
+        Args:
+            player_id: Player identifier (format: maxpreps_{state}_{school}_{name})
+
+        Returns:
+            Player object or None if not found
+
+        Example:
+            >>> player = await maxpreps.get_player("maxpreps_ca_lincoln_hs_john_doe")
+        """
+        try:
+            # Extract state from player_id
+            state = self._extract_state_from_player_id(player_id)
+            if not state:
+                self.logger.warning(
+                    "Could not extract state from player_id",
+                    player_id=player_id
+                )
+                return None
+
+            # Extract player name from ID (simplified)
+            # Format: maxpreps_{state}_{school}_{firstname}_{lastname}
+            name_parts = player_id.replace(f"maxpreps_{state.lower()}_", "").split("_")
+            # Remove school part (usually first 1-2 segments)
+            # This is a simplified extraction - may need refinement
+            player_name = " ".join(name_parts[-2:]).title() if len(name_parts) >= 2 else " ".join(name_parts).title()
+
+            # Search for player in state stats
+            players = await self.search_players(state=state, name=player_name, limit=1)
+            return players[0] if players else None
+
+        except Exception as e:
+            self.logger.error(
+                "Failed to get player by ID",
+                player_id=player_id,
+                error=str(e),
+                error_type=type(e).__name__
+            )
+            return None
+
+    async def search_players(
+        self,
+        state: str,
+        name: Optional[str] = None,
+        team: Optional[str] = None,
+        season: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[Player]:
+        """
+        Search for players in MaxPreps state stats tables.
+
+        **PRIMARY METHOD** for finding players. Fetches state leaderboard/stats page
+        and extracts player data from HTML tables.
+
+        **Implementation Steps:**
+        1. Validate state parameter (fail fast)
+        2. Build stats URL for state
+        3. Use BrowserClient to render React content
+        4. Find stats table in rendered HTML
+        5. Parse player rows and extract stats
+        6. Filter by name/team if provided
+        7. Return list of Player objects
+
+        Args:
+            state: US state code (required, e.g., "CA", "TX", "NY")
+            name: Player name filter (partial match, case-insensitive)
+            team: Team/school name filter (partial match, case-insensitive)
+            season: Season filter (e.g., "2024-25") - currently uses latest
+            limit: Maximum number of results to return
+
+        Returns:
+            List of Player objects matching search criteria
+
+        Raises:
+            ValueError: If state is invalid
+
+        Example:
+            >>> players = await maxpreps.search_players(
+            ...     state="CA",
+            ...     name="Smith",
+            ...     team="Lincoln",
+            ...     limit=10
+            ... )
+        """
+        try:
+            # Step 1: Validate state (fail fast before network call)
+            state = self._validate_state(state)
+
+            self.logger.info(
+                "Searching MaxPreps players",
+                state=state,
+                state_name=self.STATE_NAMES.get(state),
+                name_filter=name,
+                team_filter=team,
+                limit=limit
+            )
+
+            # Step 2: Build state stats/leaderboard URL
+            # MaxPreps URL pattern: /[state]/basketball/stat-leaders/
+            stats_url = self._get_state_url(state, "stat-leaders")
+
+            # Step 3: Fetch rendered HTML using browser automation
+            # MaxPreps uses React, so we need browser to render the content
+            self.logger.debug(f"Fetching MaxPreps stats page", url=stats_url)
+
+            html = await self.browser_client.get_rendered_html(
+                url=stats_url,
+                wait_for="table",  # Wait for stats table to render
+                wait_timeout=30000,  # 30 seconds
+                wait_for_network_idle=True,  # Ensure React finishes loading
+            )
+
+            # Step 4: Parse rendered HTML
+            soup = parse_html(html)
+
+            # Step 5: Find stats table (look for common MaxPreps table classes/IDs)
+            stats_table = find_stat_table(soup)
+
+            if not stats_table:
+                self.logger.warning(
+                    "No stats table found on MaxPreps page",
+                    state=state,
+                    url=stats_url
+                )
+                return []
+
+            # Step 6: Extract table data
+            rows = extract_table_data(stats_table)
+
+            if not rows:
+                self.logger.warning(
+                    "Stats table found but no rows extracted",
+                    state=state
+                )
+                return []
+
+            self.logger.info(
+                f"Extracted {len(rows)} rows from MaxPreps stats table",
+                state=state,
+                rows=len(rows)
+            )
+
+            # Step 7: Parse players from rows
+            players = []
+            data_source = self.create_data_source_metadata(
+                url=stats_url,
+                quality_flag=DataQualityFlag.COMPLETE,
+                notes=f"MaxPreps {self.STATE_NAMES.get(state, state)} stats"
+            )
+
+            for row in rows[:limit * 2]:  # Parse 2x limit to allow for filtering
+                player = self._parse_player_from_stats_row(row, state, data_source)
+
+                if player:
+                    # Apply filters
+                    if name and name.lower() not in player.full_name.lower():
+                        continue
+
+                    if team and player.school_name and team.lower() not in player.school_name.lower():
+                        continue
+
+                    players.append(player)
+
+                    # Stop once we hit limit
+                    if len(players) >= limit:
+                        break
+
+            self.logger.info(
+                f"Found {len(players)} players after filtering",
+                state=state,
+                filters={"name": name, "team": team}
+            )
+
+            return players
+
+        except ValueError as e:
+            # State validation error - re-raise
+            raise
+
+        except Exception as e:
+            self.logger.error(
+                "Failed to search MaxPreps players",
+                state=state,
+                error=str(e),
+                error_type=type(e).__name__
+            )
+            return []
+
+    def _parse_player_from_stats_row(
+        self,
+        row: dict,
+        state: str,
+        data_source
+    ) -> Optional[Player]:
+        """
+        Parse player data from MaxPreps stats table row.
+
+        Extracts player information from a single row of the stats table.
+        MaxPreps table columns typically include:
+        - Rank, Player Name, School, Class (Grad Year), Position, Stats
+
+        Args:
+            row: Dictionary of column_name -> value from stats table
+            state: State code for context
+            data_source: DataSource metadata object
+
+        Returns:
+            Player object or None if parsing fails
+
+        Example row:
+            {
+                "Rank": "1",
+                "Player": "John Doe",
+                "School": "Lincoln High School",
+                "Class": "2026",
+                "Pos": "SG",
+                "PPG": "25.3",
+                "RPG": "5.2",
+                ...
+            }
+        """
+        try:
+            # Extract player name (various possible column names)
+            player_name = (
+                row.get("Player") or
+                row.get("NAME") or
+                row.get("Name") or
+                row.get("PLAYER")
+            )
+
+            if not player_name:
+                return None
+
+            # Clean player name
+            player_name = player_name.strip()
+
+            # Split into first/last name (simplified)
+            name_parts = player_name.split()
+            if len(name_parts) >= 2:
+                first_name = name_parts[0]
+                last_name = " ".join(name_parts[1:])
+            else:
+                first_name = player_name
+                last_name = ""
+
+            # Extract school
+            school_name = (
+                row.get("School") or
+                row.get("SCHOOL") or
+                row.get("Team") or
+                row.get("TEAM")
+            )
+
+            # Extract position
+            position_str = (
+                row.get("Pos") or
+                row.get("POS") or
+                row.get("Position") or
+                row.get("POSITION")
+            )
+
+            position = None
+            if position_str:
+                # Map to Position enum
+                position_map = {
+                    "PG": Position.PG, "SG": Position.SG,
+                    "SF": Position.SF, "PF": Position.PF,
+                    "C": Position.C, "G": Position.G,
+                    "F": Position.F
+                }
+                position = position_map.get(position_str.upper().strip())
+
+            # Extract grad year
+            grad_year = None
+            class_str = (
+                row.get("Class") or
+                row.get("CLASS") or
+                row.get("Yr") or
+                row.get("Year")
+            )
+
+            if class_str:
+                grad_year = parse_grad_year(class_str)
+
+            # Extract height/weight if available
+            height_str = row.get("Ht") or row.get("Height") or row.get("HT")
+            weight_str = row.get("Wt") or row.get("Weight") or row.get("WT")
+
+            height_inches = None
+            if height_str:
+                # Parse height like "6-5" or "6'5""
+                try:
+                    if "-" in height_str or "'" in height_str:
+                        parts = height_str.replace("'", "-").replace('"', "").split("-")
+                        if len(parts) == 2:
+                            feet = parse_int(parts[0])
+                            inches = parse_int(parts[1])
+                            if feet and inches:
+                                height_inches = (feet * 12) + inches
+                except:
+                    pass
+
+            weight_lbs = parse_int(weight_str) if weight_str else None
+
+            # Build player ID
+            player_id = self._build_player_id(state, player_name, school_name)
+
+            # Create Player object
+            return Player(
+                player_id=player_id,
+                first_name=first_name,
+                last_name=last_name,
+                full_name=player_name,
+                height_inches=height_inches,
+                weight_lbs=weight_lbs,
+                position=position,
+                school_name=school_name,
+                school_state=state,
+                school_country="USA",
+                grad_year=grad_year,
+                level=PlayerLevel.HIGH_SCHOOL,
+                data_source=data_source,
+            )
+
+        except Exception as e:
+            self.logger.warning(
+                "Failed to parse player from MaxPreps row",
+                error=str(e),
+                row=row
+            )
+            return None
+
+    async def get_player_season_stats(
+        self,
+        player_id: str,
+        season: Optional[str] = None
+    ) -> Optional[PlayerSeasonStats]:
+        """
+        Get player season statistics from MaxPreps.
+
+        **NOT YET IMPLEMENTED** - Placeholder for future development.
+
+        Would require:
+        1. Extracting player MaxPreps URL from search results
+        2. Fetching player profile page
+        3. Parsing season stats table
+
+        Args:
+            player_id: MaxPreps player identifier
+            season: Season string (e.g., "2024-25")
+
+        Returns:
+            PlayerSeasonStats or None
+
+        TODO: Implement player profile page scraping
+        """
+        self.logger.warning(
+            "get_player_season_stats not yet implemented for MaxPreps",
+            player_id=player_id
+        )
+        return None
+
+    async def get_player_game_stats(
+        self,
+        player_id: str,
+        game_id: str
+    ) -> Optional[PlayerGameStats]:
+        """
+        Get player game statistics from MaxPreps.
+
+        **NOT YET IMPLEMENTED** - Placeholder for future development.
+
+        Would require:
+        1. Accessing player game log page
+        2. Finding specific game
+        3. Extracting game stats
+
+        Args:
+            player_id: MaxPreps player identifier
+            game_id: Game identifier
+
+        Returns:
+            PlayerGameStats or None
+
+        TODO: Implement game log scraping
+        """
+        self.logger.warning(
+            "get_player_game_stats not yet implemented for MaxPreps",
+            player_id=player_id,
+            game_id=game_id
+        )
+        return None
+
+    async def get_team(self, team_id: str) -> Optional[Team]:
+        """
+        Get team by ID from MaxPreps.
+
+        **NOT YET IMPLEMENTED** - Placeholder for future development.
+
+        Would require:
+        1. Building team URL from team_id
+        2. Fetching team page
+        3. Parsing team roster, record, schedule
+
+        Args:
+            team_id: Team identifier
+
+        Returns:
+            Team object or None
+
+        TODO: Implement team page scraping
+        """
+        self.logger.warning(
+            "get_team not yet implemented for MaxPreps",
+            team_id=team_id
+        )
+        return None
+
+    async def get_games(
+        self,
+        team_id: Optional[str] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        season: Optional[str] = None,
+        limit: int = 100,
+    ) -> List[Game]:
+        """
+        Get games/schedule from MaxPreps.
+
+        **NOT YET IMPLEMENTED** - Placeholder for future development.
+
+        Would require:
+        1. Accessing team schedule page
+        2. Parsing game schedule table
+        3. Extracting game details
+
+        Args:
+            team_id: Team identifier
+            start_date: Filter by start date
+            end_date: Filter by end date
+            season: Season filter
+            limit: Maximum results
+
+        Returns:
+            List of Game objects
+
+        TODO: Implement schedule scraping
+        """
+        self.logger.warning(
+            "get_games not yet implemented for MaxPreps",
+            team_id=team_id
+        )
+        return []
+
+    async def get_leaderboard(
+        self,
+        stat: str,
+        season: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[dict]:
+        """
+        Get statistical leaderboard from MaxPreps.
+
+        **PARTIALLY IMPLEMENTED** - Uses search_players with default state.
+
+        For multi-state leaderboards, would need to:
+        1. Fetch leaderboards from multiple states
+        2. Aggregate results
+        3. Sort by stat category
+
+        Current implementation: Returns top players from one state.
+
+        Args:
+            stat: Stat category (e.g., 'points', 'rebounds', 'assists')
+            season: Season filter
+            limit: Maximum results
+
+        Returns:
+            List of leaderboard entries
+
+        TODO: Implement true multi-state aggregation
+        """
+        self.logger.warning(
+            "get_leaderboard partially implemented - single state only",
+            stat=stat,
+            note="Use search_players for state-specific leaderboards"
+        )
+
+        # Default to California for now (most data)
+        try:
+            players = await self.search_players(state="CA", limit=limit)
+
+            # Convert to leaderboard entries
+            return [
+                {
+                    "rank": idx + 1,
+                    "player_id": player.player_id,
+                    "player_name": player.full_name,
+                    "school": player.school_name,
+                    "stat_value": 0.0,  # Would need to extract from stats
+                    "stat_category": stat,
+                }
+                for idx, player in enumerate(players)
+            ]
+
+        except Exception as e:
+            self.logger.error(f"Failed to get leaderboard", stat=stat, error=str(e))
+            return []
+
+    async def close(self):
+        """
+        Close connections and browser instances.
+
+        Cleanup method called when adapter is no longer needed.
+        Browser is singleton so we don't close it here.
+        """
+        await super().close()
+        # BrowserClient is singleton, managed globally
+        # No explicit cleanup needed here

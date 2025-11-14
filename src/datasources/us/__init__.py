@@ -16,6 +16,7 @@ from .uaa_girls import UAAGirlsDataSource
 # Regional/State platforms
 from .fhsaa import FHSAADataSource
 from .hhsaa import HHSAADataSource
+from .maxpreps import MaxPrepsDataSource
 from .mn_hub import MNHubDataSource
 from .psal import PSALDataSource
 from .wsn import WSNDataSource
@@ -79,6 +80,7 @@ __all__ = [
     "UAAGirlsDataSource",
     "FHSAADataSource",
     "HHSAADataSource",
+    "MaxPrepsDataSource",
     "MNHubDataSource",
     "PSALDataSource",
     "WSNDataSource",
