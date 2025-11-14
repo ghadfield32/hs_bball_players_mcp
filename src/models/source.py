@@ -260,3 +260,8 @@ class RateLimitStatus(BaseModel):
                 "is_limited": False,
             }
         }
+
+
+# Backwards compatibility alias for tests and legacy code
+# DataSource was originally named DataSourceMetadata
+DataSourceMetadata = DataSource
