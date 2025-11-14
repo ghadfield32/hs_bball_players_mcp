@@ -10,6 +10,8 @@ This script checks:
 
 Usage:
     python scripts/debug_import_issue.py
+    OR
+    python -m scripts.debug_import_issue
 """
 
 import ast
@@ -17,6 +19,10 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+
+# Add project root to sys.path so imports work correctly
+# This allows the script to import from src/ regardless of how it's run
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 def print_section(title: str):

@@ -3180,6 +3180,73 @@ tests\conftest.py:27: in <module>
 
 **Status**: ✅ Diagnostic tools created and documented, waiting for user to run on their system
 
+### WISCONSIN BACKFILL PREPARATION (2025-11-14)
+
+**Objective**: Streamline workflow for acquiring all 78 remaining Wisconsin WIAA fixtures (2015-2024)
+
+**Current State**: 2/80 fixtures present (2.5%) - Boys/Girls 2024 Div1
+
+**Target**: 80/80 fixtures (100% coverage) across 10 years × 2 genders × 4 divisions
+
+**Work Completed**:
+1. ✅ **Fixed sys.path in debug_import_issue.py** - Now imports work from any directory
+2. ✅ **Created WISCONSIN_BACKFILL_GUIDE.md** (comprehensive 400+ line workflow guide)
+   - One-time setup instructions (pytest install, script verification)
+   - Priority 1: 2024 Div2-4 (6 fixtures, ~12 min)
+   - Priority 2: 2023 & 2022 (16 fixtures, ~32 min)
+   - Phase 3: 2015-2021 (56 fixtures, ~112 min)
+   - Complete script reference with all commands
+   - Troubleshooting guide for common issues
+   - Time estimates: ~2.5 hours total for all 78 fixtures
+
+**Workflow Summary** (per fixture):
+1. `python scripts/open_missing_wiaa_fixtures.py --priority 1` → Opens browsers
+2. User saves HTML files manually (human-in-the-loop, respects bot protection)
+3. `python scripts/inspect_wiaa_fixture.py --year YYYY --gender G --division D` → Validates
+4. `python scripts/process_fixtures.py --priority 1` → Updates manifest automatically
+5. `python scripts/show_wiaa_coverage.py` → Tracks progress
+6. Commit & push after each batch
+
+**Scripts Verified**:
+- ✅ `open_missing_wiaa_fixtures.py` - Has year/priority/gender filters built in
+- ✅ `inspect_wiaa_fixture.py` - Has sys.path fix, validates data quality
+- ✅ `process_fixtures.py` - Has sys.path fix, batch processes fixtures
+- ✅ `show_wiaa_coverage.py` - Shows progress dashboard
+- ✅ `debug_import_issue.py` - Fixed sys.path, helps troubleshoot imports
+
+**Three-Phase Plan**:
+
+**Phase 1** - Priority 1 (2024 completion):
+- 6 fixtures: Boys/Girls Div2-Div4
+- Command: `python scripts/open_missing_wiaa_fixtures.py --priority 1`
+- Time: ~12 minutes
+- Result: 8/80 (10%)
+
+**Phase 2** - Priority 2 (Recent years):
+- 16 fixtures: 2023 & 2022, all divisions
+- Command: `python scripts/open_missing_wiaa_fixtures.py --priority 2`
+- Time: ~32 minutes
+- Result: 24/80 (30%)
+
+**Phase 3** - Historical backfill (2015-2021):
+- 56 fixtures: 7 years × 8 fixtures/year
+- Command: `python scripts/open_missing_wiaa_fixtures.py --year YYYY` (one year at a time)
+- Time: ~112 minutes (do 2 years/session recommended)
+- Result: 80/80 (100%)
+
+**User Action Plan**:
+1. Complete merge conflict resolution (from previous section)
+2. Install pytest in .venv: `python -m pip install pytest`
+3. Follow WISCONSIN_BACKFILL_GUIDE.md phase-by-phase
+4. Commit after each batch (Priority 1, then Priority 2, then one year at a time for Phase 3)
+5. Update this log with completion notes
+
+**Files Modified**:
+- `scripts/debug_import_issue.py`: +4 lines (sys.path fix + usage notes)
+- `WISCONSIN_BACKFILL_GUIDE.md`: +400 lines (NEW - complete workflow documentation)
+
+**Status**: ✅ All scripts verified and ready; comprehensive guide created; workflow streamlined to ~2 min/fixture
+
 ---
 
 ### IN PROGRESS
