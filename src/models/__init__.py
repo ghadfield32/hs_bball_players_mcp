@@ -8,6 +8,7 @@ Comprehensive Pydantic models for basketball player, team, game, and statistics 
 from .source import (
     DataQualityFlag,
     DataSource,
+    DataSourceMetadata,  # Backwards compatibility alias for DataSource
     DataSourceRegion,
     DataSourceType,
     RateLimitStatus,
@@ -34,6 +35,7 @@ from .stats import (
 __all__ = [
     # Source models
     "DataSource",
+    "DataSourceMetadata",  # Backwards compatibility alias
     "DataSourceType",
     "DataSourceRegion",
     "DataQualityFlag",

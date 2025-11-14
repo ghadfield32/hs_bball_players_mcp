@@ -60,9 +60,12 @@ data/cache/*
 !data/cache/.gitkeep
 data/logs/*
 !data/logs/.gitkeep
+data/exports/
 *.db
 *.sqlite
 *.sqlite3
+*.duckdb
+*.duckdb.wal
 
 # Jupyter
 .ipynb_checkpoints/
