@@ -28,6 +28,13 @@ class DataSourceType(str, Enum):
     SBLIVE = "sblive"  # SBLive Sports (Multi-state: WA, OR, CA, AZ, ID, NV)
     BOUND = "bound"  # Bound (formerly Varsity Bound) (Multi-state: IA, SD, IL, MN)
     RANKONE = "rankone"  # RankOne Sport (Multi-state: TX, KY, IN, OH, TN - schedules/fixtures)
+    MAXPREPS = "maxpreps"  # MaxPreps (All 50 states - UNIVERSAL COVERAGE)
+
+    # US - Recruiting Services
+    SPORTS_247 = "247sports"  # 247Sports recruiting rankings, offers, predictions
+    ESPN_RECRUITING = "espn_recruiting"  # ESPN recruiting rankings
+    RIVALS = "rivals"  # Rivals recruiting (now part of On3)
+    ON3 = "on3"  # On3 recruiting and rankings
 
     # US - Single State
     PSAL = "psal"  # NYC PSAL
