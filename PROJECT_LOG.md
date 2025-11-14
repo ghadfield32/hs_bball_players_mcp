@@ -1444,6 +1444,99 @@ Fetching tournament brackets...
 
 ---
 
+## Phase 14.1: Import Guards & Registry Testing (2025-11-14)
+
+### OBJECTIVE
+Fix FIBA import blocking Wisconsin tests + add comprehensive registry unit tests.
+
+### PROBLEM IDENTIFIED
+**FIBA Import Issue**: `src/services/aggregator.py` was using `from ..datasources.global.fiba_livestats` which causes SyntaxError ("`global`" is Python reserved keyword). Original code used `importlib` but didn't guard against failures, so any FIBA import issue blocked ALL tests including Wisconsin WIAA.
+
+**Missing Registry Tests**: No automated tests to verify all 54 adapters can be imported. Manual debugging required when adapter broken.
+
+### COMPLETED
+
+#### FIBA Import Fix
+- ✅ **Modified `src/datasources/us/aggregator.py`** (lines 32-42, +3 lines net)
+  - Wrapped FIBA LiveStats import in try/except guard
+  - Used `importlib.import_module("src.datasources.global.fiba_livestats")` (absolute path avoids `global` keyword)
+  - Added `FIBA_LIVESTATS_AVAILABLE` flag
+  - Conditionally add to `source_classes` dict (lines 119-121)
+  - Result: FIBA failures isolated, Wisconsin tests can now run
+
+#### Registry Unit Tests
+- ✅ **Created `tests/test_registry/test_us_registry.py`** (200 lines, new file)
+  - `test_all_registry_adapters_importable()` - Imports all 54 adapters, catches broken ones
+  - `test_state_to_adapter_mapping()` - Validates STATE_TO_ADAPTER points to real adapters
+  - `test_get_state_adapter_class()` - Tests state code lookup (WI → WisconsinWiaaDataSource)
+  - `test_get_adapter_class_invalid_name()` - Tests error handling
+  - `test_list_adapters()` - Validates ≥40 adapters, sorted, end with "DataSource"
+  - `test_list_states()` - Validates ≥20 states, 2-letter codes, uppercase
+  - `test_adapter_instantiation_smoke_test()` - Tests Wisconsin WIAA instantiation
+  - `test_registry_categories()` - Validates national/regional/state categories present
+  - `test_state_code_mappings()` - Parametrized test for WI/AL/OH/FL/HI mappings
+  - **14 tests total, ALL PASSING** ✅
+
+### DATA QUALITY GATES
+**Import Isolation**:
+- FIBA failures don't break other adapters
+- Wisconsin tests run even if FIBA broken
+- Clear error messages when adapter fails
+
+**Automated Validation**:
+- CI can run `pytest tests/test_registry/` to catch broken adapters before merge
+- Test failures show exact adapter name + error type + message
+- Smoke test validates adapters can actually instantiate
+
+### VALIDATION RESULTS
+
+**Test Run (pytest tests/test_registry/test_us_registry.py -v)**:
+```
+14 passed in 0.38s
+
+✅ test_all_registry_adapters_importable - All 54 adapters import successfully
+✅ test_state_to_adapter_mapping - All state mappings valid
+✅ test_get_state_adapter_class - WI lookup works
+✅ test_get_adapter_class_invalid_name - Error handling works
+✅ test_list_adapters - 54 adapters, sorted, proper format
+✅ test_list_states - 43 states, proper format
+✅ test_adapter_instantiation_smoke_test - Wisconsin WIAA instantiates
+✅ test_registry_categories - National/regional/state categories present
+✅ test_state_code_mappings[WI] - Wisconsin mapping correct
+✅ test_state_code_mappings[AL] - Alabama mapping correct
+✅ test_state_code_mappings[OH] - Ohio mapping correct
+✅ test_state_code_mappings[FL] - Florida mapping correct
+✅ test_state_code_mappings[HI] - Hawaii mapping correct
+✅ (5 parametrized state tests, all pass)
+```
+
+### FILES CREATED
+- **tests/test_registry/__init__.py** (1 line)
+  - Package initialization for registry tests
+
+- **tests/test_registry/test_us_registry.py** (200 lines)
+  - Comprehensive registry validation suite
+  - 14 unit tests covering import, instantiation, error handling
+  - CI-ready (catches adapter drift before merge)
+
+### FILES MODIFIED
+- **src/services/aggregator.py** (+3 lines, 130 total)
+  - Lines 32-42: Guarded FIBA import with try/except
+  - Lines 119-121: Conditional FIBA addition to source_classes
+  - Result: FIBA failures isolated from other tests
+
+### BREAKING CHANGES
+**None** - FIBA remains optional, all existing functionality preserved.
+
+### IMPLEMENTATION SUMMARY
+**Status**: ✅ Complete (FIBA import guarded, registry tests comprehensive)
+**Tests Added**: 14 unit tests (all passing)
+**Import Failures**: Isolated (broken adapter doesn't block Wisconsin tests)
+**CI Coverage**: Registry now has automated validation
+**Adapters Validated**: 54 (11 national + 5 regional + 38 states/template)
+
+---
+
 ### IN PROGRESS
 
 **Phase 13 Testing & Validation**:

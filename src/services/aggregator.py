@@ -29,10 +29,17 @@ from ..datasources.us.uaa import UAADataSource
 from ..datasources.us.uaa_girls import UAAGirlsDataSource
 from ..datasources.us.wsn import WSNDataSource
 
-# Import from global module (avoid 'global' keyword with import style)
-import importlib
-_fiba_livestats_module = importlib.import_module("..datasources.global.fiba_livestats", package=__name__)
-FIBALiveStatsDataSource = _fiba_livestats_module.FIBALiveStatsDataSource
+# Import from global module (avoid 'global' keyword with import style - it's a Python reserved word)
+# Guard FIBA LiveStats import so other tests/adapters can run even if this fails
+try:
+    import importlib
+    _fiba_mod = importlib.import_module("src.datasources.global.fiba_livestats")
+    FIBALiveStatsDataSource = _fiba_mod.FIBALiveStatsDataSource
+    FIBA_LIVESTATS_AVAILABLE = True
+except (ImportError, ModuleNotFoundError, AttributeError):
+    # FIBA LiveStats module not available - skip it
+    FIBALiveStatsDataSource = None
+    FIBA_LIVESTATS_AVAILABLE = False
 
 # Template adapters (need URL updates after website inspection):
 from ..datasources.australia.playhq import PlayHQDataSource
@@ -101,7 +108,6 @@ class DataSourceAggregator:
 
             # Global/International:
             "fiba": FIBAYouthDataSource,           # FIBA Youth competitions
-            "fiba_livestats": FIBALiveStatsDataSource,  # FIBA LiveStats v7 global
 
             # ===== TEMPLATE ADAPTERS (Need URL Updates) =====
             # These have complete code structure but need actual website URLs:
@@ -111,6 +117,10 @@ class DataSourceAggregator:
             # "osba": OSBADataSource,                    # TODO: Update URLs after inspection
             # "playhq": PlayHQDataSource,                # TODO: Update URLs after inspection
         }
+
+        # Add FIBA LiveStats conditionally (only if import succeeded)
+        if FIBA_LIVESTATS_AVAILABLE:
+            source_classes["fiba_livestats"] = FIBALiveStatsDataSource
 
         for source_key, source_class in source_classes.items():
             if self.settings.is_datasource_enabled(source_key):
