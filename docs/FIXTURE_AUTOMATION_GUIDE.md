@@ -50,11 +50,98 @@ python scripts/process_fixtures.py --planned --dry-run
 
 ## Detailed Workflow
 
-### Step 1: Download Fixtures (Manual)
+### Step 1: Download Fixtures (Human-in-the-Loop)
 
-You still need to manually download fixture HTML files because WIAA blocks automated downloads with HTTP 403 errors.
+You still need to manually download fixture HTML files because WIAA blocks automated downloads with HTTP 403 errors. However, we provide a browser helper script that automates URL opening, file naming guidance, and progress tracking.
 
-**For each fixture you want to add:**
+#### Option 1A: Automated Browser Helper (Recommended)
+
+**Use the browser helper script to streamline downloads:**
+
+```bash
+# Open browsers for all planned fixtures
+python scripts/open_missing_wiaa_fixtures.py --planned
+
+# Or just Priority 1 fixtures (2024 remaining)
+python scripts/open_missing_wiaa_fixtures.py --priority 1
+
+# Or specific year
+python scripts/open_missing_wiaa_fixtures.py --year 2024
+
+# Or specific fixtures
+python scripts/open_missing_wiaa_fixtures.py --fixtures "2024,Boys,Div2" "2024,Girls,Div3"
+```
+
+**What the script does:**
+1. Reads manifest to find missing fixtures
+2. Filters based on your criteria (planned/priority/year)
+3. Opens each URL in your browser automatically
+4. Shows exact filename to use when saving
+5. Waits for you to save, then moves to next fixture
+6. Tracks progress (X of Y downloaded)
+7. Generates summary report
+
+**Your workflow:**
+1. Run the script with your desired filter
+2. When browser opens, use **Save Page As... → HTML Only**
+3. Save to `tests/fixtures/wiaa/` with the filename shown
+4. Press ENTER to continue to next fixture
+5. Script reports what was saved and what's remaining
+
+**Example session:**
+```
+$ python scripts/open_missing_wiaa_fixtures.py --priority 1
+
+📋 Found 6 missing fixture(s) to download
+   2 fixture(s) already present
+
+================================================================================
+Fixture 1/6: 2024 Boys Div2
+================================================================================
+URL: https://halftime.wiaawi.org/CustomApps/Tournaments/Brackets/HTML/2024_Basketball_Boys_Div2.html
+Save as: 2024_Basketball_Boys_Div2.html
+Save location: /home/user/hs_bball_players_mcp/tests/fixtures/wiaa
+
+✅ Opened in browser
+
+Instructions:
+  1. In your browser, use 'Save Page As...' or Ctrl+S / Cmd+S
+  2. Choose format: 'Webpage, HTML Only' (NOT 'Complete')
+  3. Save to: /home/user/hs_bball_players_mcp/tests/fixtures/wiaa
+  4. Use filename: 2024_Basketball_Boys_Div2.html
+
+Press ENTER when saved, 's' to skip, 'q' to quit:
+✅ Confirmed: 2024_Basketball_Boys_Div2.html exists
+
+[... repeats for remaining fixtures ...]
+
+================================================================================
+SESSION SUMMARY
+================================================================================
+Browsers opened: 6
+Files saved:     6
+Skipped:         0
+Already present: 2
+
+✅ Next step: Validate and update manifest
+   Run: python scripts/process_fixtures.py --planned
+```
+
+**Batch mode (open multiple tabs at once):**
+```bash
+# Open 5 tabs at a time instead of one-by-one
+python scripts/open_missing_wiaa_fixtures.py --priority 1 --batch-size 5
+```
+
+**Auto-validate after downloading:**
+```bash
+# Automatically runs process_fixtures.py when downloads complete
+python scripts/open_missing_wiaa_fixtures.py --planned --auto-validate
+```
+
+#### Option 1B: Manual Download (Alternative)
+
+If you prefer to download manually without the helper script:
 
 1. Open browser to `https://halftime.wiaawi.org/CustomApps/Tournaments/Brackets/HTML/`
 2. Navigate to bracket page (e.g., `2024_Basketball_Boys_Div2.html`)
@@ -181,6 +268,61 @@ This will automatically:
 - Prompt to push
 
 ## Command Reference
+
+### open_missing_wiaa_fixtures.py (Browser Helper)
+
+**Purpose:** Opens browser tabs for missing fixtures to streamline the download process.
+
+**Open all planned fixtures:**
+```bash
+python scripts/open_missing_wiaa_fixtures.py --planned
+```
+
+**Open only Priority 1 fixtures:**
+```bash
+python scripts/open_missing_wiaa_fixtures.py --priority 1
+```
+
+**Open only Priority 2 fixtures:**
+```bash
+python scripts/open_missing_wiaa_fixtures.py --priority 2
+```
+
+**Open specific year:**
+```bash
+python scripts/open_missing_wiaa_fixtures.py --year 2024
+```
+
+**Open specific fixtures:**
+```bash
+python scripts/open_missing_wiaa_fixtures.py --fixtures "2024,Boys,Div2" "2024,Girls,Div3"
+```
+
+**Batch mode (multiple tabs):**
+```bash
+# Open 5 tabs at once instead of one-by-one
+python scripts/open_missing_wiaa_fixtures.py --planned --batch-size 5
+```
+
+**Auto-validate after downloading:**
+```bash
+# Runs process_fixtures.py automatically when done
+python scripts/open_missing_wiaa_fixtures.py --planned --auto-validate
+```
+
+**Flags:**
+- `--planned` - All fixtures with status="planned"
+- `--priority N` - Only fixtures with priority=N (1 or 2)
+- `--year YYYY` - Only fixtures from year YYYY
+- `--fixtures "Y,G,D"` - Specific fixtures (format: "YEAR,GENDER,DIVISION")
+- `--batch-size N` - Open N tabs before pausing (default: 1)
+- `--auto-validate` - Run process_fixtures.py after downloads
+- `--quiet` - Minimal output
+
+**Interactive controls:**
+- `ENTER` - Confirm file was saved, continue to next
+- `s` - Skip this fixture
+- `q` - Quit the session
 
 ### process_fixtures.py (Python)
 
