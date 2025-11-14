@@ -1170,6 +1170,133 @@ Implement comprehensive Wisconsin WIAA (Wisconsin Interscholastic Athletic Assoc
 
 ---
 
+## Phase 13.1: Wisconsin WIAA Health Monitoring & Production Hardening (2025-11-14)
+
+### OBJECTIVE
+Harden Wisconsin WIAA adapter for production use with robust HTTP handling, comprehensive diagnostics, and operational health monitoring.
+
+### COMPLETED
+
+#### Production-Ready HTTP Handling
+- ✅ **Robust bracket fetching** (`_fetch_bracket_with_retry` method, ~140 lines)
+  - HTTP 404 handling: Debug logging, skip gracefully (expected for missing brackets)
+  - HTTP 403 handling: Exponential backoff retry (3 attempts, 1s → 2s → 4s delays)
+  - HTTP 500+ handling: Retry with backoff for server errors
+  - Timeout handling: Retry with backoff (30s default timeout)
+  - Browser-like headers: User-Agent, Accept, Accept-Language, DNT, etc.
+- ✅ **HTTP statistics tracking** (7 metrics tracked per adapter instance)
+  - `brackets_requested`, `brackets_successful`, `brackets_404`, `brackets_403`
+  - `brackets_500`, `brackets_timeout`, `brackets_other_error`
+  - Success/error rate calculation via `get_http_stats()` method
+- ✅ **Replaced all HTTP calls** with robust fetch method (3 locations updated)
+
+#### Enhanced Diagnostic Script
+- ✅ **Check 7: HTTP Request Statistics**
+  - Reports success rate, 404/403/500/timeout counts
+  - Flags success rate < 90% as WARNING
+- ✅ **Check 8: Score Distribution**
+  - Average, median, min, max score analysis
+  - Detects suspicious low (< 10) and high (> 150) scores
+  - Flags > 5% suspicious as issue
+- ✅ **Check 9: Round Progression Sanity**
+  - Validates Regional ≥ Sectional ≥ State game counts
+  - Flags unusual progression patterns
+
+#### State Health Documentation
+- ✅ **Created STATE_HEALTH_WISCONSIN.md** (docs/, 300+ lines)
+  - Health definition: 5 critical + 5 warning criteria
+  - Expected metrics & baselines (220-235 games/year/gender)
+  - Quick health check commands (runnable copy-paste examples)
+  - HTTP error handling reference
+  - Monitoring schedule (daily/weekly/monthly/seasonal)
+  - Troubleshooting guide (403 rate, low game count, unknown rounds)
+  - Alert thresholds (CRITICAL/WARNING/INFO)
+
+#### Global Registry Updates
+- ✅ **Updated analyze_state_coverage.py**
+  - Changed WI mapping from "WSN" to "WIAA"
+  - Updated import from `wsn` to `wisconsin_wiaa`
+  - Updated adapter count documentation
+
+### DATA QUALITY GATES
+**HTTP Resilience**:
+- 404s logged as DEBUG (expected)
+- 403s retry 3x with backoff, then fail gracefully
+- 500s retry 3x with backoff
+- Timeouts retry 3x with backoff
+- Success rate tracked and reported
+
+**Data Validation**:
+- Score distribution analysis (avg 50-70 expected)
+- Round progression validation (Regional > Sectional > State)
+- Suspicious score detection (< 10 or > 150)
+- HTTP success rate monitoring (≥90% target)
+
+### HEALTH CRITERIA DEFINED
+**CRITICAL (Must Pass)**:
+1. Zero self-games
+2. Zero duplicate games
+3. Valid score range (0-200)
+4. HTTP success rate ≥ 90%
+5. Minimum 200 games/year/gender
+
+**WARNING (Should Pass)**:
+6. Unknown rounds < 20%
+7. Round progression follows expected pattern
+8. Suspicious scores < 5%
+9. HTTP 403 rate < 5%
+10. All 5 divisions present
+
+### FILES MODIFIED
+- **src/datasources/us/wisconsin_wiaa.py** (+180 lines, 880 total)
+  - Added `__init__` HTTP stats tracking (lines 70-79)
+  - Added `_fetch_bracket_with_retry` method (lines 81-241, ~160 lines)
+  - Added `get_http_stats` method (lines 243-260)
+  - Replaced 3 `http_client.get_text` calls with robust fetch (lines 324, 395)
+
+- **scripts/diagnose_wisconsin_wiaa.py** (+100 lines, 450 total)
+  - Added Check 7: HTTP Statistics (lines 202-229)
+  - Added Check 8: Score Distribution (lines 231-271)
+  - Added Check 9: Round Progression (lines 273-300)
+
+- **scripts/analyze_state_coverage.py** (+1 line, -1 line, net 0)
+  - Updated WI mapping: "WSN" → "WIAA"
+  - Updated import: `wsn` → `wisconsin_wiaa`
+
+### FILES CREATED
+- **docs/STATE_HEALTH_WISCONSIN.md** (300+ lines)
+  - Complete health monitoring reference
+  - Runnable health check commands
+  - Expected metrics & baselines
+  - Troubleshooting guide
+  - Alert thresholds
+
+### NEXT STEPS (READY TO RUN)
+**Live Validation** (can be run immediately):
+```bash
+# Validate Boys 2024
+python scripts/diagnose_wisconsin_wiaa.py --year 2024 --gender Boys --verbose
+
+# Validate Girls 2024
+python scripts/diagnose_wisconsin_wiaa.py --year 2024 --gender Girls --verbose
+
+# Run integration tests
+pytest tests/test_datasources/test_wisconsin_wiaa.py -v
+
+# Optional: Historical backfill
+python scripts/backfill_wisconsin_history.py --start 2020 --end 2024
+```
+
+### IMPLEMENTATION SUMMARY
+**Status**: ✅ Production-Ready (Health monitoring complete, awaiting live validation)
+**Lines Added**: ~280 (adapter: 180, diagnostic: 100)
+**Health Checks**: 9 total (6 original + 3 new)
+**HTTP Resilience**: 403/404/500/timeout handling with retry + backoff
+**Documentation**: Complete health monitoring guide
+**Monitoring**: Daily/weekly/monthly schedule defined
+
+---
+
 ### IN PROGRESS
 
 **Phase 13 Testing & Validation**:

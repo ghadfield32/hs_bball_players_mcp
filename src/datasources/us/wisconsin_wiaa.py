@@ -67,6 +67,198 @@ class WisconsinWiaaDataSource(AssociationAdapterBase):
         self.league_name = "Wisconsin High School"
         self.league_abbrev = "WIAA"
 
+        # HTTP statistics tracking
+        self.http_stats = {
+            "brackets_requested": 0,
+            "brackets_successful": 0,
+            "brackets_404": 0,
+            "brackets_403": 0,
+            "brackets_500": 0,
+            "brackets_timeout": 0,
+            "brackets_other_error": 0
+        }
+
+    async def _fetch_bracket_with_retry(
+        self,
+        url: str,
+        max_retries: int = 3,
+        initial_delay: float = 1.0
+    ) -> Optional[str]:
+        """
+        Fetch bracket HTML with robust error handling and retry logic.
+
+        Handles:
+        - 404: Not Found (bracket doesn't exist) - log as debug, return None
+        - 403: Forbidden (anti-bot) - retry with backoff, then return None
+        - 500+: Server errors - retry with backoff
+        - Network timeouts - retry with backoff
+
+        Args:
+            url: Bracket URL to fetch
+            max_retries: Maximum retry attempts for transient errors
+            initial_delay: Initial delay between retries (doubles each retry)
+
+        Returns:
+            HTML content if successful, None if not found or permanently failed
+        """
+        import asyncio
+        import httpx
+
+        self.http_stats["brackets_requested"] += 1
+
+        delay = initial_delay
+        last_error = None
+
+        for attempt in range(max_retries + 1):
+            try:
+                # Set custom headers to appear more like a browser
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "DNT": "1",
+                    "Connection": "keep-alive",
+                    "Upgrade-Insecure-Requests": "1"
+                }
+
+                html = await self.http_client.get_text(
+                    url,
+                    cache_ttl=3600,
+                    headers=headers
+                )
+
+                self.http_stats["brackets_successful"] += 1
+                return html
+
+            except httpx.HTTPStatusError as e:
+                status_code = e.response.status_code
+
+                if status_code == 404:
+                    # Bracket doesn't exist - this is expected for some divisions/sections
+                    self.http_stats["brackets_404"] += 1
+                    self.logger.debug(
+                        f"Bracket not found (404)",
+                        url=url,
+                        message="Bracket page does not exist (expected for some divisions/sections)"
+                    )
+                    return None
+
+                elif status_code == 403:
+                    # Anti-bot protection - retry with backoff
+                    self.http_stats["brackets_403"] += 1
+                    last_error = f"403 Forbidden (anti-bot)"
+
+                    if attempt < max_retries:
+                        self.logger.warning(
+                            f"Bracket fetch blocked (403), retrying",
+                            url=url,
+                            attempt=attempt + 1,
+                            max_retries=max_retries,
+                            delay=delay
+                        )
+                        await asyncio.sleep(delay)
+                        delay *= 2  # Exponential backoff
+                        continue
+                    else:
+                        self.logger.error(
+                            f"Bracket fetch permanently blocked after retries",
+                            url=url,
+                            attempts=max_retries + 1
+                        )
+                        return None
+
+                elif status_code >= 500:
+                    # Server error - retry with backoff
+                    self.http_stats["brackets_500"] += 1
+                    last_error = f"{status_code} Server Error"
+
+                    if attempt < max_retries:
+                        self.logger.warning(
+                            f"Server error ({status_code}), retrying",
+                            url=url,
+                            attempt=attempt + 1,
+                            max_retries=max_retries,
+                            delay=delay
+                        )
+                        await asyncio.sleep(delay)
+                        delay *= 2
+                        continue
+                    else:
+                        self.logger.error(
+                            f"Server error persists after retries",
+                            url=url,
+                            status_code=status_code,
+                            attempts=max_retries + 1
+                        )
+                        return None
+                else:
+                    # Other HTTP error
+                    self.http_stats["brackets_other_error"] += 1
+                    self.logger.error(
+                        f"HTTP error fetching bracket",
+                        url=url,
+                        status_code=status_code
+                    )
+                    return None
+
+            except (httpx.TimeoutException, asyncio.TimeoutError) as e:
+                # Timeout - retry
+                self.http_stats["brackets_timeout"] += 1
+                last_error = "Timeout"
+
+                if attempt < max_retries:
+                    self.logger.warning(
+                        f"Timeout fetching bracket, retrying",
+                        url=url,
+                        attempt=attempt + 1,
+                        max_retries=max_retries,
+                        delay=delay
+                    )
+                    await asyncio.sleep(delay)
+                    delay *= 2
+                    continue
+                else:
+                    self.logger.error(
+                        f"Timeout persists after retries",
+                        url=url,
+                        attempts=max_retries + 1
+                    )
+                    return None
+
+            except Exception as e:
+                # Unexpected error
+                self.http_stats["brackets_other_error"] += 1
+                self.logger.error(
+                    f"Unexpected error fetching bracket",
+                    url=url,
+                    error=str(e),
+                    error_type=type(e).__name__
+                )
+                return None
+
+        # Should never reach here, but just in case
+        return None
+
+    def get_http_stats(self) -> Dict[str, int]:
+        """
+        Get HTTP request statistics.
+
+        Returns:
+            Dict with counts of various HTTP outcomes
+        """
+        stats = self.http_stats.copy()
+
+        # Calculate success rate
+        if stats["brackets_requested"] > 0:
+            stats["success_rate"] = stats["brackets_successful"] / stats["brackets_requested"]
+            stats["error_rate"] = 1.0 - stats["success_rate"]
+        else:
+            stats["success_rate"] = 0.0
+            stats["error_rate"] = 0.0
+
+        return stats
+
     def _get_season_url(self, season: str, gender: str = "Boys") -> str:
         """
         Get URL for Wisconsin basketball season data.
@@ -128,12 +320,14 @@ class WisconsinWiaaDataSource(AssociationAdapterBase):
         # Parse all discovered brackets
         all_games: List[Game] = []
         for url_info in bracket_urls:
-            try:
-                html = await self.http_client.get_text(
-                    url_info["url"],
-                    cache_ttl=3600
-                )
+            # Fetch HTML with robust error handling
+            html = await self._fetch_bracket_with_retry(url_info["url"])
 
+            if html is None:
+                # Bracket fetch failed or doesn't exist (404) - skip silently
+                continue
+
+            try:
                 games = self._parse_halftime_html_to_games(
                     html,
                     year=year,
@@ -152,11 +346,12 @@ class WisconsinWiaaDataSource(AssociationAdapterBase):
                 )
 
             except Exception as e:
-                # Log but don't fail - some bracket pages may not exist
-                self.logger.debug(
-                    f"Failed to fetch/parse bracket",
+                # Parse error - log and continue
+                self.logger.warning(
+                    f"Failed to parse bracket",
                     url=url_info["url"],
-                    error=str(e)
+                    error=str(e),
+                    error_type=type(e).__name__
                 )
 
         self.logger.info(
@@ -196,10 +391,14 @@ class WisconsinWiaaDataSource(AssociationAdapterBase):
         for div in divisions_to_check:
             # Try common sectional groupings
             for sec_group in ["Sec1_2", "Sec3_4", "Sec5_6", "Sec7_8"]:
-                try:
-                    url = f"{self.brackets_url}/{year}_Basketball_{gender}_{div}_{sec_group}.html"
-                    html = await self.http_client.get_text(url, cache_ttl=3600)
+                url = f"{self.brackets_url}/{year}_Basketball_{gender}_{div}_{sec_group}.html"
+                html = await self._fetch_bracket_with_retry(url)
 
+                if html is None:
+                    # Bracket doesn't exist - try next URL
+                    continue
+
+                try:
                     # Parse HTML to find navigation links
                     soup = parse_html(html)
 

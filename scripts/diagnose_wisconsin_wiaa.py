@@ -199,6 +199,106 @@ class WisconsinDiagnostics:
             results["min_games_per_team"] = min_games
             results["max_games_per_team"] = max_games
 
+        # Check 7: HTTP Statistics
+        print("\nCheck 7: HTTP Request Statistics")
+        print("-" * 40)
+        http_stats = self.datasource.get_http_stats()
+
+        print(f"   Brackets requested: {http_stats['brackets_requested']}")
+        print(f"   Brackets successful: {http_stats['brackets_successful']}")
+        print(f"   Success rate: {http_stats['success_rate']:.1%}")
+
+        if http_stats['brackets_404'] > 0:
+            print(f"   404 Not Found: {http_stats['brackets_404']}")
+        if http_stats['brackets_403'] > 0:
+            print(f"   403 Forbidden: {http_stats['brackets_403']}")
+        if http_stats['brackets_500'] > 0:
+            print(f"   500+ Server Errors: {http_stats['brackets_500']}")
+        if http_stats['brackets_timeout'] > 0:
+            print(f"   Timeouts: {http_stats['brackets_timeout']}")
+        if http_stats['brackets_other_error'] > 0:
+            print(f"   Other errors: {http_stats['brackets_other_error']}")
+
+        results["http_stats"] = http_stats
+
+        # Flag low success rate as an issue
+        if http_stats['success_rate'] < 0.9 and http_stats['brackets_requested'] > 0:
+            print(f"\n❌ WARN: Low HTTP success rate: {http_stats['success_rate']:.1%} (target: ≥90%)")
+            results["issues"].append(f"Low HTTP success rate: {http_stats['success_rate']:.1%}")
+        else:
+            print(f"\n✓ PASS: HTTP success rate acceptable ({http_stats['success_rate']:.1%})")
+
+        # Check 8: Score Distribution
+        print("\nCheck 8: Score Distribution")
+        print("-" * 40)
+        all_scores = []
+        for game in games:
+            if game.home_score is not None:
+                all_scores.append(game.home_score)
+            if game.away_score is not None:
+                all_scores.append(game.away_score)
+
+        if all_scores:
+            import statistics
+            avg_score = statistics.mean(all_scores)
+            median_score = statistics.median(all_scores)
+            min_score = min(all_scores)
+            max_score = max(all_scores)
+
+            print(f"   Average score: {avg_score:.1f}")
+            print(f"   Median score: {median_score:.0f}")
+            print(f"   Score range: {min_score}-{max_score}")
+
+            results["score_stats"] = {
+                "average": avg_score,
+                "median": median_score,
+                "min": min_score,
+                "max": max_score
+            }
+
+            # Flag suspicious patterns
+            suspicious_low = sum(1 for s in all_scores if s < 10)
+            suspicious_high = sum(1 for s in all_scores if s > 150)
+
+            if suspicious_low > 0:
+                print(f"   ⚠️  Very low scores (< 10): {suspicious_low}")
+            if suspicious_high > 0:
+                print(f"   ⚠️  Very high scores (> 150): {suspicious_high}")
+
+            if suspicious_low > len(all_scores) * 0.05:  # More than 5% suspicious
+                results["issues"].append(f"High number of suspiciously low scores: {suspicious_low}")
+            if suspicious_high > len(all_scores) * 0.05:
+                results["issues"].append(f"High number of suspiciously high scores: {suspicious_high}")
+
+        # Check 9: Round Progression Sanity
+        print("\nCheck 9: Round Progression Sanity")
+        print("-" * 40)
+
+        # Expected progression: Regional > Sectional > State
+        regional_games = sum(1 for g in games if "Regional" in g.round)
+        sectional_games = sum(1 for g in games if "Sectional" in g.round)
+        state_games = sum(1 for g in games if "State" in g.round)
+
+        print(f"   Regional games: {regional_games}")
+        print(f"   Sectional games: {sectional_games}")
+        print(f"   State games: {state_games}")
+
+        results["round_progression"] = {
+            "regional": regional_games,
+            "sectional": sectional_games,
+            "state": state_games
+        }
+
+        # Sanity check: Regional should have most games, State should have fewest
+        if regional_games > 0 and sectional_games > 0 and state_games > 0:
+            if not (regional_games >= sectional_games >= state_games):
+                print(f"\n❌ WARN: Unusual round progression (Regional should have most games)")
+                results["issues"].append("Unusual round progression pattern")
+            else:
+                print(f"\n✓ PASS: Round progression follows expected pattern")
+        else:
+            print(f"\n⚠️  INFO: Not all round types present")
+
         # Summary
         print(f"\n{'='*80}")
         print("SUMMARY")
