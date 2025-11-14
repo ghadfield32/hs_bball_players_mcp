@@ -69,6 +69,7 @@ class DataSourceType(str, Enum):
     MSHSAA = "mshsaa"  # Missouri State High School Activities Association
     NDHSAA = "ndhsaa"  # North Dakota High School Activities Association
     NSAA = "nsaa"  # Nebraska School Activities Association
+    WIAA = "wiaa"  # Wisconsin Interscholastic Athletic Association
 
     # US - State Associations (Southwest/West)
     CHSAA = "chsaa"  # Colorado High School Activities Association

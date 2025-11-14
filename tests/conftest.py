@@ -22,6 +22,7 @@ from src.datasources.us.rankone import RankOneDataSource
 from src.datasources.us.sblive import SBLiveDataSource
 from src.datasources.us.bound import BoundDataSource
 from src.datasources.us.three_ssb import ThreeSSBDataSource
+from src.datasources.us.wisconsin_wiaa import WisconsinWiaaDataSource
 from src.datasources.us.wsn import WSNDataSource
 from src.datasources.europe.fiba_youth import FIBAYouthDataSource
 from src.main import app
@@ -138,6 +139,14 @@ async def three_ssb_source() -> AsyncGenerator[ThreeSSBDataSource, None]:
 async def wsn_source() -> AsyncGenerator[WSNDataSource, None]:
     """Create WSN (Wisconsin Sports Network) datasource for testing."""
     source = WSNDataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def wisconsin_wiaa_source() -> AsyncGenerator[WisconsinWiaaDataSource, None]:
+    """Create Wisconsin WIAA datasource for testing."""
+    source = WisconsinWiaaDataSource()
     yield source
     await source.close()
 

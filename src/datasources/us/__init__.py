@@ -54,6 +54,7 @@ from .missouri_mshsaa import MissouriMshsaaDataSource
 from .nebraska_nsaa import NebraskaNsaaDataSource
 from .north_dakota_ndhsaa import NorthDakotaNdhsaaDataSource
 from .ohio_ohsaa import OhioOhsaaDataSource
+from .wisconsin_wiaa import WisconsinWiaaDataSource
 
 # State associations - Southwest/West
 from .alaska_asaa import AlaskaAsaaDataSource
@@ -111,6 +112,7 @@ __all__ = [
     "NebraskaNsaaDataSource",
     "NorthDakotaNdhsaaDataSource",
     "OhioOhsaaDataSource",
+    "WisconsinWiaaDataSource",
     "AlaskaAsaaDataSource",
     "ColoradoChsaaDataSource",
     "DcDciaaDataSource",

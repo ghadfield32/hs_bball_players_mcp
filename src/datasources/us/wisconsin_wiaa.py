@@ -1,0 +1,669 @@
+"""
+Wisconsin Interscholastic Athletic Association (WIAA) DataSource Adapter
+
+Provides tournament brackets and results for Wisconsin high school basketball.
+
+Base URLs:
+- Main site: https://www.wiaawi.org
+- Tournament brackets: https://halftime.wiaawi.org/CustomApps/Tournaments/Brackets/HTML/
+
+Data Coverage:
+- Boys and Girls basketball
+- Tournament brackets (Regional, Sectional, State)
+- Historical data (2015-2025)
+- All divisions (D1-D5 typically)
+
+Implementation Phases:
+- Phase 1: Enhanced parser with duplicate detection, round parsing, self-game filtering
+- Phase 2: URL discovery from navigation links (not pattern-based)
+- Phase 3: Girls basketball support
+- Phase 4: Historical backfill (2015-2025)
+- Phase 5: Validation and diagnostics
+- Phase 6: Metadata enhancements (venues, neutral courts, etc.)
+"""
+
+import re
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+from ...models import (
+    DataQualityFlag,
+    DataSourceRegion,
+    DataSourceType,
+    Game,
+    GameStatus,
+    GameType,
+    Team,
+    TeamLevel,
+)
+from ...utils import get_text_or_none, parse_html, parse_int
+from ..base_association import AssociationAdapterBase
+
+
+class WisconsinWiaaDataSource(AssociationAdapterBase):
+    """
+    Wisconsin Interscholastic Athletic Association data source adapter.
+
+    Parses tournament brackets from halftime.wiaawi.org HTML pages.
+    Handles both Boys and Girls basketball across all divisions.
+    """
+
+    source_type = DataSourceType.WIAA
+    source_name = "Wisconsin WIAA"
+    base_url = "https://www.wiaawi.org"
+    brackets_url = "https://halftime.wiaawi.org/CustomApps/Tournaments/Brackets/HTML"
+    region = DataSourceRegion.US_WI
+
+    # Parser configuration
+    MIN_SCORE = 0
+    MAX_SCORE = 200
+    DIVISIONS = ["Div1", "Div2", "Div3", "Div4", "Div5"]
+    GENDERS = ["Boys", "Girls"]
+
+    def __init__(self):
+        """Initialize Wisconsin WIAA datasource."""
+        super().__init__()
+        self.state_code = "WI"
+        self.league_name = "Wisconsin High School"
+        self.league_abbrev = "WIAA"
+
+    def _get_season_url(self, season: str, gender: str = "Boys") -> str:
+        """
+        Get URL for Wisconsin basketball season data.
+
+        Args:
+            season: Season string (e.g., "2024-25")
+            gender: "Boys" or "Girls"
+
+        Returns:
+            URL for season tournament brackets
+        """
+        # Extract year (e.g., "2024-25" -> 2025 for tournament year)
+        year = int(season.split("-")[0]) + 1
+
+        # Default to Div1, Sec1_2 as starting point for URL discovery
+        return f"{self.brackets_url}/{year}_Basketball_{gender}_Div1_Sec1_2.html"
+
+    async def get_tournament_brackets(
+        self,
+        year: Optional[int] = None,
+        gender: str = "Boys",
+        division: Optional[str] = None
+    ) -> List[Game]:
+        """
+        Get tournament bracket games for a specific year and gender.
+
+        Args:
+            year: Tournament year (e.g., 2025 for 2024-25 season), defaults to current
+            gender: "Boys" or "Girls"
+            division: Specific division (e.g., "Div1"), or None for all
+
+        Returns:
+            List of Game objects from tournament brackets
+        """
+        if year is None:
+            # Determine current tournament year
+            now = datetime.now()
+            year = now.year + 1 if now.month >= 8 else now.year
+
+        self.logger.info(
+            f"Fetching Wisconsin WIAA tournament brackets",
+            year=year,
+            gender=gender,
+            division=division
+        )
+
+        # Discover bracket URLs
+        bracket_urls = await self._discover_bracket_urls(year, gender, division)
+
+        if not bracket_urls:
+            self.logger.warning(
+                f"No bracket URLs discovered for Wisconsin WIAA",
+                year=year,
+                gender=gender
+            )
+            # Fall back to pattern-based URL generation
+            bracket_urls = self._generate_bracket_urls(year, gender, division)
+
+        # Parse all discovered brackets
+        all_games: List[Game] = []
+        for url_info in bracket_urls:
+            try:
+                html = await self.http_client.get_text(
+                    url_info["url"],
+                    cache_ttl=3600
+                )
+
+                games = self._parse_halftime_html_to_games(
+                    html,
+                    year=year,
+                    gender=gender,
+                    division=url_info.get("division"),
+                    source_url=url_info["url"]
+                )
+
+                all_games.extend(games)
+
+                self.logger.info(
+                    f"Parsed bracket page",
+                    url=url_info["url"],
+                    games=len(games),
+                    division=url_info.get("division")
+                )
+
+            except Exception as e:
+                # Log but don't fail - some bracket pages may not exist
+                self.logger.debug(
+                    f"Failed to fetch/parse bracket",
+                    url=url_info["url"],
+                    error=str(e)
+                )
+
+        self.logger.info(
+            f"Total Wisconsin WIAA tournament games parsed",
+            year=year,
+            gender=gender,
+            total_games=len(all_games)
+        )
+
+        return all_games
+
+    async def _discover_bracket_urls(
+        self,
+        year: int,
+        gender: str,
+        division: Optional[str] = None
+    ) -> List[Dict[str, str]]:
+        """
+        Discover bracket URLs by parsing navigation links from index pages.
+
+        This is the Phase 2 enhancement - discovery-first approach instead of
+        pattern-based URL generation.
+
+        Args:
+            year: Tournament year
+            gender: "Boys" or "Girls"
+            division: Optional specific division
+
+        Returns:
+            List of dicts with {"url": str, "division": str, "sections": str}
+        """
+        discovered_urls: List[Dict[str, str]] = []
+
+        # Try to fetch a known bracket page to find navigation links
+        divisions_to_check = [division] if division else self.DIVISIONS
+
+        for div in divisions_to_check:
+            # Try common sectional groupings
+            for sec_group in ["Sec1_2", "Sec3_4", "Sec5_6", "Sec7_8"]:
+                try:
+                    url = f"{self.brackets_url}/{year}_Basketball_{gender}_{div}_{sec_group}.html"
+                    html = await self.http_client.get_text(url, cache_ttl=3600)
+
+                    # Parse HTML to find navigation links
+                    soup = parse_html(html)
+
+                    # Look for links to other bracket pages
+                    # Pattern: href containing "/CustomApps/Tournaments/Brackets/HTML/"
+                    links = soup.find_all("a", href=re.compile(r'/CustomApps/Tournaments/Brackets/HTML/'))
+
+                    for link in links:
+                        href = link.get("href", "")
+                        if not href:
+                            continue
+
+                        # Extract full URL
+                        if href.startswith("http"):
+                            full_url = href
+                        elif href.startswith("/"):
+                            full_url = f"https://halftime.wiaawi.org{href}"
+                        else:
+                            full_url = f"{self.brackets_url}/{href}"
+
+                        # Parse division and sections from URL
+                        # Format: 2025_Basketball_Girls_Div1_Sec3_4.html
+                        match = re.search(
+                            r'(\d{4})_Basketball_(Boys|Girls)_(Div\d+)_(Sec[\d_]+)\.html',
+                            full_url
+                        )
+
+                        if match:
+                            url_year, url_gender, url_div, url_secs = match.groups()
+
+                            if (int(url_year) == year and
+                                url_gender == gender and
+                                (not division or url_div == division)):
+
+                                discovered_urls.append({
+                                    "url": full_url,
+                                    "division": url_div,
+                                    "sections": url_secs,
+                                    "year": url_year,
+                                    "gender": url_gender
+                                })
+
+                    # If we found links, we can break
+                    if discovered_urls:
+                        break
+
+                except Exception as e:
+                    # Silently continue - page may not exist
+                    continue
+
+            if discovered_urls:
+                break
+
+        # Deduplicate URLs
+        seen_urls = set()
+        unique_urls = []
+        for url_info in discovered_urls:
+            if url_info["url"] not in seen_urls:
+                seen_urls.add(url_info["url"])
+                unique_urls.append(url_info)
+
+        return unique_urls
+
+    def _generate_bracket_urls(
+        self,
+        year: int,
+        gender: str,
+        division: Optional[str] = None
+    ) -> List[Dict[str, str]]:
+        """
+        Generate bracket URLs using pattern-based approach.
+
+        Fallback for when discovery fails (historical years, etc.)
+
+        Args:
+            year: Tournament year
+            gender: "Boys" or "Girls"
+            division: Optional specific division
+
+        Returns:
+            List of dicts with {"url": str, "division": str}
+        """
+        urls: List[Dict[str, str]] = []
+
+        divisions = [division] if division else self.DIVISIONS
+
+        # Common sectional groupings
+        sectional_groups = [
+            "Sec1_2", "Sec3_4", "Sec5_6", "Sec7_8",
+            "Sec9_10", "Sec11_12", "Sec13_14", "Sec15_16"
+        ]
+
+        for div in divisions:
+            for sec_group in sectional_groups:
+                url = f"{self.brackets_url}/{year}_Basketball_{gender}_{div}_{sec_group}.html"
+                urls.append({
+                    "url": url,
+                    "division": div,
+                    "sections": sec_group,
+                    "year": str(year),
+                    "gender": gender
+                })
+
+        return urls
+
+    def _parse_halftime_html_to_games(
+        self,
+        html: str,
+        year: int,
+        gender: str,
+        division: Optional[str],
+        source_url: str
+    ) -> List[Game]:
+        """
+        Parse halftime.wiaawi.org HTML to extract games.
+
+        Enhanced Phase 1 parser with:
+        - Self-game detection and skipping
+        - Duplicate game detection
+        - Improved round parsing
+        - Invalid score filtering
+        - Comprehensive logging
+
+        Args:
+            html: HTML content from bracket page
+            year: Tournament year
+            gender: "Boys" or "Girls"
+            division: Division (e.g., "Div1")
+            source_url: Source URL for reference
+
+        Returns:
+            List of Game objects
+        """
+        soup = parse_html(html)
+
+        # Convert HTML to text for line-by-line parsing
+        text = soup.get_text(separator="\n")
+        lines = [line.strip() for line in text.split("\n") if line.strip()]
+
+        games: List[Game] = []
+        seen_games: Set[Tuple[str, str, int, int]] = set()  # (team1, team2, score1, score2)
+
+        # Parsing state
+        current_sectional: Optional[str] = None
+        current_round: str = "Unknown Round"
+        current_date: Optional[datetime] = None
+        current_time: Optional[str] = None
+        current_location: Optional[str] = None
+        pending_teams: List[Tuple[str, int]] = []  # [(team_name, seed), ...]
+
+        # Statistics for logging
+        stats = {
+            "total_lines": len(lines),
+            "games_found": 0,
+            "skipped_self_games": 0,
+            "skipped_duplicates": 0,
+            "skipped_invalid_scores": 0,
+            "rounds_detected": set()
+        }
+
+        # Regex patterns
+        sectional_pattern = re.compile(r'^Sectional\s*#?(\d+)', re.IGNORECASE)
+        round_patterns = [
+            (re.compile(r'Regional\s+Semi-?finals?', re.IGNORECASE), "Regional Semifinals"),
+            (re.compile(r'Regional\s+Finals?', re.IGNORECASE), "Regional Finals"),
+            (re.compile(r'Sectional\s+Semi-?finals?', re.IGNORECASE), "Sectional Semifinals"),
+            (re.compile(r'Sectional\s+Finals?', re.IGNORECASE), "Sectional Finals"),
+            (re.compile(r'State\s+Semi-?finals?', re.IGNORECASE), "State Semifinals"),
+            (re.compile(r'State\s+Championship', re.IGNORECASE), "State Championship"),
+            (re.compile(r'Regionals?', re.IGNORECASE), "Regional"),
+            (re.compile(r'Sectionals?', re.IGNORECASE), "Sectional"),
+            (re.compile(r'State', re.IGNORECASE), "State"),
+        ]
+        team_pattern = re.compile(r'^#?(\d+)\s+(.+)$')
+        score_pattern = re.compile(r'^(\d{1,3})-(\d{1,3})(?:\s*\((OT|2OT|3OT)\))?$')
+        location_pattern = re.compile(r'^@(.+)$')
+        date_pattern = re.compile(r'(Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s+(\w+)\s+(\d+)')
+        time_pattern = re.compile(r'(\d{1,2}):(\d{2})\s*(AM|PM)', re.IGNORECASE)
+
+        for line_num, line in enumerate(lines, 1):
+            # Check for sectional header
+            sectional_match = sectional_pattern.search(line)
+            if sectional_match:
+                current_sectional = f"Sectional {sectional_match.group(1)}"
+                continue
+
+            # Check for round header
+            for pattern, round_name in round_patterns:
+                if pattern.search(line):
+                    current_round = round_name
+                    stats["rounds_detected"].add(round_name)
+                    break
+
+            # Check for date
+            date_match = date_pattern.search(line)
+            if date_match:
+                # Parse date (month name to date)
+                # For now, just store the string - full date parsing could be added
+                current_date = None  # TODO: Implement full date parsing
+                continue
+
+            # Check for time
+            time_match = time_pattern.search(line)
+            if time_match:
+                current_time = time_match.group(0)
+                continue
+
+            # Check for location
+            location_match = location_pattern.search(line)
+            if location_match:
+                current_location = location_match.group(1).strip()
+                continue
+
+            # Check for team (seed + name)
+            team_match = team_pattern.match(line)
+            if team_match:
+                seed = int(team_match.group(1))
+                team_name = team_match.group(2).strip()
+                pending_teams.append((team_name, seed))
+                continue
+
+            # Check for score
+            score_match = score_pattern.match(line)
+            if score_match:
+                score1 = int(score_match.group(1))
+                score2 = int(score_match.group(2))
+                overtime = score_match.group(3) if len(score_match.groups()) >= 3 else None
+
+                # Validate score
+                if not (self.MIN_SCORE <= score1 <= self.MAX_SCORE and
+                        self.MIN_SCORE <= score2 <= self.MAX_SCORE):
+                    stats["skipped_invalid_scores"] += 1
+                    pending_teams = []
+                    continue
+
+                # We need exactly 2 teams for a game
+                if len(pending_teams) == 2:
+                    team1_name, team1_seed = pending_teams[0]
+                    team2_name, team2_seed = pending_teams[1]
+
+                    # Skip self-games (team playing itself)
+                    if team1_name.lower() == team2_name.lower():
+                        stats["skipped_self_games"] += 1
+                        pending_teams = []
+                        continue
+
+                    # Check for duplicates
+                    # Normalize team order to catch reverse duplicates
+                    teams_sorted = tuple(sorted([team1_name, team2_name]))
+                    scores_sorted = tuple(sorted([score1, score2]))
+                    game_key = (teams_sorted[0], teams_sorted[1], scores_sorted[0], scores_sorted[1])
+
+                    if game_key in seen_games:
+                        stats["skipped_duplicates"] += 1
+                        pending_teams = []
+                        continue
+
+                    seen_games.add(game_key)
+
+                    # Determine home/away based on higher seed (higher seed typically home)
+                    if team1_seed < team2_seed:  # Lower seed number = higher seed
+                        home_team, home_score = team1_name, score1
+                        away_team, away_score = team2_name, score2
+                    else:
+                        home_team, home_score = team2_name, score2
+                        away_team, away_score = team1_name, score1
+
+                    # Create game ID
+                    game_id = self._generate_game_id(
+                        year, gender, division, current_sectional, current_round,
+                        home_team, away_team
+                    )
+
+                    # Create Game object
+                    game = Game(
+                        game_id=game_id,
+                        home_team_name=home_team,
+                        away_team_name=away_team,
+                        home_team_id=f"wiaa_wi_{home_team.lower().replace(' ', '_')}",
+                        away_team_id=f"wiaa_wi_{away_team.lower().replace(' ', '_')}",
+                        home_score=home_score,
+                        away_score=away_score,
+                        game_date=current_date,
+                        game_type=GameType.TOURNAMENT,
+                        status=GameStatus.COMPLETED,
+                        season=f"{year-1}-{str(year)[-2:]}",
+                        round=current_round,
+                        location=current_location,
+                        overtime_periods=self._parse_overtime(overtime) if overtime else None,
+                        gender=gender,
+                        division=division,
+                        sectional=current_sectional,
+                        data_source=self.create_data_source_metadata(
+                            url=source_url,
+                            quality_flag=DataQualityFlag.VERIFIED
+                        )
+                    )
+
+                    games.append(game)
+                    stats["games_found"] += 1
+
+                    # Clear pending teams
+                    pending_teams = []
+
+                continue
+
+        # Log statistics
+        self.logger.info(
+            f"Wisconsin WIAA bracket parsing complete",
+            **stats,
+            url=source_url
+        )
+
+        return games
+
+    def _generate_game_id(
+        self,
+        year: int,
+        gender: str,
+        division: Optional[str],
+        sectional: Optional[str],
+        round: str,
+        home_team: str,
+        away_team: str
+    ) -> str:
+        """Generate unique game ID."""
+        parts = [
+            "wiaa_wi",
+            str(year),
+            gender.lower(),
+            division.lower() if division else "unknown",
+            round.lower().replace(" ", "_"),
+            home_team.lower().replace(" ", "_")[:15],
+            away_team.lower().replace(" ", "_")[:15]
+        ]
+        return "_".join(parts)
+
+    def _parse_overtime(self, overtime_str: str) -> int:
+        """Parse overtime string to number of periods."""
+        if not overtime_str:
+            return 0
+
+        if overtime_str == "OT":
+            return 1
+        elif overtime_str == "2OT":
+            return 2
+        elif overtime_str == "3OT":
+            return 3
+
+        return 0
+
+    async def _parse_json_data(self, json_data: Dict[str, Any], season: str) -> Dict[str, Any]:
+        """
+        Parse JSON data from Wisconsin WIAA.
+
+        WIAA primarily uses HTML, so JSON parsing is minimal.
+        """
+        self.logger.debug("Wisconsin WIAA uses HTML brackets, not JSON")
+        return {"teams": [], "games": [], "season": season, "source": "json"}
+
+    async def _parse_html_data(self, html: str, season: str) -> Dict[str, Any]:
+        """
+        Parse HTML data from Wisconsin WIAA.
+
+        Args:
+            html: HTML content
+            season: Season string
+
+        Returns:
+            Dict with teams and games
+        """
+        # Extract year and default to Boys
+        year = int(season.split("-")[0]) + 1
+
+        # Parse games from HTML
+        games = self._parse_halftime_html_to_games(
+            html,
+            year=year,
+            gender="Boys",
+            division=None,
+            source_url=self.base_url
+        )
+
+        # Extract unique teams from games
+        teams_dict: Dict[str, Team] = {}
+
+        for game in games:
+            # Add home team
+            if game.home_team_id and game.home_team_id not in teams_dict:
+                teams_dict[game.home_team_id] = Team(
+                    team_id=game.home_team_id,
+                    name=game.home_team_name,
+                    school=game.home_team_name,
+                    level=TeamLevel.HIGH_SCHOOL,
+                    season=season,
+                    state=self.state_code,
+                    country="USA",
+                    data_source=self.create_data_source_metadata(
+                        url=self.base_url,
+                        quality_flag=DataQualityFlag.VERIFIED
+                    )
+                )
+
+            # Add away team
+            if game.away_team_id and game.away_team_id not in teams_dict:
+                teams_dict[game.away_team_id] = Team(
+                    team_id=game.away_team_id,
+                    name=game.away_team_name,
+                    school=game.away_team_name,
+                    level=TeamLevel.HIGH_SCHOOL,
+                    season=season,
+                    state=self.state_code,
+                    country="USA",
+                    data_source=self.create_data_source_metadata(
+                        url=self.base_url,
+                        quality_flag=DataQualityFlag.VERIFIED
+                    )
+                )
+
+        teams = list(teams_dict.values())
+
+        self.logger.info(
+            f"Parsed Wisconsin WIAA HTML data",
+            season=season,
+            teams=len(teams),
+            games=len(games)
+        )
+
+        return {"teams": teams, "games": games, "season": season, "source": "html"}
+
+    async def get_games(
+        self,
+        team_id: Optional[str] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        season: Optional[str] = None,
+        limit: int = 100,
+    ) -> list[Game]:
+        """
+        Get games with optional filters.
+
+        Overrides base class to add gender support.
+        """
+        # Determine year from season
+        if season:
+            year = int(season.split("-")[0]) + 1
+        else:
+            now = datetime.now()
+            year = now.year + 1 if now.month >= 8 else now.year
+
+        # Get both Boys and Girls games
+        boys_games = await self.get_tournament_brackets(year=year, gender="Boys")
+        girls_games = await self.get_tournament_brackets(year=year, gender="Girls")
+
+        games = boys_games + girls_games
+
+        # Apply filters
+        if team_id:
+            games = [g for g in games if g.home_team_id == team_id or g.away_team_id == team_id]
+
+        if start_date:
+            games = [g for g in games if g.game_date and g.game_date >= start_date]
+
+        if end_date:
+            games = [g for g in games if g.game_date and g.game_date <= end_date]
+
+        return games[:limit]
