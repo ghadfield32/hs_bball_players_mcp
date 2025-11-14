@@ -3112,6 +3112,74 @@ python scripts/rollover_wiaa_season.py 2026 --download --interactive
 - `src/models/source.py`: +3 lines (backwards compatibility)
 - `src/models/__init__.py`: +2 exports
 
+### MERGE CONFLICT DEBUGGING (2025-11-14)
+
+**Issue Reported**: User encountered import error during merge of Wisconsin branch to main:
+```
+ImportError: cannot import name 'WisconsinWIAADataSource' from 'src.datasources.us.wisconsin_wiaa'
+tests\conftest.py:27: in <module>
+```
+
+**Root Cause Analysis**:
+1. **Git State**: User on `main` branch with unfinished merge (MERGE_HEAD exists)
+2. **Capitalization Mismatch**:
+   - Actual class name: `WisconsinWiaaDataSource` (lowercase "iaa")
+   - Import attempting: `WisconsinWIAADataSource` (all caps "WIAA")
+3. **Why**: Merge conflict resulted in old version of `conftest.py` with wrong capitalization
+
+**Systematic Debugging Approach** (per user's 10-step methodology):
+1. ✅ **Analyzed error output**: Identified import error location and class name mismatch
+2. ✅ **Reviewed error messages**: Traced import failure to `conftest.py:27`
+3. ✅ **Traced code execution**: Searched codebase for all occurrences (40+ files all use correct name)
+4. ✅ **Debugged assumptions**: Confirmed git merge state causing file version mismatch
+5. ✅ **Provided potential fixes**: Created two fix paths (complete merge or abort & switch branch)
+6. ✅ **Recommended best practices**: Created diagnostic tools for future debugging
+
+**Tools Created**:
+
+1. **`scripts/debug_import_issue.py`** (265 lines - NEW)
+   - **Purpose**: Automated diagnostic script for import/merge issues
+   - **Features**:
+     - AST parsing to find actual class definitions
+     - Import statement analysis in test files
+     - Git merge state detection (MERGE_HEAD, staged files, conflicts)
+     - Branch comparison for conftest.py
+     - Solution recommendations based on findings
+   - **Usage**: `python scripts/debug_import_issue.py`
+   - **Output**: Comprehensive report with visual formatting showing:
+     - Line numbers where classes are defined
+     - What imports are being attempted
+     - Git state warnings
+     - Step-by-step fix instructions
+
+2. **`IMPORT_ERROR_FIX.md`** (NEW - comprehensive guide)
+   - **Purpose**: Complete diagnostic and fix guide for the import error
+   - **Sections**:
+     - Problem summary with visual tables
+     - What's happening (git state + capitalization issue)
+     - Step-by-step solutions (Option A: complete merge, Option B: abort & switch)
+     - Verification steps with expected output
+     - Why it happened (naming conventions explained)
+     - Debugging tips for future
+     - Related files reference (all 40+ correct usages)
+   - **Target Audience**: User on Windows system with merge conflict
+
+**Class Name Convention Documentation**:
+- ✅ **Correct**: `WisconsinWiaaDataSource` - follows PEP 8 (CapWords for classes, "Wiaa" as single word)
+- ❌ **Incorrect**: `WisconsinWIAADataSource` - violates PEP 8 (acronyms should not be all caps in class names)
+
+**Verification**:
+- Searched entire codebase: 40+ occurrences all use `WisconsinWiaaDataSource` ✅
+- Repository version of `conftest.py` line 25 uses correct name ✅
+- All test files, scripts, documentation use correct name ✅
+
+**User Action Required**:
+1. Run `python scripts/debug_import_issue.py` on their Windows system
+2. Follow Option A (complete merge) or Option B (abort & switch branch) from `IMPORT_ERROR_FIX.md`
+3. Verify with `uv run pytest tests/test_datasources/test_wisconsin_wiaa.py -v`
+
+**Status**: ✅ Diagnostic tools created and documented, waiting for user to run on their system
+
 ---
 
 ### IN PROGRESS
