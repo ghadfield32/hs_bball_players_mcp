@@ -506,6 +506,165 @@ class WisconsinWiaaDataSource(AssociationAdapterBase):
 
         return all_games
 
+    async def get_season_data(self, season: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get season-level data for Wisconsin WIAA basketball.
+
+        In FIXTURE mode: Aggregates tournament games from available fixtures for the season.
+        In LIVE mode: Delegates to base class implementation (may query WIAA APIs).
+
+        Args:
+            season: Season string (e.g., "2023-24", "2024-25"), None for current
+
+        Returns:
+            Dict with season data:
+                - games: List[Game] - All tournament games for the season
+                - teams: List[Team] - Unique teams participating
+                - metadata: Dict - Season info (year, divisions covered, etc.)
+
+        Example:
+            # FIXTURE mode - aggregates from local HTML fixtures
+            source = WisconsinWiaaDataSource(data_mode=DataMode.FIXTURE)
+            season_data = await source.get_season_data("2023-24")
+            # Returns games from all available 2024 Boys/Girls Div1-4 fixtures
+
+            # LIVE mode - queries WIAA website
+            source = WisconsinWiaaDataSource(data_mode=DataMode.LIVE)
+            season_data = await source.get_season_data("2023-24")
+        """
+        # In FIXTURE mode, aggregate from available fixtures
+        if self.data_mode == DataMode.FIXTURE:
+            return await self._get_season_data_from_fixtures(season)
+
+        # LIVE mode: delegate to base class
+        return await super().get_season_data(season)
+
+    async def _get_season_data_from_fixtures(self, season: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get season data by aggregating from available fixture files.
+
+        This method is only called in FIXTURE mode. It loads all available
+        fixtures for the given season and aggregates them into season-level data.
+
+        Args:
+            season: Season string (e.g., "2023-24"), None for current
+
+        Returns:
+            Dict with games, teams, and metadata
+        """
+        # Parse season to get tournament year
+        # Season "2023-24" -> tournament year 2024 (spring year)
+        if season is None:
+            now = datetime.now()
+            year = now.year + 1 if now.month >= 8 else now.year
+        else:
+            # Parse season like "2023-24" -> 2024
+            parts = season.split("-")
+            if len(parts) == 2:
+                year = int(parts[1]) + 2000 if len(parts[1]) == 2 else int(parts[1])
+            else:
+                # Single year format
+                year = int(parts[0])
+
+        self.logger.info(
+            f"Getting season data from fixtures",
+            season=season,
+            year=year,
+            mode="FIXTURE"
+        )
+
+        # Collect all games from available fixtures for this year
+        all_games: List[Game] = []
+        divisions_covered = set()
+
+        for gender in self.GENDERS:
+            for division in self.DIVISIONS:
+                # Check if fixture exists
+                fixture_path = self.fixtures_dir / f"{year}_Basketball_{gender}_{division}.html"
+                if not fixture_path.exists():
+                    self.logger.debug(
+                        f"Fixture not found, skipping",
+                        year=year,
+                        gender=gender,
+                        division=division
+                    )
+                    continue
+
+                try:
+                    games = await self.get_tournament_brackets(
+                        year=year,
+                        gender=gender,
+                        division=division
+                    )
+
+                    all_games.extend(games)
+                    divisions_covered.add(f"{gender}_{division}")
+
+                    self.logger.info(
+                        f"Loaded games from fixture",
+                        year=year,
+                        gender=gender,
+                        division=division,
+                        games_count=len(games)
+                    )
+
+                except Exception as e:
+                    self.logger.warning(
+                        f"Failed to load fixture",
+                        year=year,
+                        gender=gender,
+                        division=division,
+                        error=str(e)
+                    )
+
+        # Extract unique teams
+        teams_dict: Dict[str, Team] = {}
+        for game in all_games:
+            # Home team
+            if game.home_team_id not in teams_dict:
+                teams_dict[game.home_team_id] = Team(
+                    team_id=game.home_team_id,
+                    team_name=game.home_team_name,
+                    state=self.state_code,
+                    level=TeamLevel.HIGH_SCHOOL_VARSITY,
+                    conference=f"WIAA {self.state_code}",
+                    data_source=game.data_source
+                )
+
+            # Away team
+            if game.away_team_id not in teams_dict:
+                teams_dict[game.away_team_id] = Team(
+                    team_id=game.away_team_id,
+                    team_name=game.away_team_name,
+                    state=self.state_code,
+                    level=TeamLevel.HIGH_SCHOOL_VARSITY,
+                    conference=f"WIAA {self.state_code}",
+                    data_source=game.data_source
+                )
+
+        teams = list(teams_dict.values())
+
+        self.logger.info(
+            f"Season data aggregated from fixtures",
+            season=season,
+            year=year,
+            total_games=len(all_games),
+            total_teams=len(teams),
+            divisions_covered=sorted(divisions_covered)
+        )
+
+        return {
+            "games": all_games,
+            "teams": teams,
+            "metadata": {
+                "season": season or f"{year-1}-{str(year)[-2:]}",
+                "year": year,
+                "divisions_covered": sorted(divisions_covered),
+                "fixture_count": len(divisions_covered),
+                "data_mode": "FIXTURE"
+            }
+        }
+
     async def _discover_bracket_urls(
         self,
         year: int,

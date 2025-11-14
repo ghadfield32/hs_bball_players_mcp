@@ -19,6 +19,8 @@ Example:
 import pytest
 from pathlib import Path
 from collections import Counter
+from typing import List, Tuple, Optional
+import yaml
 
 from src.datasources.us.wisconsin_wiaa import WisconsinWiaaDataSource, DataMode
 from src.models import Game
@@ -27,11 +29,42 @@ from src.models import Game
 # ========== CONFIGURATION ==========
 
 FIXTURES_DIR = Path("tests/fixtures/wiaa")
+MANIFEST_PATH = FIXTURES_DIR / "manifest_wisconsin.yml"
 
-# Define coverage grid (expand as fixtures are added)
-YEARS = [2023, 2024]  # TODO: Add 2015-2022
-GENDERS = ["Boys", "Girls"]
-DIVISIONS = ["Div1"]  # TODO: Add Div2-Div4
+# Manifest cache
+_MANIFEST_CACHE: Optional[dict] = None
+
+
+def load_manifest() -> dict:
+    """Load the Wisconsin WIAA fixture manifest (cached)."""
+    global _MANIFEST_CACHE
+    if _MANIFEST_CACHE is None:
+        with MANIFEST_PATH.open("r", encoding="utf-8") as f:
+            _MANIFEST_CACHE = yaml.safe_load(f)
+    return _MANIFEST_CACHE
+
+
+def get_test_parameters() -> List[Tuple[int, str, str]]:
+    """
+    Get test parameters from manifest for parametric tests.
+
+    Returns list of (year, gender, division) tuples for all combinations
+    defined in the manifest's coverage grid.
+    """
+    manifest = load_manifest()
+    years = manifest.get("years", [])
+    genders = manifest.get("genders", [])
+    divisions = manifest.get("divisions", [])
+
+    # Generate all combinations from coverage grid
+    parameters = [
+        (year, gender, division)
+        for year in years
+        for gender in genders
+        for division in divisions
+    ]
+
+    return parameters
 
 
 def has_fixture(year: int, gender: str, division: str) -> bool:
@@ -40,11 +73,30 @@ def has_fixture(year: int, gender: str, division: str) -> bool:
     return fixture_path.exists()
 
 
+def get_fixture_status(year: int, gender: str, division: str) -> str:
+    """
+    Get manifest status for a specific fixture.
+
+    Returns:
+        Status string: "present", "planned", "future", "unavailable", or "unknown"
+    """
+    manifest = load_manifest()
+    for entry in manifest.get("fixtures", []):
+        if (entry["year"] == year and
+            entry["gender"] == gender and
+            entry["division"] == division):
+            return entry.get("status", "unknown")
+    return "unknown"
+
+
+# Generate test parameters from manifest
+TEST_PARAMS = get_test_parameters()
+PARAM_IDS = [f"{y}_{g}_{d}" for y, g, d in TEST_PARAMS]
+
+
 # ========== HEALTH CHECK TESTS (Parametric) ==========
 
-@pytest.mark.parametrize("year", YEARS)
-@pytest.mark.parametrize("gender", GENDERS)
-@pytest.mark.parametrize("division", DIVISIONS)
+@pytest.mark.parametrize("year,gender,division", TEST_PARAMS, ids=PARAM_IDS)
 @pytest.mark.asyncio
 async def test_wisconsin_historical_health(year, gender, division):
     """Basic health check for Wisconsin WIAA historical data.
@@ -91,9 +143,7 @@ async def test_wisconsin_historical_health(year, gender, division):
         await source.close()
 
 
-@pytest.mark.parametrize("year", YEARS)
-@pytest.mark.parametrize("gender", GENDERS)
-@pytest.mark.parametrize("division", DIVISIONS)
+@pytest.mark.parametrize("year,gender,division", TEST_PARAMS, ids=PARAM_IDS)
 @pytest.mark.asyncio
 async def test_wisconsin_historical_rounds(year, gender, division):
     """Test round parsing for Wisconsin WIAA historical data.
@@ -136,9 +186,7 @@ async def test_wisconsin_historical_rounds(year, gender, division):
         await source.close()
 
 
-@pytest.mark.parametrize("year", YEARS)
-@pytest.mark.parametrize("gender", GENDERS)
-@pytest.mark.parametrize("division", DIVISIONS)
+@pytest.mark.parametrize("year,gender,division", TEST_PARAMS, ids=PARAM_IDS)
 @pytest.mark.asyncio
 async def test_wisconsin_historical_completeness(year, gender, division):
     """Test data completeness for Wisconsin WIAA historical data.
@@ -187,29 +235,41 @@ async def test_wisconsin_fixture_coverage_report():
     """Generate a coverage report showing which fixtures exist.
 
     This test always passes but prints a coverage matrix
-    showing which year/gender/division combinations have fixtures.
+    showing which year/gender/division combinations have fixtures
+    and compares against manifest status.
     """
     print("\n" + "=" * 80)
     print("WISCONSIN WIAA FIXTURE COVERAGE REPORT")
     print("=" * 80)
 
-    # Extended coverage grid for reporting
-    all_years = list(range(2015, 2025))
-    all_genders = ["Boys", "Girls"]
-    all_divisions = ["Div1", "Div2", "Div3", "Div4"]
+    # Load manifest to get coverage grid
+    manifest = load_manifest()
+    all_years = manifest.get("years", [])
+    all_genders = manifest.get("genders", [])
+    all_divisions = manifest.get("divisions", [])
 
+    # Collect coverage data
     coverage = {}
+    status_counts = {"present": 0, "planned": 0, "future": 0, "unknown": 0}
+
     for year in all_years:
         coverage[year] = {}
         for gender in all_genders:
             coverage[year][gender] = {}
             for division in all_divisions:
-                coverage[year][gender][division] = has_fixture(year, gender, division)
+                file_exists = has_fixture(year, gender, division)
+                manifest_status = get_fixture_status(year, gender, division)
+                coverage[year][gender][division] = {
+                    "exists": file_exists,
+                    "status": manifest_status
+                }
+                status_counts[manifest_status] = status_counts.get(manifest_status, 0) + 1
 
     # Print matrix
     print(f"\nFixture directory: {FIXTURES_DIR.absolute()}")
+    print(f"Manifest: {MANIFEST_PATH.absolute()}")
     print("\nCoverage by Year/Gender/Division:")
-    print("  ✅ = fixture exists | ❌ = fixture missing\n")
+    print("  ✅ = present | 📋 = planned | ⏳ = future | ❌ = missing/unknown\n")
 
     for gender in all_genders:
         print(f"\n{gender}:")
@@ -218,8 +278,15 @@ async def test_wisconsin_fixture_coverage_report():
         for year in all_years:
             div_status = []
             for division in all_divisions:
-                has_it = coverage[year][gender][division]
-                div_status.append("✅" if has_it else "❌")
+                info = coverage[year][gender][division]
+                if info["exists"] and info["status"] == "present":
+                    div_status.append("✅")
+                elif info["status"] == "planned":
+                    div_status.append("📋")
+                elif info["status"] == "future":
+                    div_status.append("⏳")
+                else:
+                    div_status.append("❌")
             print(f"  {year}  |  {div_status[0]}  |  {div_status[1]}  |  {div_status[2]}  |  {div_status[3]}  |")
 
     # Summary stats
@@ -228,14 +295,34 @@ async def test_wisconsin_fixture_coverage_report():
         1 for year in all_years
         for gender in all_genders
         for division in all_divisions
-        if coverage[year][gender][division]
+        if coverage[year][gender][division]["exists"]
     )
-    coverage_pct = (filled_cells / total_cells * 100)
+    coverage_pct = (filled_cells / total_cells * 100) if total_cells > 0 else 0
 
     print(f"\nSummary:")
-    print(f"  Total possible fixtures: {total_cells}")
-    print(f"  Fixtures present: {filled_cells}")
-    print(f"  Coverage: {coverage_pct:.1f}%")
+    print(f"  Total coverage grid: {total_cells} fixtures")
+    print(f"  Fixtures present (✅): {filled_cells} ({coverage_pct:.1f}%)")
+    print(f"  Planned (📋): {status_counts.get('planned', 0)}")
+    print(f"  Future (⏳): {status_counts.get('future', 0)}")
+
+    # Check for manifest/filesystem mismatches
+    mismatches = []
+    for year in all_years:
+        for gender in all_genders:
+            for division in all_divisions:
+                info = coverage[year][gender][division]
+                if info["exists"] and info["status"] != "present":
+                    mismatches.append(f"{year} {gender} {division}: file exists but status={info['status']}")
+                elif not info["exists"] and info["status"] == "present":
+                    mismatches.append(f"{year} {gender} {division}: status=present but file missing")
+
+    if mismatches:
+        print(f"\n⚠️  Manifest/Filesystem Mismatches ({len(mismatches)}):")
+        for mismatch in mismatches[:10]:
+            print(f"   - {mismatch}")
+        if len(mismatches) > 10:
+            print(f"   ... and {len(mismatches) - 10} more")
+
     print("\n" + "=" * 80)
 
     # Always pass - this is just informational
@@ -243,6 +330,79 @@ async def test_wisconsin_fixture_coverage_report():
 
 
 # ========== FIXTURE VALIDATION ==========
+
+@pytest.mark.asyncio
+async def test_manifest_validation():
+    """Validate the Wisconsin WIAA fixture manifest structure.
+
+    Checks:
+    - Manifest file exists and is valid YAML
+    - Required fields are present (years, genders, divisions, fixtures)
+    - All fixture entries have required fields (year, gender, division, status)
+    - Years/genders/divisions match coverage grid
+    - All 80 combinations are accounted for in fixtures list
+    """
+    # Check manifest exists
+    assert MANIFEST_PATH.exists(), f"Manifest not found: {MANIFEST_PATH}"
+
+    # Load and parse manifest
+    manifest = load_manifest()
+    assert isinstance(manifest, dict), "Manifest should be a dict"
+
+    # Check required top-level fields
+    assert "years" in manifest, "Manifest missing 'years' field"
+    assert "genders" in manifest, "Manifest missing 'genders' field"
+    assert "divisions" in manifest, "Manifest missing 'divisions' field"
+    assert "fixtures" in manifest, "Manifest missing 'fixtures' field"
+
+    years = manifest["years"]
+    genders = manifest["genders"]
+    divisions = manifest["divisions"]
+    fixtures = manifest["fixtures"]
+
+    # Check types
+    assert isinstance(years, list), "'years' should be a list"
+    assert isinstance(genders, list), "'genders' should be a list"
+    assert isinstance(divisions, list), "'divisions' should be a list"
+    assert isinstance(fixtures, list), "'fixtures' should be a list"
+
+    # Check non-empty
+    assert len(years) > 0, "'years' should not be empty"
+    assert len(genders) > 0, "'genders' should not be empty"
+    assert len(divisions) > 0, "'divisions' should not be empty"
+    assert len(fixtures) > 0, "'fixtures' should not be empty"
+
+    # Check coverage: should have entry for all year/gender/division combos
+    expected_count = len(years) * len(genders) * len(divisions)
+    assert len(fixtures) == expected_count, \
+        f"Expected {expected_count} fixture entries, found {len(fixtures)}"
+
+    # Check all fixture entries have required fields
+    valid_statuses = {"present", "planned", "future", "unavailable"}
+    for i, entry in enumerate(fixtures):
+        assert "year" in entry, f"Fixture {i} missing 'year'"
+        assert "gender" in entry, f"Fixture {i} missing 'gender'"
+        assert "division" in entry, f"Fixture {i} missing 'division'"
+        assert "status" in entry, f"Fixture {i} missing 'status'"
+
+        assert entry["year"] in years, f"Fixture {i} year {entry['year']} not in years list"
+        assert entry["gender"] in genders, f"Fixture {i} gender {entry['gender']} not in genders list"
+        assert entry["division"] in divisions, f"Fixture {i} division {entry['division']} not in divisions list"
+        assert entry["status"] in valid_statuses, \
+            f"Fixture {i} invalid status '{entry['status']}', must be one of {valid_statuses}"
+
+    # Check for duplicate entries
+    combos_seen = set()
+    for entry in fixtures:
+        combo = (entry["year"], entry["gender"], entry["division"])
+        assert combo not in combos_seen, \
+            f"Duplicate fixture entry: {combo}"
+        combos_seen.add(combo)
+
+    print(f"\n✅ Manifest validation passed")
+    print(f"   Coverage grid: {len(years)} years × {len(genders)} genders × {len(divisions)} divisions")
+    print(f"   Total fixtures tracked: {len(fixtures)}")
+
 
 @pytest.mark.asyncio
 async def test_all_fixtures_parse_without_errors():

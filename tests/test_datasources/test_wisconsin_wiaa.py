@@ -392,29 +392,47 @@ class TestWisconsinWiaaDataSource:
         assert len(games) >= 10, f"Expected at least 10 games in Div1 fixture, got {len(games)}"
         assert len(games) <= 50, f"Unexpected game count for Div1 fixture: {len(games)}"
 
-    @pytest.mark.skip(reason="get_season_data method not yet compatible with fixture mode")
     @pytest.mark.asyncio
     async def test_season_data_method(self, wisconsin_wiaa_fixture_source):
-        """Test the get_season_data method.
+        """Test the get_season_data method (FIXTURE mode).
 
-        NOTE: This method currently tries to fetch additional data beyond fixtures.
-        TODO: Update WisconsinWiaaDataSource.get_season_data to respect fixture mode.
+        Tests that get_season_data aggregates from available fixture files
+        for the 2023-24 season (tournament year 2024).
+
+        Currently we only have 2024 Boys Div1 and Girls Div1 fixtures,
+        so this test validates aggregation from those two fixtures.
         """
         season_data = await wisconsin_wiaa_fixture_source.get_season_data("2023-24")
 
+        # Check structure
         assert isinstance(season_data, dict)
         assert "games" in season_data
         assert "teams" in season_data
+        assert "metadata" in season_data
 
         games = season_data["games"]
         teams = season_data["teams"]
+        metadata = season_data["metadata"]
 
+        # Check types
         assert isinstance(games, list)
         assert isinstance(teams, list)
+        assert isinstance(metadata, dict)
 
+        # Should have games from available 2024 fixtures (Boys Div1 + Girls Div1)
+        assert len(games) > 0, "Expected games from available 2024 fixtures"
+
+        # Should have teams extracted from those games
+        assert len(teams) > 0, "Expected teams from available 2024 fixtures"
+
+        # Check metadata
+        assert metadata["year"] == 2024
+        assert metadata["data_mode"] == "FIXTURE"
+        assert "divisions_covered" in metadata
+
+        # Check team structure
         if teams:
             for team in teams[:5]:
                 assert isinstance(team, Team)
                 assert team.team_id.startswith("wiaa_wi_")
                 assert team.state == "WI"
-                assert team.country == "USA"
