@@ -1,0 +1,69 @@
+name: Phase 16 Smoke Tests
+
+# Run nightly at 7:17 AM UTC (avoids peak hours, catches overnight data updates)
+# Also allow manual trigger for on-demand validation
+on:
+  schedule:
+    - cron: "17 7 * * *"  # Every day at 7:17 AM UTC
+  workflow_dispatch: {}  # Manual trigger via GitHub Actions UI
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15  # Prevent hanging tests
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"  # Cache pip dependencies for faster runs
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Phase 16 smoke tests
+        id: smoke_test
+        run: |
+          # Run pytest with smoke_phase16 marker
+          # -q: Quiet output (less verbose)
+          # --tb=short: Short traceback format
+          # -v: Verbose test names
+          python -m pytest tests/test_smoke_phase16.py \
+            -m smoke_phase16 \
+            -v \
+            --tb=short \
+            --color=yes
+        continue-on-error: true  # Don't fail workflow if tests fail (upload artifacts anyway)
+
+      - name: Generate smoke test report
+        if: always()  # Run even if previous step failed
+        run: |
+          # Run standalone smoke script for detailed output
+          python scripts/smoke_recent_results_2025.py > smoke_output.txt 2>&1 || true
+
+          # Print to workflow log
+          cat smoke_output.txt
+
+      - name: Upload smoke test artifacts
+        if: always()  # Always upload artifacts (pass or fail)
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-results-${{ github.run_number }}
+          path: |
+            smoke_output.txt
+            *.log
+            data/audit/*.json
+            data/research/*.html
+          retention-days: 30  # Keep for 30 days
+
+      - name: Check test results
+        if: steps.smoke_test.outcome == 'failure'
+        run: |
+          echo "⚠️ Smoke tests failed. Check artifacts for details."
+          exit 1

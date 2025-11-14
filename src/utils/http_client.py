@@ -43,11 +43,26 @@ class HTTPClient:
         self.rate_limiter = get_rate_limiter()
         self.cache_service = get_cache_service()
 
+        # Build headers with browser-like defaults
+        default_headers = {
+            "User-Agent": self.settings.http_user_agent,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+        }
+
+        # Add per-source header overrides (e.g., Referer for specific sources)
+        source_specific = self.settings.http_source_headers.get(source, {})
+        merged_headers = {**default_headers, **source_specific}
+
         # Create httpx client
         self.client = httpx.AsyncClient(
             timeout=httpx.Timeout(self.settings.http_timeout),
-            headers={"User-Agent": self.settings.http_user_agent},
+            headers=merged_headers,
             follow_redirects=True,
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
         )
 
         logger.info(f"HTTP client initialized for {source}")
@@ -64,12 +79,6 @@ class HTTPClient:
         """Async context manager exit."""
         await self.close()
 
-    @retry(
-        retry=retry_if_exception_type((httpx.NetworkError, httpx.TimeoutException)),
-        stop=stop_after_attempt(3),  # Use settings value
-        wait=wait_exponential(multiplier=2, min=2, max=16),  # 2s, 4s, 8s, 16s
-        reraise=True,
-    )
     async def _make_request(
         self,
         method: str,
@@ -77,7 +86,11 @@ class HTTPClient:
         **kwargs: Any,
     ) -> httpx.Response:
         """
-        Make HTTP request with retry logic.
+        Make HTTP request with retry logic for network errors and rate limits.
+
+        Retries on:
+        - Network/timeout errors (3 attempts)
+        - 429 (rate limit), 500, 502, 503, 504 (server errors) - 3 attempts with backoff
 
         Args:
             method: HTTP method (GET, POST, etc.)
@@ -90,43 +103,83 @@ class HTTPClient:
         Raises:
             httpx.HTTPError: On HTTP errors after retries
         """
-        logger.debug(f"Making {method} request to {url}", source=self.source)
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            try:
+                logger.debug(
+                    f"Making {method} request to {url}",
+                    attempt=attempt + 1,
+                    source=self.source,
+                )
 
-        try:
-            response = await self.client.request(method, url, **kwargs)
-            response.raise_for_status()
+                response = await self.client.request(method, url, **kwargs)
 
-            logger.debug(
-                f"Request successful: {method} {url}",
-                status_code=response.status_code,
-                source=self.source,
-            )
-            return response
+                # Check if we should retry on status code
+                if response.status_code in (429, 500, 502, 503, 504):
+                    if attempt < max_attempts - 1:
+                        backoff_time = self.settings.http_retry_backoff ** attempt
+                        logger.warning(
+                            f"Retryable HTTP error: {method} {url}",
+                            status_code=response.status_code,
+                            attempt=attempt + 1,
+                            backoff_seconds=backoff_time,
+                            source=self.source,
+                        )
+                        await asyncio.sleep(backoff_time)
+                        continue
+                    # Last attempt, raise the error
+                    response.raise_for_status()
 
-        except httpx.HTTPStatusError as e:
-            logger.error(
-                f"HTTP error: {method} {url}",
-                status_code=e.response.status_code,
-                source=self.source,
-                error=str(e),
-            )
-            raise
+                # Success or non-retryable error
+                response.raise_for_status()
 
-        except (httpx.NetworkError, httpx.TimeoutException) as e:
-            logger.warning(
-                f"Network/timeout error: {method} {url}",
-                source=self.source,
-                error=str(e),
-            )
-            raise
+                logger.debug(
+                    f"Request successful: {method} {url}",
+                    status_code=response.status_code,
+                    source=self.source,
+                )
+                return response
 
-        except Exception as e:
-            logger.error(
-                f"Unexpected error: {method} {url}",
-                source=self.source,
-                error=str(e),
-            )
-            raise
+            except httpx.HTTPStatusError as e:
+                if attempt == max_attempts - 1:
+                    logger.error(
+                        f"HTTP error: {method} {url}",
+                        status_code=e.response.status_code,
+                        source=self.source,
+                        error=str(e),
+                    )
+                    raise
+                # Will retry if status code is retryable
+
+            except (httpx.NetworkError, httpx.TimeoutException) as e:
+                if attempt < max_attempts - 1:
+                    backoff_time = self.settings.http_retry_backoff ** attempt
+                    logger.warning(
+                        f"Network/timeout error: {method} {url}",
+                        attempt=attempt + 1,
+                        backoff_seconds=backoff_time,
+                        source=self.source,
+                        error=str(e),
+                    )
+                    await asyncio.sleep(backoff_time)
+                    continue
+                logger.error(
+                    f"Network/timeout error after retries: {method} {url}",
+                    source=self.source,
+                    error=str(e),
+                )
+                raise
+
+            except Exception as e:
+                logger.error(
+                    f"Unexpected error: {method} {url}",
+                    source=self.source,
+                    error=str(e),
+                )
+                raise
+
+        # Should not reach here, but for type checking
+        raise RuntimeError(f"Request failed after {max_attempts} attempts")
 
     async def get(
         self,

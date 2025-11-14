@@ -1,0 +1,110 @@
+{
+  "generated_at": "2025-11-13T16:30:00Z",
+  "probe_year": 2024,
+  "states": [
+    {
+      "state": "AL",
+      "adapter": "AlabamaAHSAADataSource",
+      "success": true,
+      "status": "OK_REAL_DATA",
+      "games_found": 154,
+      "teams_found": 43,
+      "error_msg": ""
+    },
+    {
+      "state": "TX",
+      "adapter": "TexasUILDataSource",
+      "success": true,
+      "status": "OK_REAL_DATA",
+      "games_found": 12,
+      "teams_found": 24,
+      "error_msg": ""
+    },
+    {
+      "state": "AR",
+      "adapter": "ArkansasAAADataSource",
+      "success": false,
+      "status": "HTTP_404",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "Client error '404 Not Found' for url 'https://www.ahsaa.org/sports/basketball/boys/brackets/2024/6a'"
+    },
+    {
+      "state": "AZ",
+      "adapter": "ArizonaAIADataSource",
+      "success": false,
+      "status": "HTTP_404",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "Client error '404 Not Found' for url 'https://aiaonline.org/sports/basketball/boys/brackets/2024/6a'"
+    },
+    {
+      "state": "CA",
+      "adapter": "CaliforniaCIFSSDataSource",
+      "success": true,
+      "status": "NO_GAMES",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "Success but 0 games found - parser/JavaScript issue"
+    },
+    {
+      "state": "CO",
+      "adapter": "ColoradoCHSAADataSource",
+      "success": false,
+      "status": "SSL_ERROR",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "[SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error"
+    },
+    {
+      "state": "CT",
+      "adapter": "ConnecticutCIACDataSource",
+      "success": false,
+      "status": "SSL_ERROR",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed"
+    },
+    {
+      "state": "FL",
+      "adapter": "FloridaFHSAADataSource",
+      "success": false,
+      "status": "NETWORK_ERROR",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "All connection attempts failed"
+    },
+    {
+      "state": "GA",
+      "adapter": "GeorgiaGHSADataSource",
+      "success": false,
+      "status": "HTTP_404",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "Client error '404 Not Found'"
+    },
+    {
+      "state": "IN",
+      "adapter": "IndianaIHSAADataSource",
+      "success": false,
+      "status": "HTTP_404",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "Client error '404 Not Found'"
+    }
+  ],
+  "summary": {
+    "total_states": 10,
+    "ok_real_data": 2,
+    "no_games": 1,
+    "http_404": 4,
+    "http_403": 0,
+    "http_500": 0,
+    "ssl_error": 2,
+    "network_error": 1,
+    "other": 0,
+    "total_games": 166,
+    "total_teams": 67,
+    "success_rate": 20.0
+  }
+}

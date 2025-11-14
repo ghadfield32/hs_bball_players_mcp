@@ -33,6 +33,10 @@ from ..datasources.us.rankone import RankOneDataSource
 from ..datasources.us.sblive import SBLiveDataSource
 from ..datasources.us.wsn import WSNDataSource
 
+# Wisconsin - Hybrid Coverage (Phase 15 + Phase 20)
+from ..datasources.us.wisconsin_wiaa import WisconsinWIAADataSource
+from ..datasources.us.wisconsin_maxpreps import MaxPrepsWisconsinDataSource
+
 # US - Event Platforms (Phase 10/11)
 from ..datasources.us.cifsshome import CIFSSHomeDataSource
 from ..datasources.us.uil_brackets import UILBracketsDataSource
@@ -41,7 +45,22 @@ from ..datasources.us.tourneymachine import TournyMachineDataSource
 
 # US - State Association Adapters (Phase 14.5)
 from ..datasources.us.nchsaa import NCHSAADataSource
-from ..datasources.us.ghsa import GHSAADataSource
+from ..datasources.us.georgia_ghsa import GeorgiaGHSADataSource
+
+# US - State Association Adapters (Phase 16 - 50/50 US Coverage Complete)
+from ..datasources.us.arizona_aia import ArizonaAIADataSource
+from ..datasources.us.oregon_osaa import OregonOSAADataSource
+from ..datasources.us.nevada_niaa import NevadaNIAADataSource
+from ..datasources.us.washington_wiaa import WashingtonWIAADataSource
+from ..datasources.us.idaho_ihsaa import IdahoIHSAADataSource
+
+# US - Phase 17 High-Impact States (CA, TX, FL, GA, OH, PA, NY)
+from ..datasources.us.california_cif_ss import CaliforniaCIFSSDataSource
+from ..datasources.us.texas_uil import TexasUILDataSource
+from ..datasources.us.florida_fhsaa import FloridaFHSAADataSource
+from ..datasources.us.ohio_ohsaa import OhioOHSAADataSource
+from ..datasources.us.pennsylvania_piaa import PennsylvaniaPIAADataSource
+from ..datasources.us.newyork_nysphsaa import NewYorkNYSPHSAADataSource
 
 # Europe - Youth Leagues (Phase 7)
 from ..datasources.europe.fiba_youth import FIBAYouthDataSource
@@ -56,10 +75,10 @@ from ..datasources.canada.npa import NPADataSource
 # Canada - Provincial Associations (Phase 14.5)
 from ..datasources.canada.ofsaa import OFSAADataSource
 
-# Import from global module (avoid 'global' keyword with import style)
+# Import from global module (using getattr to avoid 'global' keyword issue)
 import importlib
-_fiba_livestats_module = importlib.import_module("..datasources.global.fiba_livestats", package=__name__)
-FIBALiveStatsDataSource = _fiba_livestats_module.FIBALiveStatsDataSource
+_fiba_module = importlib.import_module("src.datasources.global.fiba_livestats")
+FIBALiveStatsDataSource = _fiba_module.FIBALiveStatsDataSource
 
 # Template adapters (need URL updates after website inspection):
 from ..datasources.australia.playhq import PlayHQDataSource
@@ -69,8 +88,12 @@ from ..datasources.us.grind_session import GrindSessionDataSource
 from ..datasources.us.ote import OTEDataSource
 
 # Vendor Generics (Phase 14 - Global expansion):
-from ..datasources.vendors.fiba_federation_events import FibaFederationEventsDataSource
-from ..datasources.vendors.gameday import GameDayDataSource
+# TODO: Fix missing DataSourceType.CIRCUIT enum
+# from ..datasources.vendors.fiba_federation_events import FibaFederationEventsDataSource
+# from ..datasources.vendors.gameday import GameDayDataSource
+
+# Vendor Generics (Phase 16 - Parameterized Federation Coverage):
+from ..datasources.vendors.fibalivestats_federation import FIBALiveStatsFederationDataSource
 
 from ..models import Player, PlayerSeasonStats, Team
 from ..utils.logger import get_logger
@@ -191,11 +214,22 @@ class DataSourceAggregator:
                 # US - Single State Deep Coverage:
                 "mn_hub": MNHubDataSource,       # Minnesota (best free HS stats)
                 "psal": PSALDataSource,          # NYC public schools
-                "wsn": WSNDataSource,            # Wisconsin (deep stats)
+                "wsn": WSNDataSource,            # Wisconsin (INACTIVE - news site only)
+
+                # Wisconsin - Hybrid Coverage (Phase 15 + Phase 20):
+                "wiaa": WisconsinWIAADataSource,          # Wisconsin - Official tournament brackets
+                "maxpreps_wi": MaxPrepsWisconsinDataSource,  # Wisconsin - Player/team stats
 
                 # US - State Associations (Tournaments/Brackets):
                 "fhsaa": FHSAADataSource,        # Florida (Southeast anchor)
                 "hhsaa": HHSAADataSource,        # Hawaii (excellent historical data)
+
+                # US - State Associations (Phase 16 - 50/50 US Coverage Complete):
+                "aia": ArizonaAIADataSource,              # Arizona (7 conferences)
+                "osaa": OregonOSAADataSource,            # Oregon (6 classifications, JSON support)
+                "niaa": NevadaNIAADataSource,            # Nevada (5 divisions, PDF caching)
+                "wiaa_wa": WashingtonWIAADataSource,     # Washington (4 classifications)
+                "ihsaa_id": IdahoIHSAADataSource,        # Idaho (6 classifications)
 
                 # US - Event Platforms (Phase 10/11 - Generic AAU):
                 "cifsshome": CIFSSHomeDataSource,     # California CIF-SS sections

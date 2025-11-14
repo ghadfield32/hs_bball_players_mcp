@@ -1,0 +1,99 @@
+{
+  "source_id": "ihsaa_ia",
+  "source_name": "Iowa IHSAA",
+  "audit_timestamp": "2025-11-12T15:01:01.281877",
+  "capabilities": {
+    "has_player_stats": false,
+    "has_schedules": false,
+    "has_brackets": true,
+    "has_leaderboards": false,
+    "has_team_stats": false,
+    "has_game_stats": false,
+    "health_check": true,
+    "player_search_works": false,
+    "bracket_count_sample": 0
+  },
+  "historical_range": {
+    "min_year": null,
+    "max_year": null,
+    "tested_seasons": [
+      "2024-25",
+      "2023-24",
+      "2022-23",
+      "2021-22",
+      "2020-21",
+      "2019-20",
+      "2018-19",
+      "2017-18",
+      "2016-17",
+      "2015-16",
+      "2014-15",
+      "2013-14",
+      "2012-13",
+      "2011-12",
+      "2010-11"
+    ],
+    "available_seasons": [],
+    "unavailable_seasons": [
+      "2024-25",
+      "2023-24",
+      "2022-23",
+      "2021-22",
+      "2020-21",
+      "2019-20",
+      "2018-19",
+      "2017-18",
+      "2016-17",
+      "2015-16",
+      "2014-15",
+      "2013-14",
+      "2012-13",
+      "2011-12",
+      "2010-11"
+    ],
+    "years_available": 0
+  },
+  "filters": {
+    "discovered": [
+      "start_date",
+      "team_id",
+      "team",
+      "limit",
+      "filters",
+      "class_name",
+      "name",
+      "gender",
+      "season",
+      "end_date"
+    ],
+    "tested": [
+      "season",
+      "gender",
+      "limit",
+      "class_name"
+    ],
+    "working": [
+      "season",
+      "gender",
+      "limit",
+      "class_name"
+    ],
+    "broken": []
+  },
+  "data_samples": {
+    "games_sample_count": 0,
+    "players_sample_count": 0,
+    "teams_sample_count": 0,
+    "has_complete_game_data": false,
+    "has_complete_player_data": false
+  },
+  "issues": [],
+  "warnings": [
+    "Leaderboard test error: IowaIHSAADataSource.get_leaderboard() missing 1 required positional argument: 'stat'",
+    "No historical data found"
+  ],
+  "recommendations": [
+    "Historical data limited (<5 years). Consider documenting range in capabilities.",
+    "No player stats or schedules available. May need to find alternative datasource."
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "state": "WI",
+  "adapter": "WisconsinWIAADataSource",
+  "year": 2024,
+  "url": "https://www.wiaawi.org/Sports/Boys-Basketball/Tournament-Brackets",
+  "status": 200,
+  "content_type": "unknown",
+  "content_length": 68897,
+  "fetched_at": "2025-11-13T20:54:27.487034Z",
+  "gender": "Boys",
+  "classification": null,
+  "games_found": 0,
+  "teams_found": 0,
+  "health_score": 0.8,
+  "errors_count": 2,
+  "warnings_count": 0,
+  "validation_errors": [
+    "No games found",
+    "No teams found"
+  ],
+  "validation_warnings": []
+}

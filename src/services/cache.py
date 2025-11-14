@@ -5,13 +5,14 @@ Provides file-based and Redis caching with configurable TTLs.
 Reduces load on data sources and improves response times.
 """
 
+import asyncio
 import hashlib
 import json
 import pickle
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Callable, TypeVar
 
 import aiofiles
 
@@ -19,6 +20,62 @@ from ..config import get_settings
 from ..utils.logger import get_logger, get_metrics
 
 logger = get_logger(__name__)
+
+T = TypeVar('T')
+
+
+async def retry_on_file_lock(
+    func: Callable[..., T],
+    *args,
+    max_retries: int = 3,
+    base_delay: float = 0.1,
+    **kwargs
+) -> T:
+    """
+    Retry a file operation on Windows file locking errors.
+
+    Windows [WinError 32] occurs when multiple processes/tasks access the same file.
+    This helper retries with exponential backoff to handle concurrent access gracefully.
+
+    Args:
+        func: Async function to retry
+        *args: Positional arguments for func
+        max_retries: Maximum number of retry attempts
+        base_delay: Base delay in seconds (exponentially increases)
+        **kwargs: Keyword arguments for func
+
+    Returns:
+        Result from func
+
+    Raises:
+        Last exception if all retries fail
+    """
+    last_exception = None
+
+    for attempt in range(max_retries + 1):
+        try:
+            return await func(*args, **kwargs)
+        except (OSError, PermissionError) as e:
+            last_exception = e
+            # Check if it's a file locking error (Windows Error 32)
+            if attempt < max_retries and (
+                'WinError 32' in str(e) or
+                'being used by another process' in str(e) or
+                'Permission denied' in str(e)
+            ):
+                delay = base_delay * (2 ** attempt)  # Exponential backoff
+                logger.debug(
+                    f"File lock detected, retrying in {delay}s",
+                    attempt=attempt + 1,
+                    max_retries=max_retries,
+                    error=str(e)
+                )
+                await asyncio.sleep(delay)
+            else:
+                raise
+
+    # All retries exhausted
+    raise last_exception
 
 
 class CacheBackend(ABC):
@@ -79,6 +136,30 @@ class FileCacheBackend(CacheBackend):
         key_hash = hashlib.sha256(key.encode()).hexdigest()
         return self.cache_dir / f"{key_hash}.meta"
 
+    async def _read_metadata(self, meta_path: Path) -> Optional[dict]:
+        """Read metadata file with retry logic."""
+        async def _read():
+            async with aiofiles.open(meta_path, "r") as f:
+                return json.loads(await f.read())
+
+        try:
+            return await retry_on_file_lock(_read)
+        except Exception as e:
+            logger.warning(f"Failed to read metadata", path=str(meta_path), error=str(e))
+            return None
+
+    async def _read_cache_value(self, cache_path: Path) -> Optional[Any]:
+        """Read cache value file with retry logic."""
+        async def _read():
+            async with aiofiles.open(cache_path, "rb") as f:
+                return pickle.loads(await f.read())
+
+        try:
+            return await retry_on_file_lock(_read)
+        except Exception as e:
+            logger.warning(f"Failed to read cache value", path=str(cache_path), error=str(e))
+            return None
+
     async def get(self, key: str) -> Optional[Any]:
         """Get value from cache."""
         cache_path = self._get_cache_path(key)
@@ -90,35 +171,37 @@ class FileCacheBackend(CacheBackend):
 
         # Check TTL from metadata
         if meta_path.exists():
-            try:
-                async with aiofiles.open(meta_path, "r") as f:
-                    metadata = json.loads(await f.read())
-                    expires_at = datetime.fromisoformat(metadata["expires_at"])
+            metadata = await self._read_metadata(meta_path)
+            if metadata is None:
+                await self.delete(key)
+                get_metrics().record_cache_miss()
+                return None
 
-                    if datetime.utcnow() > expires_at:
-                        # Expired, delete and return None
-                        logger.debug(f"Cache expired for key: {key}")
-                        await self.delete(key)
-                        get_metrics().record_cache_miss()
-                        return None
-            except (json.JSONDecodeError, KeyError, ValueError) as e:
+            try:
+                expires_at = datetime.fromisoformat(metadata["expires_at"])
+
+                if datetime.utcnow() > expires_at:
+                    # Expired, delete and return None
+                    logger.debug(f"Cache expired for key: {key}")
+                    await self.delete(key)
+                    get_metrics().record_cache_miss()
+                    return None
+            except (KeyError, ValueError) as e:
                 logger.warning(f"Invalid cache metadata for key: {key}", error=str(e))
                 await self.delete(key)
                 get_metrics().record_cache_miss()
                 return None
 
         # Read cached value
-        try:
-            async with aiofiles.open(cache_path, "rb") as f:
-                value = pickle.loads(await f.read())
-                logger.debug(f"Cache hit for key: {key}")
-                get_metrics().record_cache_hit()
-                return value
-        except (pickle.PickleError, EOFError) as e:
-            logger.warning(f"Failed to read cache for key: {key}", error=str(e))
+        value = await self._read_cache_value(cache_path)
+        if value is None:
             await self.delete(key)
             get_metrics().record_cache_miss()
             return None
+
+        logger.debug(f"Cache hit for key: {key}")
+        get_metrics().record_cache_hit()
+        return value
 
     async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
         """Set value in cache with optional TTL."""
@@ -126,11 +209,14 @@ class FileCacheBackend(CacheBackend):
         meta_path = self._get_metadata_path(key)
 
         try:
-            # Write value
-            async with aiofiles.open(cache_path, "wb") as f:
-                await f.write(pickle.dumps(value))
+            # Write value with retry logic
+            async def _write_value():
+                async with aiofiles.open(cache_path, "wb") as f:
+                    await f.write(pickle.dumps(value))
 
-            # Write metadata with TTL
+            await retry_on_file_lock(_write_value)
+
+            # Write metadata with TTL and retry logic
             expires_at = datetime.utcnow() + timedelta(seconds=ttl if ttl else 3600)
             metadata = {
                 "key": key,
@@ -139,8 +225,11 @@ class FileCacheBackend(CacheBackend):
                 "ttl": ttl,
             }
 
-            async with aiofiles.open(meta_path, "w") as f:
-                await f.write(json.dumps(metadata))
+            async def _write_metadata():
+                async with aiofiles.open(meta_path, "w") as f:
+                    await f.write(json.dumps(metadata))
+
+            await retry_on_file_lock(_write_metadata)
 
             logger.debug(f"Cache set for key: {key}", ttl=ttl)
             return True
@@ -150,17 +239,31 @@ class FileCacheBackend(CacheBackend):
             return False
 
     async def delete(self, key: str) -> bool:
-        """Delete value from cache."""
+        """Delete value from cache with retry logic for file locking."""
         cache_path = self._get_cache_path(key)
         meta_path = self._get_metadata_path(key)
 
+        async def _delete_file(path: Path) -> bool:
+            """Delete a single file with proper existence check."""
+            if path.exists():
+                path.unlink()
+                return True
+            return False
+
         deleted = False
-        if cache_path.exists():
-            cache_path.unlink()
-            deleted = True
-        if meta_path.exists():
-            meta_path.unlink()
-            deleted = True
+        try:
+            if cache_path.exists():
+                await retry_on_file_lock(_delete_file, cache_path)
+                deleted = True
+        except Exception as e:
+            logger.warning(f"Failed to delete cache file", path=str(cache_path), error=str(e))
+
+        try:
+            if meta_path.exists():
+                await retry_on_file_lock(_delete_file, meta_path)
+                deleted = True
+        except Exception as e:
+            logger.warning(f"Failed to delete metadata file", path=str(meta_path), error=str(e))
 
         if deleted:
             logger.debug(f"Cache deleted for key: {key}")
@@ -173,14 +276,34 @@ class FileCacheBackend(CacheBackend):
         return value is not None
 
     async def clear(self) -> bool:
-        """Clear all cache entries."""
+        """Clear all cache entries with retry logic for file locking."""
+        async def _delete_file(path: Path) -> None:
+            """Delete a single file."""
+            path.unlink()
+
+        errors = []
         try:
+            # Delete cache files with retry
             for cache_file in self.cache_dir.glob("*.cache"):
-                cache_file.unlink()
+                try:
+                    await retry_on_file_lock(_delete_file, cache_file)
+                except Exception as e:
+                    errors.append(f"Failed to delete {cache_file.name}: {str(e)}")
+
+            # Delete metadata files with retry
             for meta_file in self.cache_dir.glob("*.meta"):
-                meta_file.unlink()
-            logger.info("Cache cleared")
-            return True
+                try:
+                    await retry_on_file_lock(_delete_file, meta_file)
+                except Exception as e:
+                    errors.append(f"Failed to delete {meta_file.name}: {str(e)}")
+
+            if errors:
+                logger.warning(f"Cache cleared with {len(errors)} errors", errors=errors[:5])
+            else:
+                logger.info("Cache cleared successfully")
+
+            return len(errors) == 0
+
         except OSError as e:
             logger.error("Failed to clear cache", error=str(e))
             return False

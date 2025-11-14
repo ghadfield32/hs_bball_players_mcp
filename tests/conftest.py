@@ -23,6 +23,10 @@ from src.datasources.us.sblive import SBLiveDataSource
 from src.datasources.us.bound import BoundDataSource
 from src.datasources.us.three_ssb import ThreeSSBDataSource
 from src.datasources.us.wsn import WSNDataSource
+from src.datasources.us.wisconsin_wiaa import WisconsinWIAADataSource
+from src.datasources.us.wisconsin_maxpreps import MaxPrepsWisconsinDataSource
+from src.datasources.us import IHSADataSource
+from src.datasources.us.south_dakota_sdhsaa import SouthDakotaSDHSAADataSource
 from src.datasources.europe.fiba_youth import FIBAYouthDataSource
 from src.main import app
 from src.services.aggregator import DataSourceAggregator, get_aggregator
@@ -98,6 +102,38 @@ async def rankone_source() -> AsyncGenerator[RankOneDataSource, None]:
 async def fhsaa_source() -> AsyncGenerator[FHSAADataSource, None]:
     """Create FHSAA datasource for testing."""
     source = FHSAADataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def wiaa_source() -> AsyncGenerator[WisconsinWIAADataSource, None]:
+    """Create Wisconsin WIAA datasource for testing."""
+    source = WisconsinWIAADataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def maxpreps_wi_source() -> AsyncGenerator[MaxPrepsWisconsinDataSource, None]:
+    """Create MaxPreps Wisconsin datasource for testing."""
+    source = MaxPrepsWisconsinDataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def ihsa_source() -> AsyncGenerator[IHSADataSource, None]:
+    """Create IHSA datasource for testing."""
+    source = IHSADataSource()
+    yield source
+    await source.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def sdhsaa_source() -> AsyncGenerator[SouthDakotaSDHSAADataSource, None]:
+    """Create SDHSAA datasource for testing."""
+    source = SouthDakotaSDHSAADataSource()
     yield source
     await source.close()
 

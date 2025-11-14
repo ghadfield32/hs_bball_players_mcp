@@ -51,6 +51,9 @@ class Settings(BaseSettings):
 
     # Stats Adapters (High Priority)
     rate_limit_bound: int = Field(default=20, ge=1, description="Bound (Varsity Bound) rate limit")
+    rate_limit_wiaa: int = Field(default=20, ge=1, description="WIAA (Wisconsin state association) rate limit")
+    rate_limit_ihsa: int = Field(default=20, ge=1, description="IHSA (Illinois state association) rate limit")
+    rate_limit_maxpreps_wi: int = Field(default=15, ge=1, description="MaxPreps Wisconsin rate limit")
     rate_limit_sblive: int = Field(default=15, ge=1, description="SBLive Sports rate limit")
     rate_limit_three_ssb: int = Field(default=20, ge=1, description="Adidas 3SSB rate limit")
     rate_limit_wsn: int = Field(default=15, ge=1, description="Wisconsin Sports Network rate limit")
@@ -87,9 +90,16 @@ class Settings(BaseSettings):
         default=2.0, ge=1.0, le=10.0, description="Retry backoff multiplier"
     )
     http_user_agent: str = Field(
-        default="Mozilla/5.0 (compatible; HSBasketballStatsBot/0.1; "
-        "+https://github.com/ghadfield32/hs_bball_players_mcp)",
-        description="HTTP User-Agent header",
+        default="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        description="HTTP User-Agent header (uses browser string to avoid bot detection)",
+    )
+    http_source_headers: dict = Field(
+        default_factory=lambda: {
+            "niaa": {"Referer": "https://www.niaa.com/"},
+            "osaa": {"Referer": "https://www.osaa.org/"},
+        },
+        description="Optional per-source HTTP headers (e.g., Referer for specific sources)",
     )
 
     # Browser Automation Settings (for SPA websites)
@@ -109,6 +119,16 @@ class Settings(BaseSettings):
     )
     browser_max_contexts: int = Field(
         default=5, ge=1, le=20, description="Maximum concurrent browser contexts"
+    )
+
+    # Feature Flags: Sources requiring Playwright (Cloudflare/JS challenges)
+    use_playwright_sources: set[str] = Field(
+        default_factory=lambda: set(),  # Empty by default - opt-in per source
+        description=(
+            "Data sources that require headless browser (Cloudflare/JS challenges). "
+            "Add source IDs to enable Playwright path (e.g., {'osaa'}). "
+            "Requires: pip install playwright && playwright install chromium"
+        ),
     )
 
     # Database

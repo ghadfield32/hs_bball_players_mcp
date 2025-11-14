@@ -42,10 +42,10 @@ class OFSAADataSource(AssociationAdapterBase):
     - Regular season data may be limited
     """
 
-    source_type = DataSourceType.ASSOCIATION
+    source_type = DataSourceType.OFSAA
     source_name = "Ontario OFSAA"
     base_url = "https://www.ofsaa.on.ca"
-    region = DataSourceRegion.CANADA
+    region = DataSourceRegion.CANADA_ON
 
     def _get_season_url(self, season: str) -> str:
         """Get URL for Ontario basketball season data."""

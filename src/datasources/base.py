@@ -193,18 +193,31 @@ class BaseDataSource(ABC):
         url: Optional[str] = None,
         quality_flag: DataQualityFlag = DataQualityFlag.UNVERIFIED,
         notes: Optional[str] = None,
+        **extra_kwargs,
     ) -> DataSource:
         """
-        Create DataSource metadata object.
+        Create DataSource metadata object in a forward-compatible way.
 
         Args:
             url: Source URL
             quality_flag: Data quality assessment
             notes: Additional notes
+            **extra_kwargs: Additional fields for future compatibility (e.g., 'extra' for Phase 18 metadata)
 
         Returns:
             DataSource metadata
+
+        Note:
+            Phase 18+ adapters may pass 'extra' dict with round/venue/tipoff metadata.
+            This method accepts but currently ignores these fields to maintain backward compatibility.
+            Future DataSource model updates can consume these fields without breaking existing adapters.
         """
+        # Extract known extra fields (Phase 18+)
+        extra_metadata = extra_kwargs.pop("extra", None)
+
+        # Ignore any remaining unknown kwargs for forward compatibility
+        # (allows adapters to pass new fields without breaking)
+
         return DataSource(
             source_type=self.source_type,
             source_name=self.source_name,
@@ -213,6 +226,7 @@ class BaseDataSource(ABC):
             retrieved_at=datetime.utcnow(),
             quality_flag=quality_flag,
             notes=notes,
+            # Future: attach extra_metadata when DataSource model supports it
         )
 
     def validate_and_log_data(

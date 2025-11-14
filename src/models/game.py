@@ -59,7 +59,7 @@ class Game(BaseModel):
 
     # Status & Timing
     status: GameStatus = Field(description="Game status")
-    game_date: datetime = Field(description="Game date and time")
+    game_date: Optional[datetime] = Field(default=None, description="Game date and time")
     game_type: GameType = Field(default=GameType.UNKNOWN, description="Type of game")
 
     # Location

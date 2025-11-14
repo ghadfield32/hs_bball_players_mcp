@@ -1124,10 +1124,10 @@ sources:
     full_name: "Tennessee Secondary School Athletic Association"
     region: US-TN
     type: state
-    status: planned
+    status: active
     url: "https://tssaa.org"
-    adapter_class: "TSSAADataSource"
-    adapter_module: "src.datasources.us.tssaa"
+    adapter_class: "TennesseeTSSAADataSource"
+    adapter_module: "src.datasources.us.tennessee_tssaa"
     capabilities:
       schedules: true
     data_quality:
@@ -1145,10 +1145,10 @@ sources:
     full_name: "South Carolina High School League"
     region: US-SC
     type: state
-    status: planned
+    status: active
     url: "https://schsl.org"
-    adapter_class: "SCHSLDataSource"
-    adapter_module: "src.datasources.us.schsl"
+    adapter_class: "SouthCarolinaSCHSLDataSource"
+    adapter_module: "src.datasources.us.south_carolina_schsl"
     capabilities:
       schedules: true
     rate_limit:
@@ -1160,70 +1160,110 @@ sources:
     full_name: "Alabama High School Athletic Association"
     region: US-AL
     type: state
-    status: planned
+    status: active
     url: "https://www.ahsaa.com"
-    adapter_class: "AHSAADataSource"
-    adapter_module: "src.datasources.us.ahsaa"
+    adapter_class: "AlabamaAHSAADataSource"
+    adapter_module: "src.datasources.us.alabama_ahsaa"
     capabilities:
       schedules: true
+      brackets: true
+    data_quality:
+      has_player_stats: false
+      stat_completeness: low
     rate_limit:
       requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
     robots_policy: "allowed"
+    notes: "Phase 22 Priority 3B. Alabama state championships - tournament brackets, schedules. ~400 schools, 7 classifications (7A-1A)."
 
   - id: lhsaa
     name: "LHSAA"
     full_name: "Louisiana High School Athletic Association"
     region: US-LA
     type: state
-    status: planned
+    status: active
     url: "https://www.lhsaa.org"
-    adapter_class: "LHSAADataSource"
-    adapter_module: "src.datasources.us.lhsaa"
+    adapter_class: "LouisianaLHSAADataSource"
+    adapter_module: "src.datasources.us.louisiana_lhsaa"
     capabilities:
       schedules: true
+      brackets: true
+    data_quality:
+      has_player_stats: false
+      stat_completeness: low
     rate_limit:
       requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
     robots_policy: "allowed"
+    notes: "Phase 22 Priority 3B. Louisiana state championships - tournament brackets, schedules. ~400 schools, 5 classifications (5A-1A)."
 
   - id: mhsaa_ms
     name: "MHSAA (MS)"
     full_name: "Mississippi High School Activities Association"
     region: US-MS
     type: state
-    status: planned
+    status: active
     url: "https://www.misshsaa.com"
-    adapter_class: "MHSAAMSDataSource"
-    adapter_module: "src.datasources.us.mhsaa_ms"
+    adapter_class: "MississippiMHSAA_MSDataSource"
+    adapter_module: "src.datasources.us.mississippi_mhsaa_ms"
     capabilities:
       schedules: true
+      brackets: true
+    data_quality:
+      has_player_stats: false
+      stat_completeness: low
     rate_limit:
       requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
     robots_policy: "allowed"
+    notes: "Phase 22 Priority 3B. Mississippi state championships - tournament brackets, schedules. ~300 schools, 6 classifications (6A-1A)."
 
   - id: aaa_ar
     name: "AAA (AR)"
     full_name: "Arkansas Activities Association"
     region: US-AR
     type: state
-    status: planned
+    status: active
     url: "https://www.ahsaa.org"
-    adapter_class: "AAA_ARDataSource"
-    adapter_module: "src.datasources.us.aaa_ar"
+    adapter_class: "ArkansasAAADataSource"
+    adapter_module: "src.datasources.us.arkansas_aaa"
     capabilities:
       schedules: true
+      brackets: true
+    data_quality:
+      has_player_stats: false
+      stat_completeness: low
     rate_limit:
       requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
     robots_policy: "allowed"
+    notes: "Phase 22 Priority 3B. Arkansas state championships - tournament brackets, schedules. ~250 schools, 6 classifications (6A-1A)."
 
   - id: khsaa
     name: "KHSAA"
     full_name: "Kentucky High School Athletic Association"
     region: US-KY
     type: state
-    status: planned
+    status: active
     url: "https://khsaa.org"
-    adapter_class: "KHSAADataSource"
-    adapter_module: "src.datasources.us.khsaa"
+    adapter_class: "KentuckyKHSAADataSource"
+    adapter_module: "src.datasources.us.kentucky_khsaa"
     capabilities:
       schedules: true
     rate_limit:
@@ -1252,10 +1292,10 @@ sources:
     full_name: "Connecticut Interscholastic Athletic Conference"
     region: US-CT
     type: state
-    status: planned
+    status: active
     url: "https://www.ciacsports.com"
-    adapter_class: "CIACDataSource"
-    adapter_module: "src.datasources.us.ciac"
+    adapter_class: "ConnecticutCIACDataSource"
+    adapter_module: "src.datasources.us.connecticut_ciac"
     capabilities:
       schedules: true
     rate_limit:
@@ -1344,10 +1384,10 @@ sources:
     full_name: "New Jersey State Interscholastic Athletic Association"
     region: US-NJ
     type: state
-    status: planned
+    status: active
     url: "https://www.njsiaa.org"
-    adapter_class: "NJSIAADataSource"
-    adapter_module: "src.datasources.us.njsiaa"
+    adapter_class: "NewJerseyNJSIAADataSource"
+    adapter_module: "src.datasources.us.new_jersey_njsiaa"
     capabilities:
       schedules: true
     rate_limit:
@@ -1439,25 +1479,35 @@ sources:
     full_name: "Kansas State High School Activities Association"
     region: US-KS
     type: state
-    status: planned
+    status: active
     url: "https://www.kshsaa.org"
-    adapter_class: "KSHSAADataSource"
-    adapter_module: "src.datasources.us.kshsaa"
+    adapter_class: "KansasKSHSAADataSource"
+    adapter_module: "src.datasources.us.kansas_kshsaa"
     capabilities:
       schedules: true
+      brackets: true
+    data_quality:
+      has_player_stats: false
+      stat_completeness: low
     rate_limit:
       requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
     robots_policy: "allowed"
+    notes: "Phase 22 Priority 3B. Kansas state championships - tournament brackets, schedules. ~350 schools, 6 classifications (6A-1A)."
 
   - id: mhsaa_mi
     name: "MHSAA (MI)"
     full_name: "Michigan High School Athletic Association"
     region: US-MI
     type: state
-    status: planned
+    status: active
     url: "https://www.mhsaa.com"
-    adapter_class: "MHSAAMIDataSource"
-    adapter_module: "src.datasources.us.mhsaa_mi"
+    adapter_class: "MichiganMHSAADataSource"
+    adapter_module: "src.datasources.us.michigan_mhsaa"
     capabilities:
       schedules: true
     rate_limit:
@@ -1495,20 +1545,55 @@ sources:
       requests_per_minute: 20
     robots_policy: "allowed"
 
+  - id: sdhsaa
+    name: "SDHSAA"
+    full_name: "South Dakota High School Activities Association"
+    region: US-SD
+    type: state
+    status: active
+    url: "https://www.sdhsaa.com"
+    adapter_class: "SouthDakotaSDHSAADataSource"
+    adapter_module: "src.datasources.us.south_dakota_sdhsaa"
+    capabilities:
+      schedules: true
+      brackets: true
+    data_quality:
+      has_player_stats: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Phase 22 Priority 3B. South Dakota state championships - tournament brackets, schedules. ~150 schools, 3 classifications (AA, A, B)."
+
   - id: nsaa
     name: "NSAA"
     full_name: "Nebraska School Activities Association"
     region: US-NE
     type: state
-    status: planned
+    status: active
     url: "https://www.nsaahome.org"
-    adapter_class: "NSAADataSource"
-    adapter_module: "src.datasources.us.nsaa"
+    adapter_class: "NebraskaNSAADataSource"
+    adapter_module: "src.datasources.us.nebraska_nsaa"
     capabilities:
       schedules: true
+      brackets: true
+    data_quality:
+      has_player_stats: false
+      stat_completeness: low
     rate_limit:
       requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
     robots_policy: "allowed"
+    notes: "Phase 22 Priority 3B. Nebraska state championships - tournament brackets, schedules. ~250 schools, 6 classifications (A, B, C1, C2, D1, D2)."
 
   # Southwest/West States
   - id: chsaa
@@ -1516,15 +1601,40 @@ sources:
     full_name: "Colorado High School Activities Association"
     region: US-CO
     type: state
-    status: planned
+    status: active
     url: "https://www.chsaa.org"
-    adapter_class: "CHSAADataSource"
-    adapter_module: "src.datasources.us.chsaa"
+    adapter_class: "ColoradoCHSAADataSource"
+    adapter_module: "src.datasources.us.colorado_chsaa"
     capabilities:
       schedules: true
     rate_limit:
       requests_per_minute: 20
     robots_policy: "allowed"
+
+  - id: aia
+    name: "AIA"
+    full_name: "Arizona Interscholastic Association"
+    region: US-AZ
+    type: state
+    status: active
+    url: "https://www.aiaonline.org"
+    adapter_class: "ArizonaAIADataSource"
+    adapter_module: "src.datasources.us.arizona_aia"
+    capabilities:
+      schedules: true
+      brackets: true
+    data_quality:
+      has_player_stats: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Phase 21 Priority 3A. Arizona state championships - tournament brackets, schedules. ~300 schools, 6 classifications (6A-1A)."
 
   - id: nmaa
     name: "NMAA"
@@ -1540,6 +1650,31 @@ sources:
     rate_limit:
       requests_per_minute: 20
     robots_policy: "allowed"
+
+  - id: osaa
+    name: "OSAA"
+    full_name: "Oregon School Activities Association"
+    region: US-OR
+    type: state
+    status: active
+    url: "https://www.osaa.org"
+    adapter_class: "OregonOSAADataSource"
+    adapter_module: "src.datasources.us.oregon_osaa"
+    capabilities:
+      schedules: true
+      brackets: true
+    data_quality:
+      has_player_stats: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Phase 22 Priority 3B. Oregon state championships - tournament brackets, schedules. ~300 schools, 6 classifications (6A-1A)."
 
   - id: ossaa
     name: "OSSAA"
@@ -1561,15 +1696,25 @@ sources:
     full_name: "Utah High School Activities Association"
     region: US-UT
     type: state
-    status: planned
+    status: active
     url: "https://www.uhsaa.org"
-    adapter_class: "UHSAADataSource"
-    adapter_module: "src.datasources.us.uhsaa"
+    adapter_class: "UtahUHSAADataSource"
+    adapter_module: "src.datasources.us.utah_uhsaa"
     capabilities:
       schedules: true
+      brackets: true
+    data_quality:
+      has_player_stats: false
+      stat_completeness: low
     rate_limit:
       requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
     robots_policy: "allowed"
+    notes: "Phase 22 Priority 3B. Utah state championships - tournament brackets, schedules. ~150 schools, 6 classifications (6A-1A)."
 
   - id: asaa
     name: "ASAA"
@@ -1631,6 +1776,31 @@ sources:
       requests_per_minute: 20
     robots_policy: "allowed"
     notes: "DC high school basketball. Strong talent pipeline."
+
+  - id: ihsaa_id
+    name: "IHSAA (ID)"
+    full_name: "Idaho High School Activities Association"
+    region: US-ID
+    type: state
+    status: active
+    url: "https://www.idhsaa.org"
+    adapter_class: "IdahoIHSAADataSource"
+    adapter_module: "src.datasources.us.idaho_ihsaa"
+    capabilities:
+      schedules: true
+      brackets: true
+    data_quality:
+      has_player_stats: false
+      stat_completeness: low
+    rate_limit:
+      requests_per_minute: 20
+      burst_capacity: 8
+      safety_margin: 0.5
+    cache_ttl:
+      games: 3600
+      standings: 7200
+    robots_policy: "allowed"
+    notes: "Phase 22 Priority 3B. Idaho state championships - tournament brackets, schedules. ~150 schools, 5 classifications (5A-1A)."
 
   - id: oia
     name: "OIA"

@@ -66,6 +66,83 @@ class AssociationAdapterBase(BaseDataSource):
         super().__init__()
         self.seasons_cache: Dict[str, Any] = {}
 
+    async def _http_get(
+        self,
+        url: str,
+        params: Optional[Dict[str, Any]] = None,
+        timeout: float = 10.0,
+    ) -> httpx.Response:
+        """
+        HTTP GET with structured logging for real-data observability.
+
+        Logs every state adapter HTTP request/response/error for debugging
+        404s, SSL issues, and endpoint changes. Critical for Phase 23+
+        real-data verification.
+
+        Args:
+            url: URL to fetch
+            params: Optional query parameters
+            timeout: Request timeout in seconds
+
+        Returns:
+            httpx.Response object
+
+        Raises:
+            httpx.HTTPError: On HTTP errors (logged before raising)
+
+        Logs:
+            - state_http_request: Before making request
+            - state_http_response: On success
+            - state_http_error: On any exception
+        """
+        source_type = getattr(self, "source_type", "unknown")
+        source_name = getattr(self, "source_name", "unknown")
+
+        logger.info(
+            "state_http_request",
+            extra={
+                "source_type": str(source_type),
+                "source_name": source_name,
+                "url": url,
+                "params": params or {},
+            },
+        )
+
+        try:
+            response = await self.http_client.get(
+                url,
+                params=params,
+                timeout=timeout,
+            )
+
+            logger.info(
+                "state_http_response",
+                extra={
+                    "source_type": str(source_type),
+                    "source_name": source_name,
+                    "url": url,
+                    "status_code": response.status_code,
+                    "content_length": len(response.content),
+                    "content_type": response.headers.get("content-type", "unknown"),
+                },
+            )
+
+            response.raise_for_status()
+            return response
+
+        except Exception as exc:
+            logger.error(
+                "state_http_error",
+                extra={
+                    "source_type": str(source_type),
+                    "source_name": source_name,
+                    "url": url,
+                    "error_type": type(exc).__name__,
+                    "error_msg": str(exc),
+                },
+            )
+            raise
+
     async def _fetch_with_json_discovery(
         self, url: str, keywords: Optional[List[str]] = None
     ) -> Dict[str, Any]:

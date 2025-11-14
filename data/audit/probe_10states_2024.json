@@ -1,0 +1,135 @@
+{
+  "generated_at": "2025-11-13T19:41:42Z",
+  "probe_year": 2024,
+  "batch_size": 10,
+  "states": [
+    {
+      "state": "AL",
+      "adapter": "AlabamaAHSAADataSource",
+      "success": true,
+      "status": "OK_REAL_DATA",
+      "error_type": "OK_REAL_DATA",
+      "games_found": 154,
+      "teams_found": 43,
+      "error_msg": "",
+      "http_status": 200,
+      "url_tested": null
+    },
+    {
+      "state": "TX",
+      "adapter": "TexasUILDataSource",
+      "success": true,
+      "status": "OK_REAL_DATA",
+      "error_type": "OK_REAL_DATA",
+      "games_found": 12,
+      "teams_found": 24,
+      "error_msg": "",
+      "http_status": 200,
+      "url_tested": null
+    },
+    {
+      "state": "WI",
+      "adapter": "WisconsinWIAADataSource",
+      "success": true,
+      "status": "NO_GAMES",
+      "error_type": "NO_GAMES",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "",
+      "http_status": 200,
+      "url_tested": null
+    },
+    {
+      "state": "IN",
+      "adapter": "IndianaIHSAADataSource",
+      "success": true,
+      "status": "NO_GAMES",
+      "error_type": "NO_GAMES",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "",
+      "http_status": 200,
+      "url_tested": null
+    },
+    {
+      "state": "KY",
+      "adapter": "KentuckyKHSAADataSource",
+      "success": true,
+      "status": "NO_GAMES",
+      "error_type": "NO_GAMES",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "",
+      "http_status": 200,
+      "url_tested": null
+    },
+    {
+      "state": "AZ",
+      "adapter": "ArizonaAIADataSource",
+      "success": true,
+      "status": "NO_GAMES",
+      "error_type": "NO_GAMES",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "",
+      "http_status": 200,
+      "url_tested": null
+    },
+    {
+      "state": "AR",
+      "adapter": "ArkansasAAADataSource",
+      "success": true,
+      "status": "NO_GAMES",
+      "error_type": "NO_GAMES",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "",
+      "http_status": 200,
+      "url_tested": null
+    },
+    {
+      "state": "OH",
+      "adapter": "OhioOHSAADataSource",
+      "success": true,
+      "status": "NO_GAMES",
+      "error_type": "NO_GAMES",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "",
+      "http_status": 200,
+      "url_tested": null
+    },
+    {
+      "state": "NC",
+      "adapter": "NCHSAADataSource",
+      "success": true,
+      "status": "NO_GAMES",
+      "error_type": "NO_GAMES",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "",
+      "http_status": 200,
+      "url_tested": null
+    },
+    {
+      "state": "GA",
+      "adapter": "GeorgiaGHSADataSource",
+      "success": true,
+      "status": "NO_GAMES",
+      "error_type": "NO_GAMES",
+      "games_found": 0,
+      "teams_found": 0,
+      "error_msg": "",
+      "http_status": 200,
+      "url_tested": null
+    }
+  ],
+  "summary": {
+    "total_states": 10,
+    "ok_real_data": 2,
+    "no_games": 8,
+    "http_404": 0,
+    "total_games": 166,
+    "total_teams": 67
+  }
+}

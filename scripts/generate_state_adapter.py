@@ -1,71 +1,48 @@
 """
-State Adapter Generator
+State Adapter Generator (Phase 25 Enhanced)
 
-Generates state athletic association adapters from template.
-Enables rapid creation of 50-state coverage adapters.
+Scaffolds new state adapters using the StateAdapterBase template.
+Enforces "URL discovery FIRST" workflow to prevent Phase 23 URL chaos.
 
 Usage:
-    python scripts/generate_state_adapter.py --state GA --name "Georgia GHSA" --url "https://www.ghsa.net"
-    python scripts/generate_state_adapter.py --batch southeast  # Generate all Southeast states
+    python scripts/generate_state_adapter.py \\
+        --state NV \\
+        --name Nevada \\
+        --org NIAA \\
+        --url "https://www.nevadapreps.com" \\
+        --classifications "5A,4A,3A,2A,1A"
+
+This will:
+    1. Generate src/datasources/us/{state_org}.py using StateAdapterBase
+    2. Create test stub in tests/test_datasources/test_{state_org}.py
+    3. Create data/research/{state}_url_patterns.json for documentation
+    4. Provide manual steps for STATE_REGISTRY and imports
+
+Enforces URL discovery:
+    - Requires --url parameter (must manually verify URL first)
+    - Prompts for bracket URL pattern confirmation
+    - Creates URL pattern documentation
 """
 
 import argparse
-import os
+import json
+import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import List
+import re
+from datetime import datetime
 
-# State information for batch generation
-STATES_INFO = {
-    # Southeast
-    "GA": {"name": "Georgia GHSA", "full_name": "Georgia High School Association", "url": "https://www.ghsa.net"},
-    "VA": {"name": "Virginia VHSL", "full_name": "Virginia High School League", "url": "https://www.vhsl.org"},
-    "TN": {"name": "Tennessee TSSAA", "full_name": "Tennessee Secondary School Athletic Association", "url": "https://tssaa.org"},
-    "SC": {"name": "South Carolina SCHSL", "full_name": "South Carolina High School League", "url": "https://schsl.org"},
-    "AL": {"name": "Alabama AHSAA", "full_name": "Alabama High School Athletic Association", "url": "https://www.ahsaa.com"},
-    "LA": {"name": "Louisiana LHSAA", "full_name": "Louisiana High School Athletic Association", "url": "https://www.lhsaa.org"},
-    "MS": {"name": "Mississippi MHSAA", "full_name": "Mississippi High School Activities Association", "url": "https://www.misshsaa.com"},
-    "AR": {"name": "Arkansas AAA", "full_name": "Arkansas Activities Association", "url": "https://www.ahsaa.org"},
-    "KY": {"name": "Kentucky KHSAA", "full_name": "Kentucky High School Athletic Association", "url": "https://khsaa.org"},
-    "WV": {"name": "West Virginia WVSSAC", "full_name": "West Virginia Secondary School Activities Commission", "url": "https://wvssac.org"},
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
-    # Northeast
-    "CT": {"name": "Connecticut CIAC", "full_name": "Connecticut Interscholastic Athletic Conference", "url": "https://www.ciacsports.com"},
-    "DE": {"name": "Delaware DIAA", "full_name": "Delaware Interscholastic Athletic Association", "url": "https://www.diaa.org"},
-    "MA": {"name": "Massachusetts MIAA", "full_name": "Massachusetts Interscholastic Athletic Association", "url": "https://www.miaa.net"},
-    "MD": {"name": "Maryland MPSSAA", "full_name": "Maryland Public Secondary Schools Athletic Association", "url": "https://www.mpssaa.org"},
-    "ME": {"name": "Maine MPA", "full_name": "Maine Principals' Association", "url": "https://www.mpa.cc"},
-    "NH": {"name": "New Hampshire NHIAA", "full_name": "New Hampshire Interscholastic Athletic Association", "url": "https://www.nhiaa.org"},
-    "NJ": {"name": "New Jersey NJSIAA", "full_name": "New Jersey State Interscholastic Athletic Association", "url": "https://www.njsiaa.org"},
-    "PA": {"name": "Pennsylvania PIAA", "full_name": "Pennsylvania Interscholastic Athletic Association", "url": "https://www.piaa.org"},
-    "RI": {"name": "Rhode Island RIIL", "full_name": "Rhode Island Interscholastic League", "url": "https://www.riil.org"},
-    "VT": {"name": "Vermont VPA", "full_name": "Vermont Principals' Association", "url": "https://www.vpaonline.org"},
 
-    # Midwest
-    "IN": {"name": "Indiana IHSAA", "full_name": "Indiana High School Athletic Association", "url": "https://www.ihsaa.org"},
-    "OH": {"name": "Ohio OHSAA", "full_name": "Ohio High School Athletic Association", "url": "https://www.ohsaa.org"},
-    "KS": {"name": "Kansas KSHSAA", "full_name": "Kansas State High School Activities Association", "url": "https://www.kshsaa.org"},
-    "MI": {"name": "Michigan MHSAA", "full_name": "Michigan High School Athletic Association", "url": "https://www.mhsaa.com"},
-    "MO": {"name": "Missouri MSHSAA", "full_name": "Missouri State High School Activities Association", "url": "https://www.mshsaa.org"},
-    "ND": {"name": "North Dakota NDHSAA", "full_name": "North Dakota High School Activities Association", "url": "https://www.ndhsaa.com"},
-    "NE": {"name": "Nebraska NSAA", "full_name": "Nebraska School Activities Association", "url": "https://www.nsaahome.org"},
-
-    # Southwest/West
-    "CO": {"name": "Colorado CHSAA", "full_name": "Colorado High School Activities Association", "url": "https://www.chsaa.org"},
-    "NM": {"name": "New Mexico NMAA", "full_name": "New Mexico Activities Association", "url": "https://www.nmact.org"},
-    "OK": {"name": "Oklahoma OSSAA", "full_name": "Oklahoma Secondary School Activities Association", "url": "https://www.ossaa.com"},
-    "UT": {"name": "Utah UHSAA", "full_name": "Utah High School Activities Association", "url": "https://www.uhsaa.org"},
-    "AK": {"name": "Alaska ASAA", "full_name": "Alaska School Activities Association", "url": "https://www.asaa.org"},
-    "MT": {"name": "Montana MHSA", "full_name": "Montana High School Association", "url": "https://www.mhsa.org"},
-    "WY": {"name": "Wyoming WHSAA", "full_name": "Wyoming High School Activities Association", "url": "https://www.whsaa.org"},
-    "DC": {"name": "DC DCIAA", "full_name": "District of Columbia Interscholastic Athletic Association", "url": "https://www.dciaa.org"},
-}
-
-REGIONS = {
-    "southeast": ["GA", "VA", "TN", "SC", "AL", "LA", "MS", "AR", "KY", "WV"],
-    "northeast": ["CT", "DE", "MA", "MD", "ME", "NH", "NJ", "PA", "RI", "VT"],
-    "midwest": ["IN", "OH", "KS", "MI", "MO", "ND", "NE"],
-    "southwest_west": ["CO", "NM", "OK", "UT", "AK", "MT", "WY", "DC"],
-}
+def slugify(text: str) -> str:
+    """Convert text to snake_case for file/variable names."""
+    text = text.lower().strip()
+    text = re.sub(r'[^\w\s-]', '', text)
+    text = re.sub(r'[-\s]+', '_', text)
+    return text
 
 
 ADAPTER_TEMPLATE = '''"""

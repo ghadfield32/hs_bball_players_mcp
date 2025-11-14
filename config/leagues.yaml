@@ -1,0 +1,362 @@
+# Basketball Data Source Coverage Tracker
+#
+# Tracks implementation status of all basketball data sources across
+# high school, college, and international leagues.
+#
+# Status values:
+#   - working: Fully implemented and tested
+#   - gated: Implemented but requires special setup (browser, auth, etc.)
+#   - todo: Planned but not yet implemented
+#   - research_needed: Requires API/URL discovery
+#
+# Last updated: 2025-11-12 (Phase 16 complete)
+
+# =============================================================================
+# HIGH SCHOOL - US STATE ASSOCIATIONS (Phase 16)
+# =============================================================================
+
+- id: hs_aia
+  name: Arizona Interscholastic Association
+  scope: HS
+  state: AZ
+  adapter: src/datasources/us/arizona_aia.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "7 conferences (6A-1A + Open). Tournament brackets only."
+
+- id: hs_ihsaa_id
+  name: Idaho High School Activities Association
+  scope: HS
+  state: ID
+  adapter: src/datasources/us/idaho_ihsaa.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "6 classifications (6A-1A). Tournament brackets only."
+
+- id: hs_wiaa_wa
+  name: Washington Interscholastic Activities Association
+  scope: HS
+  state: WA
+  adapter: src/datasources/us/washington_wiaa.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "6 classifications (4A-1A, 2B, 1B). WPA Network AJAX system."
+
+- id: hs_niaa
+  name: Nevada Interscholastic Activities Association
+  scope: HS
+  state: NV
+  adapter: src/datasources/us/nevada_niaa.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "5 divisions (5A-1A). PDF brackets with conditional caching (ETag/Last-Modified)."
+
+- id: hs_osaa_or
+  name: Oregon School Activities Association
+  scope: HS
+  state: OR
+  adapter: src/datasources/us/oregon_osaa.py
+  needs_browser: true
+  needs_auth: false
+  status: gated
+  notes: "6 classifications (6A-1A). Cloudflare protection requires Playwright. Enable via use_playwright_sources config."
+
+- id: hs_ihsa
+  name: Illinois High School Association
+  scope: HS
+  state: IL
+  adapter: src/datasources/us/illinois_ihsa.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "4 classes (1A-4A). Tournament brackets only."
+
+- id: hs_ihsaa_ia
+  name: Iowa High School Athletic Association
+  scope: HS
+  state: IA
+  adapter: src/datasources/us/iowa_ihsaa.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "4 classes (1A-4A). Tournament brackets only."
+
+- id: hs_sdhsaa
+  name: South Dakota High School Activities Association
+  scope: HS
+  state: SD
+  adapter: src/datasources/us/south_dakota_sdhsaa.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "Classes AA, A, B. Tournament brackets only."
+
+- id: hs_wiaa_wi
+  name: Wisconsin Interscholastic Athletic Association
+  scope: HS
+  state: WI
+  adapter: src/datasources/us/wisconsin_wiaa.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "5 divisions (D1-D5). Tournament brackets only."
+
+- id: hs_maxpreps_wi
+  name: MaxPreps Wisconsin
+  scope: HS
+  state: WI
+  adapter: src/datasources/us/wisconsin_maxpreps.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "Player stats, team stats, schedules. Complements WIAA brackets."
+
+# =============================================================================
+# HIGH SCHOOL - US STATE ASSOCIATIONS (Phase 17 Queue - High Priority)
+# =============================================================================
+
+- id: hs_cif_ca
+  name: California Interscholastic Federation
+  scope: HS
+  state: CA
+  adapter: src/datasources/us/california_cif.py
+  needs_browser: false
+  needs_auth: false
+  status: todo
+  notes: "Largest state (1,600+ schools). Multiple sections. High-impact adapter."
+  priority: critical
+
+- id: hs_uil_tx
+  name: Texas University Interscholastic League
+  scope: HS
+  state: TX
+  adapter: src/datasources/us/texas_uil.py
+  needs_browser: false
+  needs_auth: false
+  status: todo
+  notes: "2nd largest state (1,400+ schools). 6 classifications. High-impact adapter."
+  priority: critical
+
+- id: hs_fhsaa
+  name: Florida High School Athletic Association
+  scope: HS
+  state: FL
+  adapter: src/datasources/us/florida_fhsaa.py
+  needs_browser: false
+  needs_auth: false
+  status: todo
+  notes: "3rd largest state (800+ schools). 9 classifications. High-impact adapter."
+  priority: critical
+
+- id: hs_ghsa
+  name: Georgia High School Association
+  scope: HS
+  state: GA
+  adapter: src/datasources/us/georgia_ghsa.py
+  needs_browser: false
+  needs_auth: false
+  status: todo
+  notes: "Strong basketball state (500+ schools). 7 classifications."
+  priority: high
+
+- id: hs_ohsaa
+  name: Ohio High School Athletic Association
+  scope: HS
+  state: OH
+  adapter: src/datasources/us/ohio_ohsaa.py
+  needs_browser: false
+  needs_auth: false
+  status: todo
+  notes: "LeBron's home state (800+ schools). 4 divisions."
+  priority: high
+
+- id: hs_piaa
+  name: Pennsylvania Interscholastic Athletic Association
+  scope: HS
+  state: PA
+  adapter: src/datasources/us/pennsylvania_piaa.py
+  needs_browser: false
+  needs_auth: false
+  status: todo
+  notes: "Kobe's home state (600+ schools). 6 classifications."
+  priority: high
+
+- id: hs_nysphsaa
+  name: New York State Public High School Athletic Association
+  scope: HS
+  state: NY
+  adapter: src/datasources/us/new_york_nysphsaa.py
+  needs_browser: false
+  needs_auth: false
+  status: todo
+  notes: "700+ schools. Complex multi-section system."
+  priority: high
+
+- id: hs_psal
+  name: NYC Public Schools Athletic League
+  scope: HS
+  state: NY
+  adapter: src/datasources/us/psal.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "NYC public schools. Player stats and leaderboards available."
+
+# =============================================================================
+# COLLEGE / UNIVERSITY - US & INTERNATIONAL
+# =============================================================================
+
+- id: ncaa_mbb
+  name: NCAA Men's Basketball
+  scope: College
+  country: US
+  adapter: cbb_data/mens/ncaa.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "D1/D2/D3 coverage. Box scores, play-by-play, player stats."
+
+- id: ncaa_wbb
+  name: NCAA Women's Basketball
+  scope: College
+  country: US
+  adapter: cbb_data/womens/ncaa.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "D1/D2/D3 coverage. Parity with men's data."
+
+- id: euroleague
+  name: EuroLeague Basketball
+  scope: International
+  country: EU
+  adapter: cbb_data/international/euroleague.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "Top European club competition. Full stats, PIR ratings."
+
+- id: eurocup
+  name: EuroCup Basketball
+  scope: International
+  country: EU
+  adapter: cbb_data/international/eurocup.py
+  needs_browser: false
+  needs_auth: false
+  status: todo
+  notes: "2nd tier European competition. Mirror EuroLeague adapter structure."
+  priority: medium
+
+- id: fiba_federation
+  name: FIBA Federation API
+  scope: International
+  country: GLOBAL
+  adapter: src/datasources/vendors/fibalivestats_federation.py
+  needs_browser: false
+  needs_auth: true
+  status: research_needed
+  notes: "Requires FIBA API authentication (401 Unauthorized). Health check accepts 401/404 as 'reachable'."
+
+# =============================================================================
+# ELITE CIRCUITS - US NATIONAL (Phase 1-12)
+# =============================================================================
+
+- id: eybl
+  name: Nike Elite Youth Basketball League
+  scope: Circuit
+  country: US
+  adapter: src/datasources/us/eybl.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "Top boys circuit. Stats, schedules, standings."
+
+- id: eybl_girls
+  name: Nike Girls EYBL
+  scope: Circuit
+  country: US
+  adapter: src/datasources/us/eybl_girls.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "Top girls circuit. Stats, schedules, standings."
+
+- id: three_ssb
+  name: Adidas 3SSB (Boys)
+  scope: Circuit
+  country: US
+  adapter: src/datasources/us/three_ssb.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "Adidas boys circuit. Stats and standings."
+
+- id: three_ssb_girls
+  name: Adidas 3SSB Girls
+  scope: Circuit
+  country: US
+  adapter: src/datasources/us/three_ssb_girls.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "Adidas girls circuit. Stats and standings."
+
+- id: uaa
+  name: Under Armour Association
+  scope: Circuit
+  country: US
+  adapter: src/datasources/us/uaa.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "UA boys circuit. Event-based stats."
+
+- id: uaa_girls
+  name: UA Next (Girls)
+  scope: Circuit
+  country: US
+  adapter: src/datasources/us/uaa_girls.py
+  needs_browser: false
+  needs_auth: false
+  status: working
+  notes: "UA girls circuit. Event-based stats."
+
+# =============================================================================
+# METADATA & COVERAGE SUMMARY
+# =============================================================================
+
+metadata:
+  last_updated: "2025-11-12"
+  phase: 16
+  total_sources: 30
+  working: 19
+  gated: 1  # OSAA (Playwright)
+  todo: 7
+  research_needed: 1  # FIBA (auth)
+
+  coverage_by_scope:
+    hs: 17  # 10 working, 1 gated, 6 todo
+    college: 3  # 2 working, 1 todo
+    circuit: 6  # All working
+    international: 3  # 1 working, 1 todo, 1 research
+
+  us_state_coverage:
+    total_states: 50
+    states_with_adapters: 13  # AZ, ID, WA, NV, OR, IL, IA, SD, WI, NY, CA (todo), TX (todo), FL (todo)
+    states_working: 10
+    states_gated: 1  # OR
+    states_todo: 2  # CA, TX, FL
+
+  phase_17_priorities:
+    - California CIF (1,600+ schools)
+    - Texas UIL (1,400+ schools)
+    - Florida FHSAA (800+ schools)
+    - Georgia GHSA (500+ schools)
+    - Ohio OHSAA (800+ schools)
+    - Pennsylvania PIAA (600+ schools)
+    - New York NYSPHSAA (700+ schools)
+    - EuroCup (international parity)

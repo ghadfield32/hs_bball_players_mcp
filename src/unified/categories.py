@@ -77,12 +77,15 @@ CIRCUIT_KEYS = {
     "vpa": "VPA",
     # US State Associations - Midwest
     "ihsaa": "IHSAA",
+    "ihsa": "IHSA",
     "ohsaa": "OHSAA",
     "kshsaa": "KSHSAA",
     "mhsaa_mi": "MHSAA_MI",
     "mshsaa": "MSHSAA",
     "ndhsaa": "NDHSAA",
     "nsaa": "NSAA",
+    "wiaa": "WIAA",  # Wisconsin official brackets/tournaments
+    "maxpreps_wi": "MAXPREPS_WI",  # Wisconsin player/team stats
     # US State Associations - Southwest/West
     "chsaa": "CHSAA",
     "nmaa": "NMAA",
@@ -156,12 +159,15 @@ SOURCE_TYPES = {
     "riil": "ASSOCIATION",
     "vpa": "ASSOCIATION",
     "ihsaa": "ASSOCIATION",
+    "ihsa": "ASSOCIATION",
     "ohsaa": "ASSOCIATION",
     "kshsaa": "ASSOCIATION",
     "mhsaa_mi": "ASSOCIATION",
     "mshsaa": "ASSOCIATION",
     "ndhsaa": "ASSOCIATION",
     "nsaa": "ASSOCIATION",
+    "wiaa": "ASSOCIATION",  # Wisconsin - Official state association
+    "maxpreps_wi": "PLATFORM",  # Wisconsin - Player/team stats aggregator
     "chsaa": "ASSOCIATION",
     "nmaa": "ASSOCIATION",
     "ossaa": "ASSOCIATION",
@@ -295,6 +301,7 @@ def normalize_level(source_key: str, age_group: str | None) -> str:
         "riil",
         "vpa",
         "ihsaa",
+        "ihsa",
         "ohsaa",
         "kshsaa",
         "mhsaa_mi",
