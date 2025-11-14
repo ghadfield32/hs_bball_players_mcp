@@ -25,7 +25,7 @@ from src.datasources.us.three_ssb import ThreeSSBDataSource
 from src.datasources.us.wisconsin_wiaa import WisconsinWiaaDataSource
 from src.datasources.us.wsn import WSNDataSource
 from src.datasources.us.wisconsin_maxpreps import MaxPrepsWisconsinDataSource
-from src.datasources.us import IHSADataSource
+from src.datasources.us.illinois_ihsa import IllinoisIHSADataSource
 from src.datasources.us.south_dakota_sdhsaa import SouthDakotaSDHSAADataSource
 from src.datasources.europe.fiba_youth import FIBAYouthDataSource
 from src.main import app
@@ -123,9 +123,9 @@ async def maxpreps_wi_source() -> AsyncGenerator[MaxPrepsWisconsinDataSource, No
 
 
 @pytest_asyncio.fixture(scope="module")
-async def ihsa_source() -> AsyncGenerator[IHSADataSource, None]:
-    """Create IHSA datasource for testing."""
-    source = IHSADataSource()
+async def ihsa_source() -> AsyncGenerator[IllinoisIHSADataSource, None]:
+    """Create IHSA (Illinois) datasource for testing."""
+    source = IllinoisIHSADataSource()
     yield source
     await source.close()
 

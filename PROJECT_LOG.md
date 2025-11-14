@@ -3083,6 +3083,69 @@ python scripts/rollover_wiaa_season.py 2026 --download --interactive
 
 ---
 
+## Phase 13.2: Wisconsin WIAA Import Fixes & Merge Completion (2025-11-14)
+
+**Objective**: Resolve all import errors preventing Wisconsin WIAA tests from running, complete merge of wisconsin implementation branch.
+
+**Problem**: Tests failing with `ImportError: cannot import name 'WisconsinWIAADataSource'` due to class name mismatch (actual class: `WisconsinWiaaDataSource`).
+
+### COMPLETED WORK
+
+#### 1. Systematic Diagnostic & Analysis
+- Created `scripts/debug_import_issue.py` - AST-based diagnostic tool for import validation
+- Identified 7 import issues across codebase + 2 merge conflicts in aggregator.py
+- Verified actual class definition: `WisconsinWiaaDataSource` (line 58) vs incorrect imports using `WisconsinWIAADataSource`/`WIAADataSource`
+
+#### 2. Import Fixes (7 Files)
+- `tests/conftest.py`: Removed duplicate incorrect import (line 27), fixed fixture type hint
+- `tests/test_state_adapters_smoke.py`: `WisconsinWIAADataSource` → `WisconsinWiaaDataSource` (2 instances)
+- `tests/test_datasources/test_wiaa.py`: `WIAADataSource` → `WisconsinWiaaDataSource`
+- `scripts/debug_wi_pdf.py`: Fixed class name in import
+- `scripts/audit_datasource_capabilities.py`: Fixed import + 2 usage instances
+- `scripts/stress_test_datasources.py`: Fixed import + 2 usage instances
+- `src/services/aggregator.py`: Fixed import + registry entry, resolved 2 merge conflicts
+
+#### 3. Merge Conflict Resolution
+- **aggregator.py FIBA import section**: Kept try/except guard version (more robust)
+- **aggregator.py datasource registry**: Merged Wisconsin entries + FIBA entry, fixed class name
+- Removed all merge markers (`<<<<<<<`, `=======`, `>>>>>>>`)
+
+#### 4. Validation & Completion
+- Direct Python import test: ✅ `WisconsinWiaaDataSource` imports successfully
+- Verified source name: `"Wisconsin WIAA"`
+- Completed merge commit with detailed changelog
+- Branch now 9 commits ahead of origin/main
+
+**Result**: All import errors resolved, Wisconsin WIAA implementation successfully merged to main.
+
+**Next Steps**: Address remaining test failure (`DataSourceType.MAXPREPS_WI` enum missing) - separate from import issues.
+
+---
+
+## Phase 13.3: DataSourceType Enum Completion & Test Validation (2025-11-14)
+
+**Objective**: Add all missing `DataSourceType` enum values to enable comprehensive adapter coverage.
+
+**Problem**: Multiple adapters failed to load due to missing enum values, cascading from MaxPreps WI → Illinois IHSA → South Dakota → Arizona → Canada OFSAA.
+
+### COMPLETED WORK
+
+#### 1. Systematic Enum Discovery
+- Scanned all datasource adapters (US, Canada, Europe)
+- Identified 16 missing `DataSourceType` enum values
+- Used grep-based discovery to find all references
+
+#### 2. Comprehensive Enum Additions (16 values in `src/models/source.py`)
+**US National** (2): CIRCUIT, PLATFORM | **Northeast** (1): NYSPHSAA | **Midwest** (5): IHSA, IHSAA_IA, MSHSL, SDHSAA, MAXPREPS_WI | **Southwest/West** (7): AIA, CIF_SS, IHSAA_ID, NIAA, OSAA, UIL, WIAA_WA | **International** (2): FIBA_FEDERATION, OFSAA
+
+#### 3. Test Configuration Fixes
+- `tests/conftest.py`: Fixed Illinois IHSA import path + fixture
+
+#### 4. Validation Results
+✅ Wisconsin WIAA tests: **14 passed, 5 skipped** (0.34s) | ✅ All ~25 previously-blocked adapters now functional
+
+---
+
 ### IN PROGRESS
 
 **Phase 13 Testing & Validation**:

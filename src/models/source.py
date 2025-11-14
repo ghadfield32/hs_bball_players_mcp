@@ -15,6 +15,7 @@ class DataSourceType(str, Enum):
     """Type of data source."""
 
     # US - National Circuits
+    CIRCUIT = "circuit"  # Generic circuit/tournament platform
     EYBL = "eybl"  # Nike EYBL (Boys)
     EYBL_GIRLS = "eybl_girls"  # Nike Girls EYBL
     THREE_SSB = "three_ssb"  # Adidas 3 Stripe Select Basketball (Boys)
@@ -28,6 +29,7 @@ class DataSourceType(str, Enum):
     SBLIVE = "sblive"  # SBLive Sports (Multi-state: WA, OR, CA, AZ, ID, NV)
     BOUND = "bound"  # Bound (formerly Varsity Bound) (Multi-state: IA, SD, IL, MN)
     RANKONE = "rankone"  # RankOne Sport (Multi-state: TX, KY, IN, OH, TN - schedules/fixtures)
+    PLATFORM = "platform"  # Generic platform/aggregator
 
     # US - Single State
     PSAL = "psal"  # NYC PSAL
@@ -56,30 +58,43 @@ class DataSourceType(str, Enum):
     MPA = "mpa"  # Maine Principals' Association
     NHIAA = "nhiaa"  # New Hampshire Interscholastic Athletic Association
     NJSIAA = "njsiaa"  # New Jersey State Interscholastic Athletic Association
+    NYSPHSAA = "nysphsaa"  # New York State Public High School Athletic Association
     PIAA = "piaa"  # Pennsylvania Interscholastic Athletic Association
     RIIL = "riil"  # Rhode Island Interscholastic League
     VPA = "vpa"  # Vermont Principals' Association
     NEPSAC = "nepsac"  # New England Preparatory School Athletic Council (Multi-state: CT, MA, ME, NH, RI, VT)
 
     # US - State Associations (Midwest)
+    IHSA = "ihsa"  # Illinois High School Association
     IHSAA = "ihsaa"  # Indiana High School Athletic Association
-    OHSAA = "ohsaa"  # Ohio High School Athletic Association
+    IHSAA_IA = "ihsaa_ia"  # Iowa High School Athletic Association
     KSHSAA = "kshsaa"  # Kansas State High School Activities Association
     MHSAA_MI = "mhsaa_mi"  # Michigan High School Athletic Association
     MSHSAA = "mshsaa"  # Missouri State High School Activities Association
+    MSHSL = "mshsl"  # Minnesota State High School League
     NDHSAA = "ndhsaa"  # North Dakota High School Activities Association
     NSAA = "nsaa"  # Nebraska School Activities Association
+    OHSAA = "ohsaa"  # Ohio High School Athletic Association
+    SDHSAA = "sdhsaa"  # South Dakota High School Activities Association
     WIAA = "wiaa"  # Wisconsin Interscholastic Athletic Association
+    MAXPREPS_WI = "maxpreps_wi"  # MaxPreps Wisconsin (Player stats, regular season)
 
     # US - State Associations (Southwest/West)
-    CHSAA = "chsaa"  # Colorado High School Activities Association
-    NMAA = "nmaa"  # New Mexico Activities Association
-    OSSAA = "ossaa"  # Oklahoma Secondary School Activities Association
-    UHSAA = "uhsaa"  # Utah High School Activities Association
+    AIA = "aia"  # Arizona Interscholastic Association
     ASAA = "asaa"  # Alaska School Activities Association
-    MHSA = "mhsa"  # Montana High School Association
-    WHSAA = "whsaa"  # Wyoming High School Activities Association
+    CIF_SS = "cif_ss"  # California Interscholastic Federation - Southern Section
+    CHSAA = "chsaa"  # Colorado High School Activities Association
     DCIAA = "dciaa"  # District of Columbia Interscholastic Athletic Association
+    IHSAA_ID = "ihsaa_id"  # Idaho High School Activities Association
+    MHSA = "mhsa"  # Montana High School Association
+    NIAA = "niaa"  # Nevada Interscholastic Activities Association
+    NMAA = "nmaa"  # New Mexico Activities Association
+    OSAA = "osaa"  # Oregon School Activities Association
+    OSSAA = "ossaa"  # Oklahoma Secondary School Activities Association
+    UIL = "uil"  # Texas University Interscholastic League
+    UHSAA = "uhsaa"  # Utah High School Activities Association
+    WIAA_WA = "wiaa_wa"  # Washington Interscholastic Activities Association
+    WHSAA = "whsaa"  # Wyoming High School Activities Association
 
     # US - State/Regional Platforms
     HHSAA = "hhsaa"  # Hawaii High School Athletic Association
@@ -89,6 +104,7 @@ class DataSourceType(str, Enum):
     # International - Europe
     FIBA = "fiba"  # FIBA Youth
     FIBA_LIVESTATS = "fiba_livestats"  # FIBA LiveStats v7 (Global tournaments)
+    FIBA_FEDERATION = "fiba_federation"  # FIBA National Federation events
     ANGT = "angt"  # Adidas Next Generation Tournament (EuroLeague U18)
     NBBL = "nbbl"  # German NBBL/JBBL (U19/U16)
     FEB = "feb"  # Spanish FEB Junior categories
@@ -96,6 +112,7 @@ class DataSourceType(str, Enum):
     LNB_ESPOIRS = "lnb_espoirs"  # French LNB Espoirs (U21)
 
     # International - Canada
+    OFSAA = "ofsaa"  # Ontario Federation of School Athletic Associations
     OSBA = "osba"  # Ontario Scholastic Basketball Association
     NPA = "npa"  # National Preparatory Association (Canada)
 
