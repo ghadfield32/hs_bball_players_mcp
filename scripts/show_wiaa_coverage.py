@@ -131,9 +131,9 @@ class CoverageDashboard:
 
         # Breakdown by status
         print("Status Breakdown:")
-        print(f"  ✅ Present:  {present:3d} ({pct_present:.1f}%)")
-        print(f"  📋 Planned:  {planned:3d} ({pct_planned:.1f}%)")
-        print(f"  📅 Future:   {future:3d} ({(future/total*100):.1f}%)")
+        print(f"  [+] Present:  {present:3d} ({pct_present:.1f}%)")
+        print(f"  [P] Planned:  {planned:3d} ({pct_planned:.1f}%)")
+        print(f"  [F] Future:   {future:3d} ({(future/total*100):.1f}%)")
         print()
 
         # Priority breakdown (for planned fixtures)
@@ -186,7 +186,7 @@ class CoverageDashboard:
                 print(f"  1. Promote {future} future fixtures to 'planned' status")
                 print(f"     Edit manifest_wisconsin.yml to change status: future → planned")
         else:
-            print("🎉 Congratulations! 100% coverage achieved!")
+            print("[!] Congratulations! 100% coverage achieved!")
 
         print()
 
@@ -206,7 +206,7 @@ class CoverageDashboard:
         print("DETAILED COVERAGE GRID")
         print("="*80)
         print()
-        print("Legend: ✅ Present  📋 Planned  📅 Future  ❌ Missing")
+        print("Legend: [+] Present  [P] Planned  [F] Future  [-] Missing")
         print()
 
         # Print grid by year
@@ -225,16 +225,16 @@ class CoverageDashboard:
                     if key in fixtures_dict:
                         status = fixtures_dict[key].get("status", "unknown")
                         if status == "present":
-                            symbol = "✅"
+                            symbol = "[+]"
                         elif status == "planned":
                             pri = fixtures_dict[key].get("priority", "")
-                            symbol = f"📋{pri}" if pri else "📋"
+                            symbol = f"[P{pri}]" if pri else "[P]"
                         elif status == "future":
-                            symbol = "📅"
+                            symbol = "[F]"
                         else:
-                            symbol = "❓"
+                            symbol = "[?]"
                     else:
-                        symbol = "❌"
+                        symbol = "[-]"
                     print(f"{symbol:<10}", end="")
                 print()
 
@@ -258,7 +258,7 @@ class CoverageDashboard:
                 future.append(fix)
 
         if planned:
-            print(f"📋 PLANNED ({len(planned)} fixtures):")
+            print(f"[P] PLANNED ({len(planned)} fixtures):")
             print()
             # Group by priority
             by_priority = defaultdict(list)
@@ -275,12 +275,12 @@ class CoverageDashboard:
                 print()
 
         if future:
-            print(f"📅 FUTURE ({len(future)} fixtures):")
+            print(f"[F] FUTURE ({len(future)} fixtures):")
             print(f"   (Mark as 'planned' to include in download workflow)")
             print()
 
         if not planned and not future:
-            print("🎉 No missing fixtures! Coverage is complete.")
+            print("[!] No missing fixtures! Coverage is complete.")
 
         print()
 
@@ -298,16 +298,16 @@ class CoverageDashboard:
         with output.open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
-        print(f"\n✅ Coverage data exported to: {output}")
+        print(f"\n[+] Coverage data exported to: {output}")
         print()
 
     def _progress_bar(self, current: int, total: int, width: int = 40) -> str:
-        """Generate a text progress bar."""
+        """Generate a text progress bar using ASCII characters."""
         if total == 0:
             return "[" + " "*width + "]"
 
         filled = int(width * current / total)
-        bar = "█" * filled + "░" * (width - filled)
+        bar = "#" * filled + "-" * (width - filled)
         return f"[{bar}]"
 
 
@@ -357,7 +357,7 @@ Examples:
     try:
         dashboard = CoverageDashboard()
     except FileNotFoundError as e:
-        print(f"❌ Error: {e}", file=sys.stderr)
+        print(f"[X] Error: {e}", file=sys.stderr)
         sys.exit(1)
 
     # Show requested views

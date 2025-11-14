@@ -6,13 +6,22 @@ and the names used in import statements across the codebase.
 
 Usage:
     python scripts/debug_import_issue.py
+    python -m scripts.debug_import_issue
 """
 
+import ast
+import os
 import sys
 from pathlib import Path
 from typing import Dict, List, Tuple, Set
 import re
-import ast
+
+# Add project root to sys.path so imports work correctly
+# This allows the script to import from src/ regardless of how it's run
+HERE = Path(__file__).resolve()
+REPO_ROOT = HERE.parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 
 def extract_class_definitions(file_path: Path) -> Dict[str, str]:
