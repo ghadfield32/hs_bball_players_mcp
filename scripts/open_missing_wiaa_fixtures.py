@@ -155,7 +155,7 @@ class FixtureBrowserHelper:
 
         if self.verbose:
             print(f"  URL source: fallback pattern (no 'url' in manifest)")
-            print(f"  ⚠️  WARNING: If this URL gives 404, you need to:")
+            print(f"  [!] WARNING: If this URL gives 404, you need to:")
             print(f"      1. Manually find the real bracket URL on WIAA website")
             print(f"      2. Edit tests/fixtures/wiaa/manifest_wisconsin.yml")
             print(f"      3. Add 'url: <actual_url>' to the {year} {gender} {division} entry")
@@ -273,9 +273,9 @@ class FixtureBrowserHelper:
         try:
             webbrowser.open(url)
             self.stats["opened"] += 1
-            print("✅ Opened in browser")
+            print("[+] Opened in browser")
         except Exception as e:
-            print(f"❌ Failed to open browser: {e}")
+            print(f"[X] Failed to open browser: {e}")
             print(f"   Please manually navigate to: {url}")
 
         if batch_mode:
@@ -307,11 +307,11 @@ class FixtureBrowserHelper:
                 # Check if file was actually saved
                 file_path = self._get_fixture_path(year, gender, division)
                 if file_path.exists():
-                    print(f"✅ Confirmed: {filename} exists")
+                    print(f"[+] Confirmed: {filename} exists")
                     self.stats["saved"] += 1
                     return True
                 else:
-                    print(f"⚠️  Warning: {filename} not found in {FIXTURES_DIR}")
+                    print(f"[!] Warning: {filename} not found in {FIXTURES_DIR}")
                     retry = input("   Continue anyway? (y/N): ").strip().lower()
                     if retry == 'y':
                         self.stats["saved"] += 1
@@ -334,17 +334,17 @@ class FixtureBrowserHelper:
             batch_size: Number of browsers to open before pausing (1 = interactive)
         """
         if not fixtures:
-            print("\n✅ No missing fixtures found!")
+            print("\n[+] No missing fixtures found!")
             print(f"   {self.stats['already_present']} fixtures already present")
             return
 
         total = len(fixtures)
-        print(f"\n📋 Found {total} missing fixture(s) to download")
+        print(f"\n[P] Found {total} missing fixture(s) to download")
         print(f"   {self.stats['already_present']} fixture(s) already present")
         print()
 
         if batch_size > 1:
-            print(f"🚀 Batch mode: Opening {batch_size} tabs at a time")
+            print(f"[>] Batch mode: Opening {batch_size} tabs at a time")
             print()
 
         # Process fixtures
@@ -364,10 +364,10 @@ class FixtureBrowserHelper:
                     f = fixtures[j]
                     file_path = self._get_fixture_path(f["year"], f["gender"], f["division"])
                     if file_path.exists():
-                        print(f"   ✅ {f['filename']}")
+                        print(f"   [+] {f['filename']}")
                         self.stats["saved"] += 1
                     else:
-                        print(f"   ⚠️  {f['filename']} - not found")
+                        print(f"   [!] {f['filename']} - not found")
 
     def print_summary(self) -> None:
         """Print session summary."""
@@ -381,11 +381,11 @@ class FixtureBrowserHelper:
         print()
 
         if self.stats["saved"] > 0:
-            print("✅ Next step: Validate and update manifest")
+            print("[+] Next step: Validate and update manifest")
             print("   Run: python scripts/process_fixtures.py --planned")
             print()
         elif self.stats["skipped"] > 0:
-            print("ℹ️  Some fixtures were skipped")
+            print("[i] Some fixtures were skipped")
             print("   Re-run this command to download skipped fixtures")
             print()
 
@@ -443,7 +443,7 @@ Examples:
 
 Notes:
   - This script opens URLs in your browser; you must manually save the HTML
-  - Use "Save Page As... → HTML Only" (NOT "Complete")
+  - Use "Save Page As... -> HTML Only" (NOT "Complete")
   - Save files to: tests/fixtures/wiaa/
   - Use exact filename shown by the script
   - After downloading, run: python scripts/process_fixtures.py --planned
@@ -522,7 +522,7 @@ Notes:
         print("="*80)
 
         if not missing:
-            print("\n✅ No missing fixtures found!")
+            print("\n[+] No missing fixtures found!")
             print(f"   {helper.stats['already_present']} fixtures already present")
             return
 
@@ -547,7 +547,7 @@ Notes:
             print(f"  URL Source:  {url_source}")
 
             if url_source == "fallback":
-                print(f"  ⚠️  WARNING: Using fallback pattern - may 404!")
+                print(f"  [!] WARNING: Using fallback pattern - may 404!")
                 print(f"     If this URL doesn't work, add 'url:' field to manifest")
 
             print()
@@ -580,11 +580,11 @@ Notes:
                 check=False
             )
             if result.returncode == 0:
-                print("\n✅ Validation complete!")
+                print("\n[+] Validation complete!")
             else:
-                print("\n⚠️  Validation encountered issues (see output above)")
+                print("\n[!] Validation encountered issues (see output above)")
         except Exception as e:
-            print(f"\n❌ Failed to run validation: {e}")
+            print(f"\n[X] Failed to run validation: {e}")
             print("   You can run it manually: python scripts/process_fixtures.py --planned")
 
 
