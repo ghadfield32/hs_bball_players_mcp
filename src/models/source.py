@@ -32,8 +32,7 @@ class DataSourceType(str, Enum):
     # US - Single State
     PSAL = "psal"  # NYC PSAL
     MN_HUB = "mn_hub"  # Minnesota Basketball Hub
-    WSN = "wsn"  # Wisconsin Sports Network (INACTIVE - news site only)
-    MAXPREPS_WI = "maxpreps_wi"  # MaxPreps Wisconsin (player/team stats)
+    WSN = "wsn"  # Wisconsin Sports Network
 
     # US - State Associations (Southeast)
     FHSAA = "fhsaa"  # Florida High School Athletic Association
@@ -57,7 +56,6 @@ class DataSourceType(str, Enum):
     MPA = "mpa"  # Maine Principals' Association
     NHIAA = "nhiaa"  # New Hampshire Interscholastic Athletic Association
     NJSIAA = "njsiaa"  # New Jersey State Interscholastic Athletic Association
-    NYSPHSAA = "nysphsaa"  # New York State Public High School Athletic Association
     PIAA = "piaa"  # Pennsylvania Interscholastic Athletic Association
     RIIL = "riil"  # Rhode Island Interscholastic League
     VPA = "vpa"  # Vermont Principals' Association
@@ -65,16 +63,12 @@ class DataSourceType(str, Enum):
 
     # US - State Associations (Midwest)
     IHSAA = "ihsaa"  # Indiana High School Athletic Association
-    IHSAA_IA = "ihsaa_ia"  # Iowa High School Athletic Association
-    IHSA = "ihsa"  # Illinois High School Association
     OHSAA = "ohsaa"  # Ohio High School Athletic Association
     KSHSAA = "kshsaa"  # Kansas State High School Activities Association
     MHSAA_MI = "mhsaa_mi"  # Michigan High School Athletic Association
-    MSHSL = "mshsl"  # Minnesota State High School League
     MSHSAA = "mshsaa"  # Missouri State High School Activities Association
     NDHSAA = "ndhsaa"  # North Dakota High School Activities Association
     NSAA = "nsaa"  # Nebraska School Activities Association
-    SDHSAA = "sdhsaa"  # South Dakota High School Activities Association
     WIAA = "wiaa"  # Wisconsin Interscholastic Athletic Association
 
     # US - State Associations (Southwest/West)
@@ -92,72 +86,23 @@ class DataSourceType(str, Enum):
     TEXAS_HOOPS = "texas_hoops"  # TexasHoops.com
     OIA = "oia"  # Oahu Interscholastic Association (Hawaii)
 
-    # US - Missing States (Phase 16)
-    AIA = "aia"  # Arizona Interscholastic Association
-    OSAA = "osaa"  # Oregon School Activities Association
-    NIAA = "niaa"  # Nevada Interscholastic Activities Association
-    WIAA_WA = "wiaa_wa"  # Washington Interscholastic Activities Association
-    IHSAA_ID = "ihsaa_id"  # Idaho High School Activities Association
-
-    # US - Elite Prep Leagues (Phase 16)
-    NIBC = "nibc"  # National Interscholastic Basketball Conference
-    WCAC = "wcac"  # Washington Catholic Athletic Conference
-    PCL = "pcl"  # Philadelphia Catholic League
-
-    # US - Event Platforms
-    EXPOSURE_EVENTS = "exposure_events"  # Exposure Events platform
-    TOURNEYMACHINE = "tourneymachine"  # TournyMachine platform
-
-    # US - Phase 17 High-Impact States
-    CIF_SS = "cif_ss"  # CIF Southern Section (California)
-    UIL = "uil"  # University Interscholastic League (Texas)
-    UIL_BRACKETS = "uil_brackets"  # UIL Texas Brackets (legacy)
-
     # International - Europe
     FIBA = "fiba"  # FIBA Youth
     FIBA_LIVESTATS = "fiba_livestats"  # FIBA LiveStats v7 (Global tournaments)
-    FIBA_FEDERATION = "fiba_federation"  # FIBA LiveStats Federation adapter (parameterized)
     ANGT = "angt"  # Adidas Next Generation Tournament (EuroLeague U18)
     NBBL = "nbbl"  # German NBBL/JBBL (U19/U16)
     FEB = "feb"  # Spanish FEB Junior categories
     MKL = "mkl"  # Lithuanian youth leagues
     LNB_ESPOIRS = "lnb_espoirs"  # French LNB Espoirs (U21)
 
-    # England Academies (Phase 16)
-    EABL = "eabl"  # England Basketball Academy League (U19 Boys)
-    WEABL = "weabl"  # Women's England Basketball Academy League (U19 Girls)
-    ABL = "abl"  # Academy Basketball League (U18)
-
     # International - Canada
     OSBA = "osba"  # Ontario Scholastic Basketball Association
     NPA = "npa"  # National Preparatory Association (Canada)
-    OFSAA = "ofsaa"  # Ontario Federation of School Athletic Associations
-
-    # Canada Provincial (Phase 16)
-    BCSS = "bcss"  # BC School Sports (British Columbia)
-    RSEQ = "rseq"  # RSEQ Scolaire (Quebec)
-    ASAA_AB = "asaa_ab"  # Alberta Schools' Athletic Association
-    SHSAA = "shsaa"  # Saskatchewan High School Athletic Association
-    MHSAA_MB = "mhsaa_mb"  # Manitoba High School Athletic Association
-    NBIAA = "nbiaa"  # New Brunswick Interscholastic Athletic Association
-    NSSAF = "nssaf"  # Nova Scotia School Athletic Federation
-    SSNL = "ssnl"  # School Sport Newfoundland & Labrador
-    PEISAA = "peisaa"  # Prince Edward Island School Athletic Association
 
     # International - Australia
     PLAYHQ = "playhq"  # PlayHQ Australia
 
-    # International - Asia (Phase 16)
-    JPN_WINTERCUP = "jpn_wintercup"  # Japan Winter Cup (All-Japan HS Tournament)
-    PH_UAAP_JR = "ph_uaap_jr"  # Philippines UAAP Juniors
-    PH_NCAA_JR = "ph_ncaa_jr"  # Philippines NCAA Juniors
-
-    # Vendor Platforms (Phase 16)
-    RSCHOOLTODAY = "rschooltoday"  # rSchoolToday platform (multi-school)
-    GAMEDAY = "gameday"  # GameDay/Sportstg platform (AU/NZ/Asia)
-
     UNKNOWN = "unknown"  # Unknown/other source
-    CIRCUIT = "circuit"  # Generic circuit/tournament
 
 
 class DataSourceRegion(str, Enum):
@@ -230,39 +175,12 @@ class DataSourceRegion(str, Enum):
     # International
     CANADA = "canada"
     CANADA_ON = "canada_on"  # Ontario
-    CANADA_BC = "canada_bc"  # British Columbia
-    CANADA_QC = "canada_qc"  # Quebec
-    CANADA_AB = "canada_ab"  # Alberta
-    CANADA_SK = "canada_sk"  # Saskatchewan
-    CANADA_MB = "canada_mb"  # Manitoba
-    CANADA_NB = "canada_nb"  # New Brunswick
-    CANADA_NS = "canada_ns"  # Nova Scotia
-    CANADA_NL = "canada_nl"  # Newfoundland & Labrador
-    CANADA_PE = "canada_pe"  # Prince Edward Island
-
     EUROPE = "europe"
     EUROPE_DE = "europe_de"  # Germany
     EUROPE_ES = "europe_es"  # Spain
     EUROPE_FR = "europe_fr"  # France
     EUROPE_LT = "europe_lt"  # Lithuania
-    EUROPE_GB = "europe_gb"  # Great Britain (England/Scotland/Wales)
-
     AUSTRALIA = "australia"
-    OCEANIA = "oceania"  # New Zealand + Pacific
-
-    ASIA = "asia"
-    ASIA_JP = "asia_jp"  # Japan
-    ASIA_PH = "asia_ph"  # Philippines
-    ASIA_CN = "asia_cn"  # China
-    ASIA_KR = "asia_kr"  # Korea
-    ASIA_TW = "asia_tw"  # Taiwan
-
-    AFRICA = "africa"
-    AFRICA_EG = "africa_eg"  # Egypt
-    AFRICA_NG = "africa_ng"  # Nigeria
-    AFRICA_SN = "africa_sn"  # Senegal
-    AFRICA_ZA = "africa_za"  # South Africa
-
     GLOBAL = "global"
 
 

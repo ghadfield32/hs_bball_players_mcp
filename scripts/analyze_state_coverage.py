@@ -56,7 +56,7 @@ def analyze_coverage():
     from src.datasources.us.rankone import RankOneDataSource
     from src.datasources.us.psal import PSALDataSource
     from src.datasources.us.mn_hub import MNHubDataSource
-    from src.datasources.us.wsn import WSNDataSource
+    from src.datasources.us.wisconsin_wiaa import WisconsinWiaaDataSource
     from src.datasources.us.fhsaa import FHSAADataSource
     from src.datasources.us.hhsaa import HHSAADataSource
 
@@ -76,7 +76,7 @@ def analyze_coverage():
     # Single-state adapters
     coverage.setdefault("NY", []).append("PSAL (NYC)")
     coverage.setdefault("MN", []).append("MN Hub")
-    coverage.setdefault("WI", []).append("WSN")
+    coverage.setdefault("WI", []).append("WIAA")
     coverage.setdefault("FL", []).append("FHSAA")
     coverage.setdefault("HI", []).append("HHSAA")
 
@@ -140,7 +140,7 @@ def analyze_coverage():
     print(f"{'='*70}")
     print(f"Total Adapters Analyzed: 8")
     print(f"Multi-state Adapters: 3 (SBLive, Bound, RankOne)")
-    print(f"Single-state Adapters: 5 (PSAL, MN Hub, WSN, FHSAA, HHSAA)")
+    print(f"Single-state Adapters: 5 (PSAL, MN Hub, WIAA, FHSAA, HHSAA)")
     print(f"States with Multiple Sources: {len(multi_coverage)}")
     print(f"Average Sources per Covered State: {sum(len(a) for a in coverage.values())/len(coverage):.2f}")
 
