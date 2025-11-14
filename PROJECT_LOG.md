@@ -3247,6 +3247,52 @@ tests\conftest.py:27: in <module>
 
 **Status**: ✅ All scripts verified and ready; comprehensive guide created; workflow streamlined to ~2 min/fixture
 
+### WISCONSIN 404 FIX: URL OVERRIDE SYSTEM (2025-11-14)
+
+**Problem**: 404 errors when downloading 2024 Div2-4 fixtures - hard-coded URL pattern doesn't work for all brackets
+
+**Root Cause**: URL assumed derivable from (year, gender, division) but WIAA uses different patterns for different divisions/years
+
+**Solution**: Data-driven URL system with explicit manifest overrides + dry-run mode for debugging
+
+**Changes Made**:
+1. ✅ **scripts/open_missing_wiaa_fixtures.py** (+60 lines, ~90 modified)
+   - `_construct_url()`: Now checks manifest `url` field first, falls back to pattern with warning
+   - `get_missing_fixtures()`: Passes full entry dict, tracks URL source (manifest vs fallback)
+   - `main()`: Added --dry-run mode to preview URLs before downloading
+   - argparse: Added --dry-run flag
+   - Help: Updated examples to show dry-run usage first
+
+2. ✅ **Documentation Created** (3 new files, ~700 lines):
+   - `WISCONSIN_404_DEBUG.md`: Systematic debugging analysis (8 sections)
+   - `WISCONSIN_URL_OVERRIDE_PLAN.md`: Integration strategy and testing plan
+   - `WISCONSIN_URL_OVERRIDE_WORKFLOW.md`: Complete user workflow guide (10 steps)
+   - `WISCONSIN_URL_OVERRIDE_CHANGES.md`: All function changes documented
+
+**New Workflow**:
+1. Run `--dry-run` to see URLs (identifies fallback vs manifest sources)
+2. For 404s: Manually find real URL on WIAA site
+3. Edit `manifest_wisconsin.yml`, add `url: <actual_url>` field
+4. Re-run without dry-run to download with correct URLs
+5. Validate and mark as present
+
+**Backward Compatible**: ✅ If no `url` fields in manifest, behavior identical to before (with helpful warnings)
+
+**Example Manifest Update**:
+```yaml
+- year: 2024
+  gender: "Boys"
+  division: "Div2"
+  url: "https://halftime.wiaawi.org/ActualPath/RealBracket.html"
+  notes: "URL differs from Div1 pattern, discovered manually 2025-11-14"
+```
+
+**Files Modified**: 1 (scripts/open_missing_wiaa_fixtures.py)
+**Documentation Added**: 4 files
+**Breaking Changes**: None (additive enhancement)
+
+**User Action**: Use `--dry-run` to identify 404-prone URLs, manually discover correct URLs, update manifest
+
 ---
 
 ### IN PROGRESS
