@@ -2,9 +2,13 @@
 Services Module
 
 Provides high-level services for data aggregation, storage, and forecasting.
+
+Note: Uses lazy imports for DataSourceAggregator and ForecastingDataAggregator
+to avoid circular import issues with datasources.base
 """
 
-from .aggregator import DataSourceAggregator
+# Lazy imports to break circular dependencies
+# from .aggregator import DataSourceAggregator  # Moved to __getattr__
 from .cache import get_cache
 from .coverage_metrics import (
     CoverageFlags,
@@ -14,7 +18,7 @@ from .coverage_metrics import (
     get_coverage_summary,
 )
 from .duckdb_storage import get_duckdb_storage
-from .forecasting import ForecastingDataAggregator, get_forecasting_data_for_player
+# from .forecasting import ForecastingDataAggregator, get_forecasting_data_for_player  # Moved to __getattr__
 from .historical_trends import HistoricalTrendsService
 from .identity import (
     deduplicate_players,
@@ -61,3 +65,22 @@ __all__ = [
     "mark_as_merged",
     "get_canonical_uid",
 ]
+
+
+def __getattr__(name):
+    """
+    Lazy import for classes/functions that cause circular dependencies.
+
+    This allows the module to be imported without triggering circular imports,
+    while still providing access to all classes when they're actually used.
+    """
+    if name == "DataSourceAggregator":
+        from .aggregator import DataSourceAggregator
+        return DataSourceAggregator
+    elif name == "ForecastingDataAggregator":
+        from .forecasting import ForecastingDataAggregator
+        return ForecastingDataAggregator
+    elif name == "get_forecasting_data_for_player":
+        from .forecasting import get_forecasting_data_for_player
+        return get_forecasting_data_for_player
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

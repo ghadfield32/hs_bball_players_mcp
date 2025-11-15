@@ -32,7 +32,8 @@ from ..models import (
     PlayerSeasonStats,
     Team,
 )
-from ..utils import create_http_client, get_logger
+from ..utils import get_logger
+from ..utils.http_client import create_http_client
 
 logger = get_logger(__name__)
 

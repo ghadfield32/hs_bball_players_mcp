@@ -24,7 +24,7 @@ from .age_calculations import (
     categorize_age_for_grade,
     parse_birth_date,
 )
-from .http_client import HTTPClient, create_http_client
+from .http_client import HTTPClient
 from .logger import (
     RequestMetrics,
     StructuredLogger,
@@ -57,7 +57,6 @@ from .scraping_helpers import (
 __all__ = [
     # HTTP client
     "HTTPClient",
-    "create_http_client",
     # Logger
     "StructuredLogger",
     "RequestMetrics",

@@ -266,10 +266,12 @@ class EYBLDataFetcher:
             try:
                 # Create minimal data source metadata
                 from src.models import PlayerSeasonStats
-                from src.models.source import DataSource, DataSourceType, DataQualityFlag
+                from src.models.source import DataSource, DataSourceType, DataSourceRegion, DataQualityFlag
 
                 data_source = DataSource(
+                    source_name="Nike EYBL",
                     source_type=DataSourceType.EYBL,
+                    region=DataSourceRegion.US,
                     url="https://nikeeyb.com/cumulative-season-stats",
                     quality_flag=DataQualityFlag.PARTIAL,
                     retrieved_at=row.get('retrieved_at', datetime.now())

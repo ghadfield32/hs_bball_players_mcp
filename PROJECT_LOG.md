@@ -4410,4 +4410,172 @@ tests\conftest.py:27: in <module>
 
 ---
 
-*Last Updated: 2025-11-15 17:00 UTC*
+## Session Log: 2025-11-15 - Critical: Circular Import Fix + Real EYBL Data
+
+### COMPLETED
+
+#### [2025-11-15 19:00] 🎉 CRITICAL FIX: Circular Import Resolved
+
+**Problem**: Circular import blocked ALL datasource testing and real EYBL data fetch:
+```
+utils/__init__.py → http_client → services.cache → services/__init__ → aggregator → datasources.base → utils (cycle!)
+```
+
+**Root Cause Analysis**:
+1. `utils/__init__.py` exported `create_http_client` from `http_client.py`
+2. `http_client.py` imported from `services.cache` and `services.rate_limiter`
+3. `services/__init__.py` imported `DataSourceAggregator` from `aggregator` at module level
+4. `aggregator.py` imported `BaseDataSource`
+5. `datasources/base.py` imported `create_http_client` and `get_logger` from `utils`
+6. Cycle created during `utils` initialization → blocked ALL imports
+
+**Solution Implemented** (Multi-layered approach):
+
+**1. Removed `create_http_client` from `utils` exports** ([utils/__init__.py:27](src/utils/__init__.py#L27))
+- Removed from import statement and `__all__` list
+- Only 2 files used it: `datasources/base.py` and `datasources/recruiting/base_recruiting.py`
+
+**2. Updated direct imports** ([datasources/base.py:35-36](src/datasources/base.py#L35-L36))
+```python
+# Before:
+from ..utils import create_http_client, get_logger
+
+# After:
+from ..utils import get_logger
+from ..utils.http_client import create_http_client
+```
+- Also updated `datasources/recruiting/base_recruiting.py` similarly
+
+**3. Implemented lazy imports in services** ([services/__init__.py:70-86](src/services/__init__.py#L70-L86))
+- Added `__getattr__` function for module-level lazy loading (Python 3.7+ feature)
+- Lazy-loaded classes that cause circular dependencies:
+  - `DataSourceAggregator` (from `aggregator.py`)
+  - `ForecastingDataAggregator` (from `forecasting.py`)
+  - `get_forecasting_data_for_player` (from `forecasting.py`)
+- Classes are only imported when actually accessed, breaking the initialization cycle
+
+```python
+def __getattr__(name):
+    """Lazy import for classes/functions that cause circular dependencies."""
+    if name == "DataSourceAggregator":
+        from .aggregator import DataSourceAggregator
+        return DataSourceAggregator
+    elif name == "ForecastingDataAggregator":
+        from .forecasting import ForecastingDataAggregator
+        return ForecastingDataAggregator
+    elif name == "get_forecasting_data_for_player":
+        from .forecasting import get_forecasting_data_for_player
+        return get_forecasting_data_for_player
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+```
+
+**Impact**:
+- ✅ **Circular import completely resolved**
+- ✅ All datasource imports work
+- ✅ `fetch_real_eybl_data.py` runs successfully
+- ✅ No breaking changes for existing code (lazy loading is transparent)
+- ✅ Only 2 scripts use `DataSourceAggregator` from `services` (validation/monitoring scripts)
+
+---
+
+#### [2025-11-15 19:15] Real EYBL Data Successfully Fetched
+
+**Test Results**:
+```bash
+python scripts/fetch_real_eybl_data.py --limit 50 --save-to-duckdb
+```
+
+**Outcome**: ✅ **SUCCESS**
+- Fetched 35 real EYBL players (36 found, 1 not in leaderboards)
+- Saved to `data/raw/eybl/player_season_stats.parquet` (0.01 MB)
+- Data includes: season stats, PPG, RPG, APG, shooting percentages
+- Sample players: Jason Crowe Jr (26.5 PPG), Tyran Stokes (22.2 PPG, 8.8 RPG), etc.
+
+**Minor Issue** (DuckDB save):
+- Pydantic validation errors for NaN values (model requires `>= 0` but pandas uses NaN for missing stats)
+- Workaround: Parquet file contains all data (DuckDB save is optional)
+- Fix needed: Convert NaN → None or 0 before validation in `fetch_real_eybl_data.py`
+
+**Also Fixed**: Added missing `source_name` and `region` fields to DataSource creation
+```python
+data_source = DataSource(
+    source_name="Nike EYBL",
+    source_type=DataSourceType.EYBL,
+    region=DataSourceRegion.US,  # Added
+    url="https://nikeeyb.com/cumulative-season-stats",
+    quality_flag=DataQualityFlag.PARTIAL,
+    retrieved_at=row.get('retrieved_at', datetime.now())
+)
+```
+
+---
+
+### FILES MODIFIED
+
+**src/utils/__init__.py** (~2 lines modified):
+- Line 27: Removed `create_http_client` from import
+- Line 59: Removed `create_http_client` from `__all__` exports
+
+**src/datasources/base.py** (~2 lines modified):
+- Lines 35-36: Split import to break circular dependency
+```python
+from ..utils import get_logger
+from ..utils.http_client import create_http_client
+```
+
+**src/datasources/recruiting/base_recruiting.py** (~2 lines modified):
+- Lines 28-29: Split import to break circular dependency (same pattern as base.py)
+
+**src/services/__init__.py** (~20 lines added):
+- Lines 11, 21: Commented out eager imports of `DataSourceAggregator` and forecasting classes
+- Lines 70-86: Added `__getattr__` function for lazy module-level imports
+
+**scripts/fetch_real_eybl_data.py** (~2 lines modified):
+- Line 269: Added `DataSourceRegion` import
+- Lines 272-274: Added `source_name` and `region` to DataSource initialization
+
+---
+
+### VALIDATION TESTING
+
+**Before Fix**:
+```python
+ImportError: cannot import name 'create_http_client' from partially initialized module 'src.utils'
+(most likely due to a circular import)
+```
+
+**After Fix**:
+```bash
+✅ fetch_real_eybl_data.py --limit 10: SUCCESS (10 players fetched in 14s)
+✅ fetch_real_eybl_data.py --limit 50: SUCCESS (35 players fetched in 6s)
+✅ generate_multi_year_datasets.py: Still works with mock data
+✅ validate_duckdb_pipeline.py: Still works (tested empty DB)
+✅ validate_dataset_coverage.py: Still works
+```
+
+**Performance**: EYBL fetch with browser automation ~0.4s per player (includes retry logic, Playwright overhead)
+
+---
+
+### NEXT STEPS
+
+**Priority 1: Complete Real Data Population** 🔥
+- ✅ EYBL data fetched (35 players)
+- ⏳ Fetch recruiting rankings (247Sports adapter)
+- ⏳ Fetch MaxPreps HS stats (state adapters)
+- ⏳ Fetch college offers data
+- ⏳ Fix NaN → None/0 conversion for DuckDB saves
+
+**Priority 2: Generate Real Multi-Year Datasets**
+- After real data population: Run `generate_multi_year_datasets.py --use-real-data --start-year 2023 --end-year 2026`
+- Validate coverage on production datasets
+- Test full pipeline end-to-end
+
+**Priority 3: Phase 16-18 Implementation**
+- Phase 16: Add college outcome labels
+- Phase 17: Export to production formats
+- Phase 18: Deployment
+
+---
+
+*Last Updated: 2025-11-15 19:15 UTC*
