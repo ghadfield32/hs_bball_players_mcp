@@ -44,7 +44,7 @@ A comprehensive, production-ready API for aggregating high school and youth bask
 - ✅ **HHSAA** - Hawaii High School Athletic Association
 
 #### Universal Coverage (1 source)
-- ✅ **MaxPreps** - All 50 US states (comprehensive national platform)
+- ✅ **MaxPreps** ✨ **ENHANCED** - All 50 US states (comprehensive national platform + full season stats extraction)
 
 #### State Athletic Associations (35 sources)
 - ✅ **Alabama** - AHSAA (Alabama High School Athletic Association)
