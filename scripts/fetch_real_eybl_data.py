@@ -74,9 +74,7 @@ class EYBLDataFetcher:
         self.duckdb_storage = None
 
         logger.info(
-            "EYBLDataFetcher initialized",
-            output_path=str(self.output_path),
-            save_to_duckdb=save_to_duckdb
+            f"EYBLDataFetcher initialized: output_path={str(self.output_path)}, save_to_duckdb={save_to_duckdb}"
         )
 
     async def initialize(self):
@@ -176,8 +174,7 @@ class EYBLDataFetcher:
                     except Exception as e:
                         retries += 1
                         logger.warning(
-                            f"Failed to get stats for {player.full_name} (attempt {retries}/{self.max_retries})",
-                            error=str(e)
+                            f"Failed to get stats for {player.full_name} (attempt {retries}/{self.max_retries}): {str(e)}"
                         )
 
                         if retries >= self.max_retries:
@@ -246,9 +243,7 @@ class EYBLDataFetcher:
         # Log file size
         file_size_mb = self.output_path.stat().st_size / (1024 * 1024)
         logger.info(
-            f"Parquet file saved successfully",
-            path=str(self.output_path),
-            size_mb=f"{file_size_mb:.2f}"
+            f"Parquet file saved successfully: path={str(self.output_path)}, size_mb={file_size_mb:.2f}"
         )
 
     async def save_to_duckdb_storage(self, df: pd.DataFrame) -> None:
@@ -325,9 +320,7 @@ class EYBLDataFetcher:
             DataFrame with fetched data
         """
         logger.info(
-            "Starting EYBL data fetch pipeline",
-            limit=limit,
-            season=season
+            f"Starting EYBL data fetch pipeline: limit={limit}, season={season}"
         )
 
         # Initialize
@@ -348,8 +341,7 @@ class EYBLDataFetcher:
             df = df.drop_duplicates(subset=['player_id', 'season'])
 
             logger.info(
-                f"Created DataFrame with {len(df)} records after deduplication",
-                shape=df.shape
+                f"Created DataFrame with {len(df)} records after deduplication: shape={df.shape}"
             )
 
             # Validate schema
