@@ -3358,6 +3358,28 @@ tests\conftest.py:27: in <module>
 
 ---
 
+## Phase 13.4: WIAA Fixture 404 Debugging & Workflow Clarification (2025-11-14)
+
+**Objective**: Debug 404 errors on WIAA fixture URLs; clarify path from 2/80 to 100% fixture coverage.
+
+### ROOT CAUSE ANALYSIS
+**Error #1**: Missing fixture files → **Expected** - HTML not saved locally yet | **Error #2**: `pytest_asyncio` not installed → **Environment issue** - ✅ Fixed via `uv pip install` | **Error #3**: 404 fallback URLs → **Tooling working as designed** - fallback pattern is guess; script warns to add manual `url:` override
+
+### COMPLETED WORK
+✅ Installed `pytest-asyncio==1.3.0`, verified `pytest 9.0.1` | ✅ Fixed Unicode encoding in `show_wiaa_coverage.py` (emoji → ASCII for Windows console) | ✅ Added sys.path fixes to `debug_import_issue.py` | ✅ Validated all tooling: coverage dashboard (2/80, 2.5%), browser helper, URL override system | ✅ Created comprehensive `WIAA_FIXTURE_WORKFLOW.md` (470 lines) - full workflow guide
+
+### KEY INSIGHTS
+**Tooling Ready** ✅ - All scripts working as designed; manifest tracking 80 fixtures | **404s Expected** ✅ - Fix is data/config (find real URLs, add to manifest), not code | **No Code Changes Needed** ✅ - System designed for human-in-loop; URL override handles 404 scenario
+
+### PATH TO 100% COVERAGE
+**Priority 1** (6 fixtures, ~12 min): Manually find WIAA URLs for 2024 Div2-4 → add `url:` to manifest → download HTML → mark present → validate → Target: 8/80 (10%) | **Priority 2** (16 fixtures, ~32 min): Repeat for 2023 + 2022 → Target: 24/80 (30%) | **Future** (48 fixtures, ~2 hrs): Work backward 2021→2015 → Target: 80/80 (100%)
+
+**Result**: Environment fixed, tooling validated, path clarified. Ready for manual URL discovery + HTML download workflow.
+
+**Next Session**: Execute Priority 1 workflow (6 fixtures) to complete 2024 season.
+
+---
+
 ### IN PROGRESS
 
 **Phase 13 Testing & Validation**:
@@ -3374,4 +3396,4 @@ tests\conftest.py:27: in <module>
 
 ---
 
-*Last Updated: 2025-11-14 12:00 UTC*
+*Last Updated: 2025-11-14 16:45 UTC*
