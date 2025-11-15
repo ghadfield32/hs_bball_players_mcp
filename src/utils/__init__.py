@@ -1,9 +1,23 @@
 """
 Utility Functions and Helpers
 
-Common utilities for HTTP, parsing, logging, and scraping.
+Common utilities for HTTP, parsing, logging, scraping, and advanced stats.
 """
 
+from .advanced_stats import (
+    calculate_assist_to_turnover_ratio,
+    calculate_effective_fg_percentage,
+    calculate_free_throw_rate,
+    calculate_points_per_40,
+    calculate_points_per_shot_attempt,
+    calculate_rebounds_per_40,
+    calculate_three_point_attempt_rate,
+    calculate_true_shooting_percentage,
+    calculate_two_point_percentage,
+    enrich_player_game_stats,
+    enrich_player_season_stats,
+    get_advanced_stats_summary,
+)
 from .http_client import HTTPClient, create_http_client
 from .logger import (
     RequestMetrics,
@@ -63,4 +77,17 @@ __all__ = [
     "standardize_stat_columns",
     "build_leaderboard_entry",
     "extract_links_from_table",
+    # Advanced stats
+    "calculate_true_shooting_percentage",
+    "calculate_effective_fg_percentage",
+    "calculate_assist_to_turnover_ratio",
+    "calculate_two_point_percentage",
+    "calculate_three_point_attempt_rate",
+    "calculate_free_throw_rate",
+    "calculate_points_per_shot_attempt",
+    "calculate_rebounds_per_40",
+    "calculate_points_per_40",
+    "enrich_player_season_stats",
+    "enrich_player_game_stats",
+    "get_advanced_stats_summary",
 ]

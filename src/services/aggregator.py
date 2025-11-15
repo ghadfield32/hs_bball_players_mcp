@@ -54,6 +54,7 @@ from ..models import (
     RecruitingRank,
     Team,
 )
+from ..utils.advanced_stats import enrich_player_season_stats
 from ..utils.logger import get_logger
 from .duckdb_storage import get_duckdb_storage
 from .identity import deduplicate_players, resolve_player_uid
@@ -335,15 +336,27 @@ class DataSourceAggregator:
                 all_stats.append(result)
                 logger.info(f"Got stats from {source_keys[i]}")
 
-        # Persist to DuckDB if enabled
-        if self.duckdb and all_stats:
+        # Enrich stats with advanced metrics (TS%, eFG%, A/TO, etc.)
+        enriched_stats = []
+        for stat in all_stats:
             try:
-                await self.duckdb.store_player_stats(all_stats)
-                logger.info(f"Persisted {len(all_stats)} player stats to DuckDB")
+                enriched_stat = enrich_player_season_stats(stat)
+                enriched_stats.append(enriched_stat)
+            except Exception as e:
+                logger.warning(f"Failed to enrich stats, using original", error=str(e))
+                enriched_stats.append(stat)
+
+        logger.info(f"Enriched {len(enriched_stats)} player stats with advanced metrics")
+
+        # Persist enriched stats to DuckDB if enabled
+        if self.duckdb and enriched_stats:
+            try:
+                await self.duckdb.store_player_stats(enriched_stats)
+                logger.info(f"Persisted {len(enriched_stats)} player stats to DuckDB")
             except Exception as e:
                 logger.error("Failed to persist stats to DuckDB", error=str(e))
 
-        return all_stats
+        return enriched_stats
 
     async def search_teams_all_sources(
         self,
