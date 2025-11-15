@@ -41,7 +41,19 @@ from ..datasources.europe.angt import ANGTDataSource
 from ..datasources.us.grind_session import GrindSessionDataSource
 from ..datasources.us.ote import OTEDataSource
 
-from ..models import Player, PlayerSeasonStats, Team
+# Recruiting adapters:
+from ..datasources.recruiting.base_recruiting import BaseRecruitingSource
+from ..datasources.recruiting.sports_247 import Sports247DataSource
+
+from ..models import (
+    CollegeOffer,
+    Player,
+    PlayerSeasonStats,
+    RecruitingPrediction,
+    RecruitingProfile,
+    RecruitingRank,
+    Team,
+)
 from ..utils.logger import get_logger
 from .duckdb_storage import get_duckdb_storage
 from .identity import deduplicate_players, resolve_player_uid
@@ -60,7 +72,8 @@ class DataSourceAggregator:
     def __init__(self):
         """Initialize aggregator with all enabled datasources."""
         self.settings = get_settings()
-        self.sources: dict[str, BaseDataSource] = {}
+        self.sources: dict[str, BaseDataSource] = {}  # Stats datasources
+        self.recruiting_sources: dict[str, BaseRecruitingSource] = {}  # Recruiting datasources
         self._initialize_sources()
 
         # Initialize storage and export services
@@ -68,7 +81,8 @@ class DataSourceAggregator:
         self.exporter = get_parquet_exporter()
 
         logger.info(
-            f"Aggregator initialized with {len(self.sources)} sources",
+            f"Aggregator initialized with {len(self.sources)} stats sources "
+            f"and {len(self.recruiting_sources)} recruiting sources",
             duckdb_enabled=self.settings.duckdb_enabled,
         )
 
@@ -112,21 +126,48 @@ class DataSourceAggregator:
             # "playhq": PlayHQDataSource,                # TODO: Update URLs after inspection
         }
 
+        # Recruiting sources (separate from stats sources)
+        recruiting_source_classes = {
+            # ===== RECRUITING SERVICES =====
+            # WARNING: Most recruiting services prohibit scraping
+            # Use only with explicit permission or commercial license
+            "247sports": Sports247DataSource,  # 247Sports Composite Rankings
+            # Future: ESPN, Rivals, On3
+        }
+
+        # Initialize stats datasources
         for source_key, source_class in source_classes.items():
             if self.settings.is_datasource_enabled(source_key):
                 try:
                     self.sources[source_key] = source_class()
-                    logger.info(f"Enabled datasource: {source_key}")
+                    logger.info(f"Enabled stats datasource: {source_key}")
                 except Exception as e:
-                    logger.error(f"Failed to initialize datasource {source_key}", error=str(e))
+                    logger.error(f"Failed to initialize stats datasource {source_key}", error=str(e))
+
+        # Initialize recruiting datasources
+        for source_key, source_class in recruiting_source_classes.items():
+            if self.settings.is_datasource_enabled(source_key):
+                try:
+                    self.recruiting_sources[source_key] = source_class()
+                    logger.info(f"Enabled recruiting datasource: {source_key}")
+                except Exception as e:
+                    logger.error(f"Failed to initialize recruiting datasource {source_key}", error=str(e))
 
     async def close_all(self) -> None:
         """Close all datasource connections."""
+        # Close stats sources
         for source in self.sources.values():
             try:
                 await source.close()
             except Exception as e:
-                logger.error(f"Error closing source", error=str(e))
+                logger.error(f"Error closing stats source", error=str(e))
+
+        # Close recruiting sources
+        for source in self.recruiting_sources.values():
+            try:
+                await source.close()
+            except Exception as e:
+                logger.error(f"Error closing recruiting source", error=str(e))
 
     async def search_players_all_sources(
         self,
@@ -450,6 +491,328 @@ class DataSourceAggregator:
                 "enabled": source.is_enabled(),
             }
         return info
+
+    # ===== RECRUITING-SPECIFIC METHODS =====
+
+    def get_recruiting_sources(self) -> list[str]:
+        """
+        Get list of available recruiting source keys.
+
+        Returns:
+            List of recruiting source keys
+        """
+        return list(self.recruiting_sources.keys())
+
+    def get_recruiting_source_info(self) -> dict[str, dict]:
+        """
+        Get information about all recruiting sources.
+
+        Returns:
+            Dictionary with recruiting source metadata
+        """
+        info = {}
+        for key, source in self.recruiting_sources.items():
+            info[key] = {
+                "name": source.source_name,
+                "type": source.source_type.value,
+                "region": source.region.value,
+                "base_url": source.base_url,
+                "enabled": source.is_enabled(),
+            }
+        return info
+
+    async def get_rankings_all_sources(
+        self,
+        class_year: int,
+        position: Optional[str] = None,
+        state: Optional[str] = None,
+        sources: Optional[list[str]] = None,
+        limit_per_source: int = 100,
+        total_limit: int = 200,
+    ) -> list[RecruitingRank]:
+        """
+        Get recruiting rankings from multiple recruiting sources.
+
+        Args:
+            class_year: Graduation year (2020-2035)
+            position: Filter by position (optional)
+            state: Filter by state (optional)
+            sources: Specific recruiting sources to query (None = all enabled)
+            limit_per_source: Max results per source
+            total_limit: Max total results
+
+        Returns:
+            List of RecruitingRank objects from all recruiting sources
+        """
+        # Determine which recruiting sources to query
+        query_sources = sources if sources else list(self.recruiting_sources.keys())
+        query_sources = [s for s in query_sources if s in self.recruiting_sources]
+
+        if not query_sources:
+            logger.warning("No recruiting sources available for query")
+            return []
+
+        logger.info(
+            f"Getting rankings from {len(query_sources)} recruiting sources",
+            class_year=class_year,
+            position=position,
+            state=state,
+            sources=query_sources,
+        )
+
+        # Query sources in parallel
+        tasks = []
+        for source_key in query_sources:
+            source = self.recruiting_sources[source_key]
+            task = source.get_rankings(
+                class_year=class_year,
+                limit=limit_per_source,
+                position=position,
+                state=state,
+            )
+            tasks.append(task)
+
+        # Gather results
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Aggregate results
+        all_rankings = []
+        for i, result in enumerate(results):
+            source_key = query_sources[i]
+
+            if isinstance(result, Exception):
+                logger.error(f"Recruiting source {source_key} failed", error=str(result))
+                continue
+
+            if result:
+                all_rankings.extend(result)
+                logger.info(f"Recruiting source {source_key} returned {len(result)} rankings")
+
+        # Apply total limit
+        all_rankings = all_rankings[:total_limit]
+
+        logger.info(f"Aggregated {len(all_rankings)} rankings from recruiting sources")
+
+        # Persist to DuckDB if enabled
+        if self.duckdb and all_rankings:
+            try:
+                await self.duckdb.store_recruiting_ranks(all_rankings)
+                logger.info(f"Persisted {len(all_rankings)} rankings to DuckDB")
+            except Exception as e:
+                logger.error("Failed to persist rankings to DuckDB", error=str(e))
+
+        return all_rankings
+
+    async def get_player_offers_all_sources(
+        self,
+        player_id: str,
+        sources: Optional[list[str]] = None,
+    ) -> list[CollegeOffer]:
+        """
+        Get college offers for a player from multiple recruiting sources.
+
+        Args:
+            player_id: Player identifier
+            sources: Specific recruiting sources to query (None = all enabled)
+
+        Returns:
+            List of CollegeOffer objects from all recruiting sources
+        """
+        query_sources = sources if sources else list(self.recruiting_sources.keys())
+        query_sources = [s for s in query_sources if s in self.recruiting_sources]
+
+        if not query_sources:
+            logger.warning("No recruiting sources available")
+            return []
+
+        logger.info(
+            f"Getting offers from {len(query_sources)} recruiting sources",
+            player_id=player_id,
+        )
+
+        # Query sources in parallel
+        tasks = []
+        for source_key in query_sources:
+            source = self.recruiting_sources[source_key]
+            task = source.get_offers(player_id)
+            tasks.append(task)
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Aggregate results
+        all_offers = []
+        for i, result in enumerate(results):
+            source_key = query_sources[i]
+
+            if isinstance(result, Exception):
+                logger.error(f"Recruiting source {source_key} failed", error=str(result))
+                continue
+
+            if result:
+                all_offers.extend(result)
+                logger.info(f"Recruiting source {source_key} returned {len(result)} offers")
+
+        logger.info(f"Aggregated {len(all_offers)} offers from recruiting sources")
+
+        # Persist to DuckDB if enabled
+        if self.duckdb and all_offers:
+            try:
+                await self.duckdb.store_college_offers(all_offers)
+                logger.info(f"Persisted {len(all_offers)} offers to DuckDB")
+            except Exception as e:
+                logger.error("Failed to persist offers to DuckDB", error=str(e))
+
+        return all_offers
+
+    async def get_player_predictions_all_sources(
+        self,
+        player_id: str,
+        sources: Optional[list[str]] = None,
+    ) -> list[RecruitingPrediction]:
+        """
+        Get recruiting predictions for a player from multiple sources.
+
+        Args:
+            player_id: Player identifier
+            sources: Specific recruiting sources to query (None = all enabled)
+
+        Returns:
+            List of RecruitingPrediction objects from all recruiting sources
+        """
+        query_sources = sources if sources else list(self.recruiting_sources.keys())
+        query_sources = [s for s in query_sources if s in self.recruiting_sources]
+
+        if not query_sources:
+            logger.warning("No recruiting sources available")
+            return []
+
+        logger.info(
+            f"Getting predictions from {len(query_sources)} recruiting sources",
+            player_id=player_id,
+        )
+
+        # Query sources in parallel
+        tasks = []
+        for source_key in query_sources:
+            source = self.recruiting_sources[source_key]
+            task = source.get_predictions(player_id)
+            tasks.append(task)
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Aggregate results
+        all_predictions = []
+        for i, result in enumerate(results):
+            source_key = query_sources[i]
+
+            if isinstance(result, Exception):
+                logger.error(f"Recruiting source {source_key} failed", error=str(result))
+                continue
+
+            if result:
+                all_predictions.extend(result)
+                logger.info(f"Recruiting source {source_key} returned {len(result)} predictions")
+
+        logger.info(f"Aggregated {len(all_predictions)} predictions from recruiting sources")
+
+        # Persist to DuckDB if enabled
+        if self.duckdb and all_predictions:
+            try:
+                await self.duckdb.store_recruiting_predictions(all_predictions)
+                logger.info(f"Persisted {len(all_predictions)} predictions to DuckDB")
+            except Exception as e:
+                logger.error("Failed to persist predictions to DuckDB", error=str(e))
+
+        return all_predictions
+
+    async def get_player_recruiting_profile_all_sources(
+        self,
+        player_id: str,
+        sources: Optional[list[str]] = None,
+    ) -> Optional[RecruitingProfile]:
+        """
+        Get complete recruiting profile for a player from multiple sources.
+
+        Aggregates rankings, offers, and predictions into a comprehensive
+        RecruitingProfile object.
+
+        Args:
+            player_id: Player identifier
+            sources: Specific recruiting sources to query (None = all enabled)
+
+        Returns:
+            RecruitingProfile with aggregated data or None
+        """
+        query_sources = sources if sources else list(self.recruiting_sources.keys())
+        query_sources = [s for s in query_sources if s in self.recruiting_sources]
+
+        if not query_sources:
+            logger.warning("No recruiting sources available")
+            return None
+
+        logger.info(
+            f"Getting recruiting profile from {len(query_sources)} sources",
+            player_id=player_id,
+        )
+
+        # Query sources in parallel
+        tasks = []
+        for source_key in query_sources:
+            source = self.recruiting_sources[source_key]
+            task = source.get_player_recruiting_profile(player_id)
+            tasks.append(task)
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Aggregate profiles
+        all_rankings = []
+        all_offers = []
+        all_predictions = []
+        player_name = None
+
+        for i, result in enumerate(results):
+            source_key = query_sources[i]
+
+            if isinstance(result, Exception):
+                logger.error(f"Recruiting source {source_key} failed", error=str(result))
+                continue
+
+            if result:
+                # Extract data from profile
+                if result.rankings:
+                    all_rankings.extend(result.rankings)
+                if result.offers:
+                    all_offers.extend(result.offers)
+                if result.predictions:
+                    all_predictions.extend(result.predictions)
+                if result.player_name and not player_name:
+                    player_name = result.player_name
+
+                logger.info(f"Recruiting source {source_key} returned profile")
+
+        # If we got no data, return None
+        if not all_rankings and not all_offers and not all_predictions:
+            logger.warning(f"No recruiting profile data found for {player_id}")
+            return None
+
+        # Create aggregated profile
+        profile = RecruitingProfile(
+            player_id=player_id,
+            player_name=player_name or "Unknown",
+            rankings=all_rankings if all_rankings else None,
+            offers=all_offers if all_offers else None,
+            predictions=all_predictions if all_predictions else None,
+        )
+
+        logger.info(
+            f"Aggregated recruiting profile",
+            player_id=player_id,
+            rankings_count=len(all_rankings),
+            offers_count=len(all_offers),
+            predictions_count=len(all_predictions),
+        )
+
+        return profile
 
 
 # Global aggregator instance

@@ -102,6 +102,7 @@ async def root():
             "teams": "/api/v1/teams",
             "games": "/api/v1/games",
             "stats": "/api/v1/stats",
+            "recruiting": "/api/v1/recruiting",
             "export": "/api/v1/export",
             "analytics": "/api/v1/analytics",
         },
@@ -145,8 +146,10 @@ async def get_metrics_endpoint():
 # Import and include API routers
 from .api.routes import router as api_router
 from .api.export_routes import analytics_router, export_router
+from .api.recruiting_routes import router as recruiting_router
 
 app.include_router(api_router)
+app.include_router(recruiting_router)
 app.include_router(export_router)
 app.include_router(analytics_router)
 

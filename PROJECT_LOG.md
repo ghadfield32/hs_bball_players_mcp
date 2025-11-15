@@ -1199,6 +1199,32 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
   - Simple MaxPreps test users can run manually
   - ToS permission prompt, basic functionality tests (state validation, search 3 players)
 
+#### [2025-11-15 13:00] Phase 13.3.1: Recruiting API Endpoints & Aggregator Integration
+- ✅ **Created recruiting API endpoints** (src/api/recruiting_routes.py, 550+ lines):
+  - Response models: RankingsResponse, OffersResponse, PredictionsResponse, ProfileResponse, RecruitingSourcesResponse
+  - GET /api/v1/recruiting/rankings - Get rankings with filters (class_year, position, state, limit, persist)
+  - GET /api/v1/recruiting/rankings/{player_id} - Get player rankings across all services
+  - GET /api/v1/recruiting/offers/{player_id} - Get college offers with status filtering
+  - GET /api/v1/recruiting/predictions/{player_id} - Get Crystal Ball predictions with confidence scores
+  - GET /api/v1/recruiting/profile/{player_id} - Get complete recruiting profile (aggregates all data)
+  - GET /api/v1/recruiting/sources - Get available recruiting sources and metadata
+  - Features: Source filtering, optional DuckDB persistence, comprehensive error handling, legal warnings
+- ✅ **Integrated recruiting into aggregator** (src/services/aggregator.py):
+  - Separated recruiting_sources dict from stats sources dict (architecture clarity)
+  - Registered Sports247DataSource under "RECRUITING SERVICES" section with legal warnings
+  - Updated __init__() to track both stats (16) and recruiting (1) sources separately
+  - Updated close_all() to close both types of sources
+  - Added 6 recruiting aggregation methods (~320 lines):
+    - get_recruiting_sources() / get_recruiting_source_info() - List/inspect recruiting sources
+    - get_rankings_all_sources() - Aggregate rankings from all recruiting sources (parallel queries)
+    - get_player_offers_all_sources() - Aggregate college offers from all sources
+    - get_player_predictions_all_sources() - Aggregate Crystal Ball predictions
+    - get_player_recruiting_profile_all_sources() - Build complete profile aggregating all data
+  - All methods: Parallel async queries, automatic DuckDB persistence, comprehensive error handling
+- ✅ **Updated main application** (src/main.py):
+  - Imported recruiting_router and included in app routers
+  - Added "recruiting": "/api/v1/recruiting" to root endpoint documentation
+
 ---
 
 ### IN PROGRESS
@@ -1210,10 +1236,10 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
 - ⏳ Integrate enhanced parser into maxpreps.py after validation
 - ⏳ Obtain ToS compliance (commercial license recommended)
 
-**Phase 13.3.1 (NEXT)**:
-- ⏳ Create recruiting API endpoints (/api/v1/recruiting/rankings, /offers, /predictions)
-- ⏳ Integrate 247Sports adapter into aggregator service
-- ⏳ Test 247Sports adapter manually (with ToS compliance check)
+**Phase 13.3.2 (NEXT)**:
+- ⏳ Test recruiting API endpoints manually (with ToS compliance check)
+- ⏳ Verify 247Sports adapter integration works correctly
+- ⏳ Test DuckDB persistence for recruiting data
 
 **Phase 13.4 (UPCOMING)**:
 - ⏳ Create state association test framework (scripts/test_state_associations.py)
@@ -1227,4 +1253,4 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
 
 ---
 
-*Last Updated: 2025-11-14 17:15 UTC*
+*Last Updated: 2025-11-15 13:00 UTC*
