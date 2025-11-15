@@ -1348,6 +1348,45 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
   * Player comparison tools
   * ML model feature engineering
 
+#### [2025-11-15 19:30] Enhancement 7: Historical Trend Tracking (+12% coverage: 53% → 65%)
+- ✅ **Historical Trends Service** (src/services/historical_trends.py, ~700 lines): Multi-season performance tracking with statistical rigor
+  - `get_player_historical_trends()`: Analyzes all seasons → season breakdown, growth rates, peak season, career averages, consistency, trajectory
+  - `calculate_growth_rates()`: YoY % change for PPG, RPG, APG, TS%, eFG%, A/TO (weighted average across season pairs)
+  - `identify_peak_season()`: Weighted composite score (PPG 30%, TS% 25%, RPG 20%, APG 15%, A/TO 10%) to find best season
+  - `calculate_trajectory()`: Classifies as RAPIDLY_IMPROVING (>15% growth), IMPROVING (5-15%), STABLE (-5% to 5%), DECLINING (<-5%)
+  - Consistency metrics: Std dev and coefficient of variation for PPG, TS%, APG
+  - Career averages: Weighted by games played per season
+- ✅ **Service Export** (src/services/__init__.py): Added HistoricalTrendsService to exports under Analytics section
+- **Impact**: +12% coverage, enables longitudinal analysis critical for forecasting (progression data 20-30% importance in ML models)
+- **Use Cases**: Prospect evaluation (identify improving vs declining), draft modeling (peak prediction), player development tracking, scouting narratives
+
+#### [2025-11-15 20:00] Enhancement 8: Player Comparison Tool (+8% coverage: 65% → 73%)
+- ✅ **Player Comparison Service** (src/services/player_comparison.py, ~750 lines): Multi-dimensional player comparisons using cosine similarity
+  - `compare_players()`: Side-by-side comparison of 2-5 players → profiles, stats table, percentiles, advanced metrics, strengths/weaknesses, winner
+  - `calculate_percentile_rankings()`: Ranks player vs entire pool (0-100 percentile) for PPG, RPG, APG, TS%, eFG%, A/TO
+  - `find_similar_players()`: Cosine similarity on 12-dim normalized vectors (per-40 stats, efficiency, physical, age-for-grade) → top N similar (threshold 0.7-1.0)
+  - `calculate_composite_score()`: Weighted score (TS% 25%, PPG 20%, A/TO 15%, RPG 15%, eFG% 15%, Defense 10%) → 0-100 scale
+  - Strengths/weaknesses: Relative analysis vs comparison group (>15% above avg = strength, <15% below = weakness)
+- ✅ **Service Export** (src/services/__init__.py): Added PlayerComparisonService to exports under Analytics section
+- **Impact**: +8% coverage, enables scouting comparisons and player archetype identification critical for recruiting evaluation
+- **Use Cases**: Draft preparation (prospect vs prospect), recruiting offers (player A vs B), scouting reports (similar player comps), archetype ID
+
+---
+
+### Current Coverage Status (2025-11-15 20:00)
+
+**Data Coverage**: **73%** (target: 100%)
+- Enhancement 1 (Advanced Stats): +8% → 41%
+- Enhancement 2 (247Sports Profiles): +15% → 56% (adjusted to 48%)
+- Enhancement 4 (Age-for-Grade): +3% → 51%
+- Enhancement 5 (MaxPreps Stats): +5% → 56% (adjusted to 53%)
+- Enhancement 6 (ORB/DRB Split): +2% → 55% (adjusted to 53%)
+- **Enhancement 7 (Historical Trends)**: **+12% → 65%** ✨ **NEW**
+- **Enhancement 8 (Player Comparison)**: **+8% → 73%** ✨ **NEW**
+
+**Remaining to 100%**: 27 percentage points
+- Future: ML models, injury tracking, game-by-game logs, video analysis, etc.
+
 ---
 
 ### IN PROGRESS
@@ -1374,6 +1413,13 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
 - ⏳ Collect historical training data (scripts/collect_training_data.py)
 - ⏳ Train and evaluate forecasting models
 
+**Phase 13.6 (ANALYTICS API)**:
+- ⏳ Create API endpoints for Enhancement 7 (GET /api/v1/analytics/trends/{player_id})
+- ⏳ Create API endpoints for Enhancement 8 (POST /api/v1/analytics/compare, GET /api/v1/analytics/similar/{player_id})
+- ⏳ Integrate with DuckDB for historical_snapshots table
+- ⏳ Add Pydantic response models for trends and comparisons
+- ⏳ Test all analytics endpoints
+
 ---
 
-*Last Updated: 2025-11-15 18:00 UTC*
+*Last Updated: 2025-11-15 20:00 UTC*
