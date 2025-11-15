@@ -18,6 +18,12 @@ from .advanced_stats import (
     enrich_player_season_stats,
     get_advanced_stats_summary,
 )
+from .age_calculations import (
+    calculate_age_at_date,
+    calculate_age_for_grade,
+    categorize_age_for_grade,
+    parse_birth_date,
+)
 from .http_client import HTTPClient, create_http_client
 from .logger import (
     RequestMetrics,
@@ -90,4 +96,9 @@ __all__ = [
     "enrich_player_season_stats",
     "enrich_player_game_stats",
     "get_advanced_stats_summary",
+    # Age calculations
+    "calculate_age_for_grade",
+    "calculate_age_at_date",
+    "parse_birth_date",
+    "categorize_age_for_grade",
 ]

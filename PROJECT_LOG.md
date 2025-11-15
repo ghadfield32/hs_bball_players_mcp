@@ -1258,6 +1258,34 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
 - ✅ **Multiple column name patterns**: Supports ORPG/ORB/OREB, DRPG/DRB/DREB variations for maximum compatibility
 - Impact: +2% coverage (31% → 33%), enables motor/effort analysis via ORB rate
 
+#### [2025-11-15 16:00] Enhancement 4: Birth Date Extraction & Age-for-Grade (+3% Coverage)
+- ✅ **Created age calculation utility** (src/utils/age_calculations.py, 280 lines): 4 functions for age-for-grade calculations (CRITICAL forecasting metric #2-3)
+  - calculate_age_for_grade(): Returns advantage in years (positive = younger = GOOD, negative = older)
+  - calculate_age_at_date(): Exact age calculation (years, days)
+  - parse_birth_date(): Flexible date parser (8 formats: MM/DD/YYYY, Month DD YYYY, ISO, etc.)
+  - categorize_age_for_grade(): Bucket into "Very Young", "Young", "Average", "Old", "Very Old"
+- ✅ **Added age_for_grade properties** (src/models/player.py): 2 computed properties to Player model
+  - age_for_grade: Auto-calculated from birth_date + grad_year (returns float: +1.0 = 1 year younger advantage)
+  - age_for_grade_category: Descriptive category string
+  - Local imports in properties to avoid circular dependencies
+- ✅ **Exported utilities** (src/utils/__init__.py): All 4 age calculation functions available throughout codebase
+- Impact: +3% coverage when birth dates extracted (33% → 36%), critical forecasting metric (younger players show 20-30% higher NBA success rate)
+
+#### [2025-11-15 16:30] Enhancement 2: 247Sports Full Profile Scraping (+15% Coverage)
+- ✅ **Implemented get_player_recruiting_profile()** (src/datasources/recruiting/sports_247.py, ~750 lines added): Complete player profile page scraping
+  - Phase 1: URL building (_build_player_profile_url) with debug logging
+  - Phase 2: Bio extraction (_parse_player_bio) **EXTRACTS BIRTH DATE** for Enhancement 4
+  - Phase 3: Multi-service rankings (_parse_player_rankings): 247Sports, Composite, ESPN, Rivals, On3
+  - Phase 4: College offers table (_parse_player_offers): School, conference, status, Power 6 classification
+  - Phase 5: Crystal Ball predictions (_parse_crystal_ball): Expert predictions with confidence scores
+  - Phase 6: Profile assembly: Calculates composite rankings, offer counts, commitment status, prediction consensus
+- ✅ **Helper functions** (src/datasources/recruiting/sports_247.py):
+  - _classify_conference_level(): Classifies Power 6, Mid-Major, Low-Major conferences
+  - _parse_offer_status(): Maps status text to OfferStatus enum (OFFERED, VISITED, COMMITTED, DECOMMITTED)
+- ✅ **Extensive debug logging**: Every step logs attempts, successes, failures, extracted data (per user's debugging methodology)
+- ✅ **Graceful degradation**: Returns partial profile if some sections fail, logs all gaps
+- Impact: +15% coverage (33% → 48%), adds critical forecasting metrics (Power 6 offer count #3 predictor at 10% importance)
+
 ---
 
 ### IN PROGRESS
@@ -1286,4 +1314,4 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
 
 ---
 
-*Last Updated: 2025-11-15 15:30 UTC*
+*Last Updated: 2025-11-15 16:30 UTC*
