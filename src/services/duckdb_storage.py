@@ -546,7 +546,47 @@ class DuckDBStorage:
                 )
 
             df = pd.DataFrame(data)
-            self.conn.execute("INSERT OR REPLACE INTO player_season_stats SELECT * FROM df")
+            # Use ON CONFLICT with explicit target for DuckDB 1.0+ compatibility
+            self.conn.execute("""
+                INSERT INTO player_season_stats
+                SELECT * FROM df
+                ON CONFLICT (stat_id)
+                DO UPDATE SET
+                    player_name = EXCLUDED.player_name,
+                    team_id = EXCLUDED.team_id,
+                    source_type = EXCLUDED.source_type,
+                    season = EXCLUDED.season,
+                    league = EXCLUDED.league,
+                    games_played = EXCLUDED.games_played,
+                    games_started = EXCLUDED.games_started,
+                    minutes_played = EXCLUDED.minutes_played,
+                    points = EXCLUDED.points,
+                    points_per_game = EXCLUDED.points_per_game,
+                    field_goals_made = EXCLUDED.field_goals_made,
+                    field_goals_attempted = EXCLUDED.field_goals_attempted,
+                    three_pointers_made = EXCLUDED.three_pointers_made,
+                    three_pointers_attempted = EXCLUDED.three_pointers_attempted,
+                    free_throws_made = EXCLUDED.free_throws_made,
+                    free_throws_attempted = EXCLUDED.free_throws_attempted,
+                    offensive_rebounds = EXCLUDED.offensive_rebounds,
+                    defensive_rebounds = EXCLUDED.defensive_rebounds,
+                    total_rebounds = EXCLUDED.total_rebounds,
+                    rebounds_per_game = EXCLUDED.rebounds_per_game,
+                    assists = EXCLUDED.assists,
+                    assists_per_game = EXCLUDED.assists_per_game,
+                    steals = EXCLUDED.steals,
+                    steals_per_game = EXCLUDED.steals_per_game,
+                    blocks = EXCLUDED.blocks,
+                    blocks_per_game = EXCLUDED.blocks_per_game,
+                    turnovers = EXCLUDED.turnovers,
+                    personal_fouls = EXCLUDED.personal_fouls,
+                    high_points = EXCLUDED.high_points,
+                    high_rebounds = EXCLUDED.high_rebounds,
+                    high_assists = EXCLUDED.high_assists,
+                    double_doubles = EXCLUDED.double_doubles,
+                    triple_doubles = EXCLUDED.triple_doubles,
+                    retrieved_at = EXCLUDED.retrieved_at
+            """)
 
             logger.info(f"Stored {len(stats)} player stats in DuckDB")
             return len(stats)

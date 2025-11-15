@@ -262,11 +262,27 @@ class EYBLDataFetcher:
         # Convert DataFrame rows to PlayerSeasonStats objects
         stats_objects = []
 
-        for _, row in df.iterrows():
+        # Helper function to convert NaN to None for Pydantic validation
+        def nan_to_none(value):
+            """Convert NaN values to None, which Pydantic accepts as Optional."""
+            import math
+            if pd.isna(value) or (isinstance(value, float) and math.isnan(value)):
+                return None
+            return value
+
+        for idx, row in df.iterrows():
             try:
                 # Create minimal data source metadata
                 from src.models import PlayerSeasonStats
                 from src.models.source import DataSource, DataSourceType, DataSourceRegion, DataQualityFlag
+
+                # Debug: Log raw values before conversion (first player only)
+                if idx == 0:
+                    logger.debug(f"DEBUG - First player raw values:")
+                    logger.debug(f"  player_name: {row.get('player_name')} (type: {type(row.get('player_name'))})")
+                    logger.debug(f"  points_per_game: {row.get('points_per_game')} (type: {type(row.get('points_per_game'))}, isna: {pd.isna(row.get('points_per_game'))})")
+                    logger.debug(f"  rebounds_per_game: {row.get('rebounds_per_game')} (type: {type(row.get('rebounds_per_game'))}, isna: {pd.isna(row.get('rebounds_per_game'))})")
+                    logger.debug(f"  assists_per_game: {row.get('assists_per_game')} (type: {type(row.get('assists_per_game'))}, isna: {pd.isna(row.get('assists_per_game'))})")
 
                 data_source = DataSource(
                     source_name="Nike EYBL",
@@ -277,29 +293,37 @@ class EYBLDataFetcher:
                     retrieved_at=row.get('retrieved_at', datetime.now())
                 )
 
+                # Convert NaN values to None for Pydantic validation
+                # Pydantic rejects NaN because NaN >= 0 returns False
                 stats = PlayerSeasonStats(
                     player_id=row['player_id'],
                     player_name=row['player_name'],
                     team_id=row.get('team_id', 'unknown'),
                     season=row['season'],
                     games_played=row['games_played'],
-                    points_per_game=row.get('points_per_game'),
-                    rebounds_per_game=row.get('rebounds_per_game'),
-                    assists_per_game=row.get('assists_per_game'),
-                    steals_per_game=row.get('steals_per_game'),
-                    blocks_per_game=row.get('blocks_per_game'),
-                    field_goal_percentage=row.get('field_goal_percentage'),
-                    three_point_percentage=row.get('three_point_percentage'),
-                    free_throw_percentage=row.get('free_throw_percentage'),
-                    offensive_rebounds_per_game=row.get('offensive_rebounds_per_game'),
-                    defensive_rebounds_per_game=row.get('defensive_rebounds_per_game'),
+                    points_per_game=nan_to_none(row.get('points_per_game')),
+                    rebounds_per_game=nan_to_none(row.get('rebounds_per_game')),
+                    assists_per_game=nan_to_none(row.get('assists_per_game')),
+                    steals_per_game=nan_to_none(row.get('steals_per_game')),
+                    blocks_per_game=nan_to_none(row.get('blocks_per_game')),
+                    field_goal_percentage=nan_to_none(row.get('field_goal_percentage')),
+                    three_point_percentage=nan_to_none(row.get('three_point_percentage')),
+                    free_throw_percentage=nan_to_none(row.get('free_throw_percentage')),
+                    offensive_rebounds_per_game=nan_to_none(row.get('offensive_rebounds_per_game')),
+                    defensive_rebounds_per_game=nan_to_none(row.get('defensive_rebounds_per_game')),
                     data_source=data_source
                 )
 
                 stats_objects.append(stats)
 
+                # Debug: Log successful conversion (first player only)
+                if idx == 0:
+                    logger.debug(f"DEBUG - First player after conversion: Successfully created PlayerSeasonStats")
+
             except Exception as e:
-                logger.warning(f"Failed to create PlayerSeasonStats for {row.get('player_name')}: {e}")
+                logger.warning(f"Failed to create PlayerSeasonStats for {row.get('player_name')} (row {idx}): {e}")
+                # Debug: Log which specific field failed
+                logger.debug(f"DEBUG - Failed row values: {row.to_dict()}")
 
         # Store in DuckDB
         if stats_objects:
