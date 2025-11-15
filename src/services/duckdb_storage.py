@@ -265,6 +265,80 @@ class DuckDBStorage:
             )
         """)
 
+        # ======================================================================
+        # NEW TABLES (Enhancement 10, Step 6): Historical Snapshots & Player Vectors
+        # ======================================================================
+
+        # Historical snapshots table: Multi-season tracking
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS historical_snapshots (
+                snapshot_id VARCHAR PRIMARY KEY,
+                player_uid VARCHAR NOT NULL,
+                snapshot_date DATE NOT NULL,
+                season VARCHAR,
+                grad_year INTEGER,
+
+                -- Bio snapshot
+                height INTEGER,
+                weight INTEGER,
+                position VARCHAR,
+                birth_date DATE,
+
+                -- Recruiting snapshot
+                composite_247_rating DOUBLE,
+                stars_247 INTEGER,
+                power_6_offer_count INTEGER,
+                total_offer_count INTEGER,
+
+                -- Performance snapshot
+                ppg DOUBLE,
+                rpg DOUBLE,
+                apg DOUBLE,
+                ts_pct DOUBLE,
+                efg_pct DOUBLE,
+                ato_ratio DOUBLE,
+
+                -- Context
+                school_name VARCHAR,
+                state VARCHAR,
+                league VARCHAR,
+                competition_level VARCHAR,
+
+                source_type VARCHAR NOT NULL,
+                retrieved_at TIMESTAMP NOT NULL,
+
+                UNIQUE(player_uid, snapshot_date, season)
+            )
+        """)
+
+        # Player vectors table: For similarity searches
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS player_vectors (
+                vector_id VARCHAR PRIMARY KEY,
+                player_uid VARCHAR NOT NULL,
+                season VARCHAR NOT NULL,
+
+                -- 12-dimensional normalized vector for similarity
+                ppg_per40_norm DOUBLE,
+                rpg_per40_norm DOUBLE,
+                apg_per40_norm DOUBLE,
+                spg_per40_norm DOUBLE,
+                bpg_per40_norm DOUBLE,
+                ts_pct_norm DOUBLE,
+                efg_pct_norm DOUBLE,
+                ato_ratio_norm DOUBLE,
+                height_norm DOUBLE,
+                weight_norm DOUBLE,
+                age_for_grade_norm DOUBLE,
+                mpg_norm DOUBLE,
+
+                -- Metadata
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+                UNIQUE(player_uid, season)
+            )
+        """)
+
         # Create indexes for common queries
         self.conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_players_name ON players(full_name, source_type)"
@@ -296,7 +370,18 @@ class DuckDBStorage:
             "CREATE INDEX IF NOT EXISTS idx_recruiting_predictions_player ON recruiting_predictions(player_id, prediction_date)"
         )
 
-        logger.info("DuckDB schema initialized with 7 tables (4 stats + 3 recruiting) and indexes")
+        # Historical tables indexes (NEW - Enhancement 10, Step 6)
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_historical_snapshots_player ON historical_snapshots(player_uid, snapshot_date)"
+        )
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_historical_snapshots_season ON historical_snapshots(season, grad_year)"
+        )
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_player_vectors_player ON player_vectors(player_uid, season)"
+        )
+
+        logger.info("DuckDB schema initialized with 9 tables (4 stats + 3 recruiting + 2 historical) and indexes")
 
     async def store_players(self, players: list[Player]) -> int:
         """

@@ -177,6 +177,27 @@ class ForecastingDataAggregator:
             "seasons": [],  # List of season stats for trend analysis
             "performance_trend": None,  # "improving", "declining", "stable"
 
+            # Missing Reasons (NEW - Enhancement 10, Step 7: Missingness as Features)
+            "missing_reasons": {
+                "missing_247_profile": False,
+                "missing_maxpreps_data": False,
+                "missing_multi_season_data": False,
+                "missing_recruiting_coverage": False,
+                "missing_birth_date": False,
+                "missing_physical_measurements": False,
+                "missing_international_data": False,
+                "missing_advanced_stats": False,
+            },
+
+            # Feature Flags for ML (binary indicators)
+            "feature_flags": {
+                "has_recruiting_data": False,
+                "has_advanced_stats": False,
+                "has_progression_data": False,
+                "has_physical_data": False,
+                "has_multi_source_data": False,
+            },
+
             # Raw Data (for ML feature engineering)
             "raw_players": [],
             "raw_stats": [],
@@ -232,6 +253,95 @@ class ForecastingDataAggregator:
                         age_advantage=profile["age_for_grade"],
                         category=profile["age_for_grade_category"]
                     )
+
+            # Update feature flags based on Phase 1 results
+            if profile["birth_date"]:
+                profile["feature_flags"]["has_physical_data"] = True
+            if profile["height"] and profile["weight"]:
+                profile["feature_flags"]["has_physical_data"] = True
+            if not profile["birth_date"]:
+                profile["missing_reasons"]["missing_birth_date"] = True
+            if not (profile["height"] and profile["weight"]):
+                profile["missing_reasons"]["missing_physical_measurements"] = True
+
+            # ================================================================
+            # PHASE 2.5: Get MaxPreps Advanced Stats (NEW - Enhancement 10, Step 2)
+            # ================================================================
+            # MaxPreps is the PRIMARY source for US HS player advanced stats
+            # Provides: TS%, eFG%, A/TO, per-40 stats, state-level competition
+            self.logger.info("Phase 2.5: Fetching MaxPreps advanced stats", player_name=player_name)
+
+            maxpreps_stats_found = False
+            if state and state in ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+                                   "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+                                   "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+                                   "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+                                   "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "DC"]:
+                # Try to get MaxPreps stats for US players
+                if "maxpreps" in self.aggregator.stats_sources:
+                    try:
+                        maxpreps_source = self.aggregator.stats_sources["maxpreps"]
+
+                        # Call search_players_with_stats() to get both Player and Stats
+                        maxpreps_results = await maxpreps_source.search_players_with_stats(
+                            state=state,
+                            name=player_name,
+                            limit=5  # Get top 5 matches
+                        )
+
+                        if maxpreps_results:
+                            self.logger.info(
+                                f"Found {len(maxpreps_results)} MaxPreps results",
+                                player_name=player_name,
+                                state=state
+                            )
+
+                            # Extract stats from best match
+                            for maxpreps_player, maxpreps_stats in maxpreps_results:
+                                if maxpreps_stats:
+                                    # Add to raw_stats for aggregation in Phase 2
+                                    if "raw_stats" not in profile:
+                                        profile["raw_stats"] = []
+                                    profile["raw_stats"].append(maxpreps_stats)
+
+                                    maxpreps_stats_found = True
+
+                                    # Also extract advanced stats immediately
+                                    if maxpreps_stats.true_shooting_pct:
+                                        if not profile["best_ts_pct"] or maxpreps_stats.true_shooting_pct > profile["best_ts_pct"]:
+                                            profile["best_ts_pct"] = maxpreps_stats.true_shooting_pct
+
+                                    if maxpreps_stats.effective_fg_pct:
+                                        if not profile["best_efg_pct"] or maxpreps_stats.effective_fg_pct > profile["best_efg_pct"]:
+                                            profile["best_efg_pct"] = maxpreps_stats.effective_fg_pct
+
+                                    if maxpreps_stats.assist_to_turnover_ratio:
+                                        if not profile["best_ato_ratio"] or maxpreps_stats.assist_to_turnover_ratio > profile["best_ato_ratio"]:
+                                            profile["best_ato_ratio"] = maxpreps_stats.assist_to_turnover_ratio
+
+                                    self.logger.info(
+                                        "Extracted MaxPreps advanced stats",
+                                        player_name=player_name,
+                                        ts_pct=maxpreps_stats.true_shooting_pct,
+                                        efg_pct=maxpreps_stats.effective_fg_pct,
+                                        ato_ratio=maxpreps_stats.assist_to_turnover_ratio
+                                    )
+
+                                    # Only use first match with stats
+                                    break
+
+                    except Exception as e:
+                        self.logger.warning(
+                            "Failed to fetch MaxPreps stats",
+                            player_name=player_name,
+                            state=state,
+                            error=str(e)
+                        )
+
+            # Update missing reasons
+            if not maxpreps_stats_found:
+                profile["missing_reasons"]["missing_maxpreps_data"] = True
+                self.logger.debug("No MaxPreps data found", player_name=player_name)
 
             # ================================================================
             # PHASE 2: Get Season Stats from ALL Sources
@@ -372,6 +482,20 @@ class ForecastingDataAggregator:
                         else:
                             profile["performance_trend"] = "stable"
 
+            # Update feature flags and missing reasons after Phase 2
+            if profile["best_ts_pct"] or profile["best_efg_pct"] or profile["best_ato_ratio"]:
+                profile["feature_flags"]["has_advanced_stats"] = True
+            else:
+                profile["missing_reasons"]["missing_advanced_stats"] = True
+
+            if len(season_summaries) >= 2:
+                profile["feature_flags"]["has_progression_data"] = True
+            else:
+                profile["missing_reasons"]["missing_multi_season_data"] = True
+
+            if len(profile["raw_stats"]) > 1:
+                profile["feature_flags"]["has_multi_source_data"] = True
+
             # ================================================================
             # PHASE 3: Get Recruiting Data (247Sports, ESPN, Rivals, On3)
             # ================================================================
@@ -451,6 +575,14 @@ class ForecastingDataAggregator:
                                 power_6_offers=profile["power_6_offer_count"],
                                 is_committed=profile["is_committed"]
                             )
+
+            # Update feature flags and missing reasons after Phase 3
+            if (profile["composite_247_rating"] or profile["stars_247"] or
+                profile["total_offer_count"] > 0 or profile["raw_recruiting_ranks"]):
+                profile["feature_flags"]["has_recruiting_data"] = True
+            else:
+                profile["missing_reasons"]["missing_recruiting_coverage"] = True
+                profile["missing_reasons"]["missing_247_profile"] = True
 
             # ================================================================
             # PHASE 4: Calculate Forecasting Score (Simple Weighted)

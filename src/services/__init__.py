@@ -16,7 +16,15 @@ from .coverage_metrics import (
 from .duckdb_storage import get_duckdb_storage
 from .forecasting import ForecastingDataAggregator, get_forecasting_data_for_player
 from .historical_trends import HistoricalTrendsService
-from .identity import deduplicate_players, resolve_player_uid
+from .identity import (
+    deduplicate_players,
+    resolve_player_uid,
+    resolve_player_uid_enhanced,
+    calculate_match_confidence,
+    get_duplicate_candidates,
+    mark_as_merged,
+    get_canonical_uid,
+)
 from .parquet_exporter import get_parquet_exporter
 from .player_comparison import PlayerComparisonService
 from .rate_limiter import get_rate_limiter
@@ -44,6 +52,12 @@ __all__ = [
     "get_cache",
     "get_rate_limiter",
     "get_source_registry",
+    # Identity Resolution (Enhanced - Enhancement 10, Step 5)
     "deduplicate_players",
     "resolve_player_uid",
+    "resolve_player_uid_enhanced",
+    "calculate_match_confidence",
+    "get_duplicate_candidates",
+    "mark_as_merged",
+    "get_canonical_uid",
 ]
