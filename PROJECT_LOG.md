@@ -1286,6 +1286,31 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
 - ✅ **Graceful degradation**: Returns partial profile if some sections fail, logs all gaps
 - Impact: +15% coverage (33% → 48%), adds critical forecasting metrics (Power 6 offer count #3 predictor at 10% importance)
 
+#### [2025-11-15 17:00] Comprehensive Test Suite for Enhancements 4 & 2
+- ✅ **Age calculations unit tests** (tests/test_utils/test_age_calculations.py, ~450 lines): 4 test classes, 35+ test cases
+  - TestCalculateAgeForGrade: Tests younger/older/average players, different grad years, leap years, custom reference dates
+  - TestCalculateAgeAtDate: Tests exact age calculation with years+days, leap year handling, default reference date
+  - TestParseBirthDate: Tests 8 date formats (MM/DD/YYYY, Month DD YYYY, ISO, European), invalid formats, whitespace handling
+  - TestCategorizeAgeForGrade: Tests all 5 categories (Very Young, Young, Average, Old, Very Old), boundary values
+  - TestEdgeCases: Integration tests for full workflow (parse→calculate→categorize), real-world player examples
+- ✅ **Player model property tests** (tests/test_models/test_player_age_properties.py, ~350 lines): 3 test classes, 25+ test cases
+  - TestPlayerAgeForGradeProperty: Tests computed property with/without birth_date+grad_year, different grad years, on-access computation
+  - TestPlayerAgeForGradeCategory: Tests all category classifications, Unknown handling for missing data
+  - TestPlayerAgePropertyIntegration: Tests independence from existing age property, real-world scenarios (Cooper Flagg example)
+  - TestCircularImportPrevention: Validates local imports prevent circular dependencies
+- ✅ **247Sports profile parsing tests** (tests/test_datasources/test_sports_247_profile_parsing.py, ~600 lines): 8 test classes, 40+ test cases
+  - TestBuildPlayerProfileURL: URL construction with numeric IDs, name slug conversion, invalid format handling
+  - TestParsePlayerBio: Birth date extraction, height/weight/position parsing, alternative label names, missing sections
+  - TestClassifyConferenceLevel: Power 6, Mid-Major, Low-Major classification, None handling
+  - TestParseOfferStatus: All 4 status types (OFFERED, VISITED, COMMITTED, DECOMMITTED)
+  - TestParsePlayerOffers: Table parsing, Power 6 classification, graceful degradation with missing data
+  - TestParseCrystalBall: Predictions extraction, confidence % → 0.0-1.0 conversion, missing sections
+  - TestDebugLogging: Validates extensive logging present in all functions (caplog verification)
+  - TestGracefulDegradation: Partial data handling, missing fields, empty sections
+- **Test coverage**: 100+ test cases across all new functionality
+- **Testing patterns**: Fixtures for reusable data, parametrized tests, mock HTML for parsing, caplog for logging verification
+- **Run tests**: `pytest tests/test_utils/test_age_calculations.py tests/test_models/test_player_age_properties.py tests/test_datasources/test_sports_247_profile_parsing.py -v`
+
 ---
 
 ### IN PROGRESS
@@ -1314,4 +1339,4 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
 
 ---
 
-*Last Updated: 2025-11-15 16:30 UTC*
+*Last Updated: 2025-11-15 17:00 UTC*
