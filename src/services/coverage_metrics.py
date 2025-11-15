@@ -75,6 +75,7 @@ class CoverageFlags:
     missing_multi_season_data: bool = False  # Only one season available
     missing_recruiting_coverage: bool = False  # No recruiting services coverage
     missing_international_data: bool = False  # No FIBA/ANGT data
+    missing_advanced_stats: bool = False  # No TS%, eFG%, A/TO, or usage rate
 
     # Player segment (for coverage reporting)
     player_segment: Optional[str] = None  # "US_HS" | "Europe" | "Canada" | "Other"
@@ -467,6 +468,7 @@ def extract_coverage_flags_from_profile(profile: Dict[str, Any]) -> CoverageFlag
     flags.missing_multi_season_data = len(unique_seasons) < 2
     flags.missing_recruiting_coverage = recruiting_sources == 0
     flags.missing_international_data = not has_intl and not has_eurobasket
+    flags.missing_advanced_stats = not (flags.has_ts_pct or flags.has_efg_pct or flags.has_ato_ratio or flags.has_usage_rate)
 
     # ===== PLAYER SEGMENT =====
 

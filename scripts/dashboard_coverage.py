@@ -48,19 +48,21 @@ def print_ascii_bar(
     value: float,
     max_value: float = 100.0,
     width: int = 40,
-    fill_char: str = "█",
-    empty_char: str = "░"
+    fill_char: str = "#",
+    empty_char: str = "."
 ) -> None:
     """
     Print an ASCII bar chart.
+
+    NOTE: Changed from emoji chars (█, ░) to ASCII (#, .) for Windows console compatibility.
 
     Args:
         label: Label for the bar
         value: Value to visualize (0-100)
         max_value: Maximum value for scaling
         width: Width of bar in characters
-        fill_char: Character for filled portion
-        empty_char: Character for empty portion
+        fill_char: Character for filled portion (default: #)
+        empty_char: Character for empty portion (default: .)
     """
     pct = min(value / max_value, 1.0) if max_value > 0 else 0
     filled = int(pct * width)
@@ -135,7 +137,7 @@ def print_state_coverage_dashboard(results: List[tuple]) -> Dict[str, Dict]:
     )
 
     # Print top 10 states by priority
-    print(f"🎯 TOP 10 PRIORITY STATES (Player Count × Coverage Gap)\n")
+    print(f"*** TOP 10 PRIORITY STATES (Player Count x Coverage Gap)\n")
     print(f"{'State':<6} {'Players':<8} {'Coverage':<10} {'Gap':<10} {'Priority':<12}")
     print(f"{'-'*6} {'-'*8} {'-'*10} {'-'*10} {'-'*12}")
 
@@ -145,40 +147,40 @@ def print_state_coverage_dashboard(results: List[tuple]) -> Dict[str, Dict]:
         gap = metrics["coverage_gap"]
         priority = metrics["priority_score"]
 
-        # Color coding for priority
+        # Priority level indicators (ASCII instead of emoji for Windows compatibility)
         if priority > 3000:
-            priority_str = f"🔴 {priority:.0f}"
+            priority_str = f"[HIGH] {priority:.0f}"
         elif priority > 1500:
-            priority_str = f"🟡 {priority:.0f}"
+            priority_str = f"[MED]  {priority:.0f}"
         else:
-            priority_str = f"🟢 {priority:.0f}"
+            priority_str = f"[LOW]  {priority:.0f}"
 
         print(f"{state:<6} {players:<8} {coverage:>6.1f}%   {gap:>6.1f}%   {priority_str}")
 
     print(f"\n{'='*80}\n")
 
     # Coverage distribution bars
-    print(f"📊 COVERAGE DISTRIBUTION (Top 10 States)\n")
+    print(f"[DATA] COVERAGE DISTRIBUTION (Top 10 States)\n")
 
     for i, (state, metrics) in enumerate(sorted_states[:10], 1):
         coverage = metrics["avg_coverage"]
         players = metrics["player_count"]
 
-        # Bar color based on coverage level
+        # Bar color based on coverage level (ASCII characters for Windows compatibility)
         if coverage >= 70:
-            fill_char = "█"  # Green
+            fill_char = "#"  # Green (was █)
         elif coverage >= 50:
-            fill_char = "▓"  # Yellow
+            fill_char = "="  # Yellow (was ▓)
         else:
-            fill_char = "░"  # Red
+            fill_char = "-"  # Red (was ░)
 
         label = f"{i:2}. {state} ({players}p)"
-        print_ascii_bar(label, coverage, 100.0, width=50, fill_char=fill_char, empty_char="·")
+        print_ascii_bar(label, coverage, 100.0, width=50, fill_char=fill_char, empty_char=".")
 
     print(f"\n{'='*80}\n")
 
     # Gap analysis
-    print(f"🔍 GAP ANALYSIS (Top 5 Priority States)\n")
+    print(f"[?] GAP ANALYSIS (Top 5 Priority States)\n")
 
     for i, (state, metrics) in enumerate(sorted_states[:5], 1):
         print(f"{i}. {state} - {metrics['player_count']} players, {metrics['avg_coverage']:.1f}% coverage")
@@ -190,14 +192,14 @@ def print_state_coverage_dashboard(results: List[tuple]) -> Dict[str, Dict]:
         # Recommendations
         recs = []
         if metrics['missing_maxpreps_pct'] > 50:
-            recs.append("• Fix MaxPreps state normalization")
+            recs.append("- Fix MaxPreps state normalization")
         if metrics['missing_recruiting_pct'] > 50:
-            recs.append(f"• Import {state} recruiting CSV (247/ESPN)")
+            recs.append(f"- Import {state} recruiting CSV (247/ESPN)")
         if metrics['missing_advanced_stats_pct'] > 60:
-            recs.append(f"• Implement {state} state datasource adapter")
+            recs.append(f"- Implement {state} state datasource adapter")
 
         if recs:
-            print(f"   🎯 Actions:")
+            print(f"   *** Actions:")
             for rec in recs:
                 print(f"      {rec}")
         print()
@@ -231,10 +233,10 @@ def print_summary_stats(results: List[tuple]) -> None:
     print()
 
     print(f"Distribution:")
-    print_ascii_bar("  EXCELLENT (≥80%)", excellent / total_players * 100, 100, 40, "█", "·")
-    print_ascii_bar("  GOOD (≥60%)", good / total_players * 100, 100, 40, "▓", "·")
-    print_ascii_bar("  FAIR (≥40%)", fair / total_players * 100, 100, 40, "▒", "·")
-    print_ascii_bar("  POOR (<40%)", poor / total_players * 100, 100, 40, "░", "·")
+    print_ascii_bar("  EXCELLENT (>=80%)", excellent / total_players * 100, 100, 40, "#", ".")
+    print_ascii_bar("  GOOD (>=60%)", good / total_players * 100, 100, 40, "=", ".")
+    print_ascii_bar("  FAIR (>=40%)", fair / total_players * 100, 100, 40, "-", ".")
+    print_ascii_bar("  POOR (<40%)", poor / total_players * 100, 100, 40, ".", " ")
 
     print(f"\n{'='*80}\n")
 
@@ -268,20 +270,20 @@ async def main():
 
     # Load players
     if args.cohort:
-        print(f"📊 Loading college cohort: {args.cohort}\n")
+        print(f"[DATA] Loading college cohort: {args.cohort}\n")
         players = load_players_from_cohort_csv(Path(args.cohort), limit=args.limit)
         cohort_name = Path(args.cohort).name
     else:
-        print(f"📊 Loading sample players from DuckDB\n")
+        print(f"[DATA] Loading sample players from DuckDB\n")
         players = await load_players_from_duckdb(segment="All", limit=args.limit or 50)
         cohort_name = "Sample Players"
 
     if not players:
-        print("❌ No players loaded. Exiting.")
+        print("[X] No players loaded. Exiting.")
         return
 
     # Compute coverage
-    print(f"⚙️  Computing coverage for {len(players)} players...\n")
+    print(f"[...] Computing coverage for {len(players)} players...\n")
     results = await compute_coverage_for_players(players, verbose=False)
 
     # Print dashboard
@@ -315,7 +317,7 @@ async def main():
                     **metrics
                 })
 
-        print(f"✅ State gaps exported to: {export_path}\n")
+        print(f"[OK] State gaps exported to: {export_path}\n")
 
     # Final recommendations
     print(f"{'='*80}")
@@ -323,7 +325,7 @@ async def main():
     print(f"{'='*80}")
     print()
     print(f"1. Review top priority states above")
-    print(f"2. For HIGH priority states (🔴):")
+    print(f"2. For HIGH priority states ([HIGH]):")
     print(f"   - Add recruiting CSV: data/recruiting/{{state}}_rankings.csv")
     print(f"   - Consider state datasource: src/datasources/us/state/{{state}}_*.py")
     print(f"3. Re-run dashboard to measure improvement")

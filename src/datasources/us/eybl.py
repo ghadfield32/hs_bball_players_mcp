@@ -97,9 +97,11 @@ class EYBLDataSource(BaseDataSource):
         limit: int = 50,
     ) -> list[Player]:
         """
-        Search for players in EYBL stats tables.
+        Search for players in EYBL leaderboard.
 
-        Uses browser automation to render React app and extract stats table.
+        Uses browser automation to render React app and extract leaderboard cards.
+        Note: EYBL stats page shows leaderboards (top performers per category),
+        not a complete player roster.
 
         Args:
             name: Player name (partial match)
@@ -108,16 +110,16 @@ class EYBLDataSource(BaseDataSource):
             limit: Maximum results
 
         Returns:
-            List of Player objects
+            List of Player objects from leaderboards
         """
         try:
-            self.logger.info("Fetching EYBL player stats (React rendering)")
+            self.logger.info("Fetching EYBL player leaderboards (React rendering)")
 
             # Use browser automation to render React app
-            # Wait for table element to appear (React renders asynchronously)
+            # Wait for leaderboard container to appear (not table - EYBL uses custom divs)
             html = await self.browser_client.get_rendered_html(
                 url=self.stats_url,
-                wait_for="table",  # Wait for stats table to render
+                wait_for=".sw-season-leaders",  # Wait for leaderboard container
                 wait_timeout=self.browser_client.timeout,
                 wait_for_network_idle=True,  # Wait for React to finish loading
             )
@@ -125,56 +127,131 @@ class EYBLDataSource(BaseDataSource):
             # Parse rendered HTML
             soup = parse_html(html)
 
-            # Find stats table (same parsing as before, but now has data!)
-            stats_table = soup.find("table", class_=lambda x: x and "stats" in str(x).lower())
-            if not stats_table:
-                # Try finding any table
-                stats_table = soup.find("table")
+            # Find leaderboard cards (EYBL uses div-based layout, not tables)
+            leader_cards = soup.find_all("div", class_="sw-leaders-card")
 
-            if not stats_table:
-                self.logger.warning("No stats table found on EYBL stats page after rendering")
+            if not leader_cards:
+                self.logger.warning("No leaderboard cards found on EYBL stats page")
                 return []
 
-            # Extract table data
-            rows = extract_table_data(stats_table)
-
-            if not rows:
-                self.logger.warning("Stats table found but no rows extracted")
-                return []
-
-            self.logger.info(f"Extracted {len(rows)} rows from EYBL stats table")
+            self.logger.info(f"Found {len(leader_cards)} leaderboard categories")
 
             players = []
             data_source = self.create_data_source_metadata(
-                url=self.stats_url, quality_flag=DataQualityFlag.COMPLETE
+                url=self.stats_url, quality_flag=DataQualityFlag.PARTIAL
             )
 
-            for row in rows[:limit]:
-                # Parse player from row
-                player = self._parse_player_from_stats_row(row, data_source)
-                if player:
-                    # Filter by name if provided
-                    if name and name.lower() not in player.full_name.lower():
-                        continue
+            # Extract top players from each leaderboard card
+            players_seen = set()  # Track duplicates across categories
 
-                    # Filter by team if provided
-                    if team and (
-                        not player.team_name or team.lower() not in player.team_name.lower()
-                    ):
-                        continue
+            for card in leader_cards:
+                # Extract category (e.g., "Points per Game")
+                category_elem = card.find("div", class_="sw-leaders-card-category")
+                category = category_elem.get_text(strip=True) if category_elem else "Unknown"
 
-                    players.append(player)
+                # Find all player links in this card (top player + non-leaders)
+                player_links = card.find_all("a", attrs={"data-sw-person-link": "true"})
 
-            self.logger.info(f"Found {len(players)} players", filters={"name": name, "team": team})
+                for link in player_links[:5]:  # Limit per category
+                    player = self._parse_player_from_leaderboard_link(link, category, data_source)
+                    if player and player.full_name not in players_seen:
+                        # Filter by name if provided
+                        if name and name.lower() not in player.full_name.lower():
+                            continue
+
+                        # Filter by team if provided
+                        if team and (
+                            not player.team_name or team.lower() not in player.team_name.lower()
+                        ):
+                            continue
+
+                        players.append(player)
+                        players_seen.add(player.full_name)
+
+                        if len(players) >= limit:
+                            break
+
+                if len(players) >= limit:
+                    break
+
+            self.logger.info(f"Found {len(players)} unique players from leaderboards", filters={"name": name, "team": team})
             return players
 
         except Exception as e:
             self.logger.error("Failed to search players", error=str(e), error_type=type(e).__name__)
             return []
 
+    def _parse_player_from_leaderboard_link(
+        self, link_elem, category: str, data_source
+    ) -> Optional[Player]:
+        """
+        Parse player from leaderboard link element.
+
+        Args:
+            link_elem: BeautifulSoup link element with data-sw-person-link attribute
+            category: Stat category (e.g., "Points per Game")
+            data_source: DataSource metadata
+
+        Returns:
+            Player object or None
+        """
+        try:
+            # Extract player name from data attribute or link text
+            player_name = link_elem.get("data-sw-person-link-person-name")
+
+            if not player_name:
+                # Fallback: get from link text
+                text = link_elem.get_text(strip=True)
+                # Remove rank number if present (e.g., "1. Jason Crowe Jr" -> "Jason Crowe Jr")
+                if text and ". " in text:
+                    player_name = text.split(". ", 1)[1]
+                else:
+                    player_name = text
+
+            if not player_name:
+                return None
+
+            # Find team link (sibling or nearby)
+            parent = link_elem.parent
+            team_link = None
+            team_name = None
+
+            if parent:
+                team_link = parent.find("a", attrs={"data-sw-team-link": "true"})
+                if team_link:
+                    team_name = team_link.get("data-sw-team-link-team-name") or team_link.get_text(strip=True)
+
+            # Split name into first/last
+            name_parts = player_name.strip().split()
+            if len(name_parts) >= 2:
+                first_name = name_parts[0]
+                last_name = " ".join(name_parts[1:])
+            else:
+                first_name = player_name
+                last_name = ""
+
+            # Create player ID from name (sanitized)
+            player_id = f"eybl_{player_name.lower().replace(' ', '_').replace('.', '')}"
+
+            player_data = {
+                "player_id": player_id,
+                "first_name": first_name,
+                "last_name": last_name,
+                "full_name": player_name,
+                "team_name": team_name,
+                "level": PlayerLevel.GRASSROOTS,
+                "data_source": data_source,
+            }
+
+            return self.validate_and_log_data(Player, player_data, f"player {player_name}")
+
+        except Exception as e:
+            self.logger.error("Failed to parse player from leaderboard link", error=str(e))
+            return None
+
     def _parse_player_from_stats_row(self, row: dict, data_source) -> Optional[Player]:
         """
-        Parse player from stats table row.
+        Parse player from stats table row (legacy - tables no longer used).
 
         Args:
             row: Row dictionary from stats table
@@ -233,16 +310,18 @@ class EYBLDataSource(BaseDataSource):
         self, player_id: str, season: Optional[str] = None
     ) -> Optional[PlayerSeasonStats]:
         """
-        Get player season statistics from cumulative stats page.
+        Get player season statistics from leaderboard page.
 
-        Uses browser automation to render React app before extracting stats.
+        Note: EYBL leaderboard shows category leaders, not complete stats tables.
+        This method searches for the player across all leaderboard categories and
+        extracts available stat values.
 
         Args:
             player_id: Player identifier
             season: Season (uses current if None)
 
         Returns:
-            PlayerSeasonStats object or None
+            PlayerSeasonStats object or None (may have limited stats)
         """
         try:
             self.logger.info(f"Fetching season stats for player {player_id}")
@@ -250,40 +329,106 @@ class EYBLDataSource(BaseDataSource):
             # Render page with browser
             html = await self.browser_client.get_rendered_html(
                 url=self.stats_url,
-                wait_for="table",
+                wait_for=".sw-season-leaders",
                 wait_for_network_idle=True,
             )
 
             soup = parse_html(html)
 
-            # Find stats table
-            stats_table = soup.find("table", class_=lambda x: x and "stats" in str(x).lower())
-            if not stats_table:
-                stats_table = soup.find("table")
+            # Extract player name from ID (format: eybl_firstname_lastname)
+            player_name_from_id = player_id.replace("eybl_", "").replace("_", " ").replace(".", "")
 
-            if not stats_table:
-                self.logger.warning("No stats table found")
+            # Find leaderboard cards
+            leader_cards = soup.find_all("div", class_="sw-leaders-card")
+
+            if not leader_cards:
+                self.logger.warning("No leaderboard cards found")
                 return None
 
-            # Extract rows and find matching player
-            rows = extract_table_data(stats_table)
+            # Search for player across all leaderboards
+            stats_data = {
+                "player_id": player_id,
+                "player_name": player_name_from_id,  # Required field
+                "team_id": "unknown",  # Will update if found
+                "season": season or str(datetime.now().year),
+                "games_played": 0,  # Required field - will try to extract
+            }
+            player_found = False
+            team_name = None
 
-            # Extract player name from ID (format: eybl_firstname_lastname)
-            player_name_from_id = player_id.replace("eybl_", "").replace("_", " ")
+            for card in leader_cards:
+                # Get category
+                category_elem = card.find("div", class_="sw-leaders-card-category")
+                category = category_elem.get_text(strip=True) if category_elem else ""
 
-            for row in rows:
-                row_player_name = row.get("Player") or row.get("NAME") or row.get("Name", "")
+                # Find player links
+                player_links = card.find_all("a", attrs={"data-sw-person-link": "true"})
 
-                # Match player
-                if row_player_name.lower() == player_name_from_id.lower():
-                    return self._parse_season_stats_from_row(row, player_id)
+                for link in player_links:
+                    link_player_name = link.get("data-sw-person-link-person-name", "")
 
-            self.logger.warning(f"Player {player_id} not found in stats table")
+                    # Match player
+                    if link_player_name.lower().replace(".", "") == player_name_from_id.lower():
+                        player_found = True
+
+                        # Extract team info if not already found
+                        if team_name is None:
+                            parent = link.parent
+                            if parent:
+                                team_link = parent.find("a", attrs={"data-sw-team-link": "true"})
+                                if team_link:
+                                    team_name = team_link.get("data-sw-team-link-team-name") or team_link.get_text(strip=True)
+                                    if team_name:
+                                        stats_data["team_id"] = f"eybl_{team_name.lower().replace(' ', '_')}"
+
+                        # Found player! Extract stat value
+                        # Find the stat value (usually in sibling div with class sw-leaders-*-result)
+                        parent = link.parent
+                        if parent:
+                            result_elem = parent.find("div", class_=lambda x: x and "result" in str(x).lower())
+                            if result_elem:
+                                stat_value = parse_float(result_elem.get_text(strip=True))
+                                # Map category to stat field
+                                self._map_category_to_stat(category, stat_value, stats_data)
+
+            # Only return stats if we found the player
+            if player_found and len(stats_data) > 5:  # More than just the required base fields
+                data_source = self.create_data_source_metadata(
+                    url=self.stats_url, quality_flag=DataQualityFlag.PARTIAL
+                )
+                stats_data["data_source"] = data_source
+
+                return self.validate_and_log_data(
+                    PlayerSeasonStats, stats_data, f"season stats for {player_id}"
+                )
+
+            self.logger.warning(f"Player {player_id} not found in leaderboards")
             return None
 
         except Exception as e:
             self.logger.error(f"Failed to get player season stats", player_id=player_id, error=str(e))
             return None
+
+    def _map_category_to_stat(self, category: str, value: float, stats_data: dict) -> None:
+        """Map leaderboard category to stats field."""
+        category_lower = category.lower()
+
+        if "points" in category_lower or "ppg" in category_lower:
+            stats_data["points_per_game"] = value
+        elif "rebound" in category_lower or "rpg" in category_lower:
+            stats_data["rebounds_per_game"] = value
+        elif "assist" in category_lower or "apg" in category_lower:
+            stats_data["assists_per_game"] = value
+        elif "steal" in category_lower or "spg" in category_lower:
+            stats_data["steals_per_game"] = value
+        elif "block" in category_lower or "bpg" in category_lower:
+            stats_data["blocks_per_game"] = value
+        elif "fg%" in category_lower or "field goal" in category_lower:
+            stats_data["field_goal_percentage"] = value / 100 if value > 1 else value
+        elif "3p%" in category_lower or "three point" in category_lower:
+            stats_data["three_point_percentage"] = value / 100 if value > 1 else value
+        elif "ft%" in category_lower or "free throw" in category_lower:
+            stats_data["free_throw_percentage"] = value / 100 if value > 1 else value
 
     def _parse_season_stats_from_row(self, row: dict, player_id: str) -> Optional[PlayerSeasonStats]:
         """Parse season stats from stats table row."""
@@ -351,71 +496,87 @@ class EYBLDataSource(BaseDataSource):
             # Render cumulative stats page
             html = await self.browser_client.get_rendered_html(
                 url=self.stats_url,
-                wait_for="table",
+                wait_for=".sw-season-leaders",
                 wait_for_network_idle=True,
             )
 
             soup = parse_html(html)
 
-            # Find stats table
-            stats_table = soup.find("table", class_=lambda x: x and "stats" in str(x).lower())
-            if not stats_table:
-                stats_table = soup.find("table")
+            # Find leaderboard cards
+            leader_cards = soup.find_all("div", class_="sw-leaders-card")
 
-            if not stats_table:
-                self.logger.warning("No stats table found for leaderboard")
+            if not leader_cards:
+                self.logger.warning("No leaderboard cards found")
                 return []
 
-            # Extract table data
-            rows = extract_table_data(stats_table)
-
-            # Map stat types to column names
-            stat_column_map = {
-                "points": ["PPG", "PTS", "Points"],
-                "rebounds": ["RPG", "REB", "Rebounds"],
-                "assists": ["APG", "AST", "Assists"],
-                "steals": ["SPG", "STL", "Steals"],
-                "blocks": ["BPG", "BLK", "Blocks"],
-                "field_goal_pct": ["FG%"],
-                "three_point_pct": ["3P%", "3PT%"],
+            # Map stat types to category keywords
+            category_keywords = {
+                "points": ["points", "ppg"],
+                "rebounds": ["rebound", "rpg"],
+                "assists": ["assist", "apg"],
+                "steals": ["steal", "spg"],
+                "blocks": ["block", "bpg"],
+                "field_goal_pct": ["fg%", "field goal"],
+                "three_point_pct": ["3p%", "three point"],
             }
 
-            column_names = stat_column_map.get(stat_type, ["PPG"])
+            keywords = category_keywords.get(stat_type, ["points"])
 
-            # Find matching column
-            stat_column = None
-            for col in column_names:
-                if col in rows[0] if rows else {}:
-                    stat_column = col
-                    break
+            # Find matching leaderboard card
+            target_card = None
+            for card in leader_cards:
+                category_elem = card.find("div", class_="sw-leaders-card-category")
+                if category_elem:
+                    category = category_elem.get_text(strip=True).lower()
+                    if any(kw in category for kw in keywords):
+                        target_card = card
+                        break
 
-            if not stat_column:
-                self.logger.warning(f"Stat column not found for {stat_type}")
+            if not target_card:
+                self.logger.warning(f"No leaderboard card found for {stat_type}")
                 return []
 
-            # Build leaderboard
+            # Extract players from card
             leaderboard = []
-            for row in rows:
-                player_name = row.get("Player") or row.get("NAME") or row.get("Name")
-                stat_value = parse_float(row.get(stat_column))
+            player_links = target_card.find_all("a", attrs={"data-sw-person-link": "true"})
 
-                if player_name and stat_value is not None:
+            for i, link in enumerate(player_links[:limit], 1):
+                player_name = link.get("data-sw-person-link-person-name")
+
+                # Get text if attribute not available
+                if not player_name:
+                    text = link.get_text(strip=True)
+                    if ". " in text:
+                        player_name = text.split(". ", 1)[1]
+                    else:
+                        player_name = text
+
+                # Find team link
+                parent = link.parent
+                team_name = None
+                if parent:
+                    team_link = parent.find("a", attrs={"data-sw-team-link": "true"})
+                    if team_link:
+                        team_name = team_link.get("data-sw-team-link-team-name") or team_link.get_text(strip=True)
+
+                # Find stat value
+                stat_value = None
+                if parent:
+                    result_elem = parent.find("div", class_=lambda x: x and "result" in str(x).lower())
+                    if result_elem:
+                        stat_value = parse_float(result_elem.get_text(strip=True))
+
+                if player_name:
                     leaderboard.append({
+                        "rank": i,
                         "player_name": player_name,
-                        "team_name": row.get("Team") or row.get("TEAM"),
+                        "team_name": team_name,
                         "stat_value": stat_value,
                         "stat_type": stat_type,
                     })
 
-            # Sort by stat value descending
-            leaderboard.sort(key=lambda x: x["stat_value"], reverse=True)
-
-            # Add ranks
-            for i, entry in enumerate(leaderboard[:limit], 1):
-                entry["rank"] = i
-
-            self.logger.info(f"Generated {len(leaderboard[:limit])} leaderboard entries")
-            return leaderboard[:limit]
+            self.logger.info(f"Generated {len(leaderboard)} leaderboard entries")
+            return leaderboard
 
         except Exception as e:
             self.logger.error("Failed to get leaderboard", stat_type=stat_type, error=str(e))

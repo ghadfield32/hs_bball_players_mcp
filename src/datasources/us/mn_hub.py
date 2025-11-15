@@ -66,11 +66,7 @@ class MNHubDataSource(BaseDataSource):
         else:
             season_year = now.year - 1
 
-        season_str = f"{season_year}-{str(season_year + 1)[-2:]}"
-
-        # MN Hub-specific endpoints (season-specific URLs)
-        self.season = season_str
-        self.leaderboards_url = f"{self.base_url}/{season_str}-boys-basketball-stat-leaderboards"
+        self.current_season_year = season_year
         self.historical_url = f"{self.base_url}/historical-data"
 
         # Initialize browser client for Angular rendering
@@ -84,12 +80,92 @@ class MNHubDataSource(BaseDataSource):
             cache_ttl=self.settings.browser_cache_ttl if hasattr(self.settings, 'browser_cache_ttl') else 7200,
         )
 
-        self.logger.info(f"MN Hub initialized for {season_str} season")
+        # Will be set by _find_available_season() on first use
+        self.season = None
+        self.leaderboards_url = None
+        self._season_search_attempted = False
+
+        self.logger.info(f"MN Hub initialized (will auto-detect available season)")
 
     async def close(self):
         """Close connections and browser instances."""
         await super().close()
         # Note: Browser is singleton, so we don't close it here
+
+    async def _find_available_season(self) -> bool:
+        """
+        Find the first available season with published data using fallback strategy.
+
+        Tries seasons in order: current → previous → 2 years ago → 3 years ago
+        Updates self.season and self.leaderboards_url when found.
+
+        Returns:
+            True if a season was found, False otherwise
+        """
+        if self._season_search_attempted:
+            return self.season is not None
+
+        self._season_search_attempted = True
+
+        # Generate seasons to try (current, -1, -2, -3 years)
+        seasons_to_try = []
+        for years_back in range(4):
+            year = self.current_season_year - years_back
+            season_str = f"{year}-{str(year + 1)[-2:]}"
+            url = f"{self.base_url}/{season_str}-boys-basketball-stat-leaderboards"
+            seasons_to_try.append((season_str, url))
+
+        self.logger.info(
+            f"Attempting season fallback detection (trying {len(seasons_to_try)} seasons)"
+        )
+
+        # Try each season URL to find one that works
+        for season_str, url in seasons_to_try:
+            try:
+                self.logger.debug(f"Trying season: {season_str} at {url}")
+
+                # Quick HEAD request to check if page exists (avoid full render)
+                try:
+                    response = await self.http_client.head(url, timeout=10.0)
+                    status_code = response.status_code
+                except Exception:
+                    # If HEAD fails, try GET
+                    response = await self.http_client.get(url, timeout=10.0)
+                    status_code = response.status_code
+
+                if status_code == 200:
+                    self.logger.info(
+                        f"✓ Found available season: {season_str}",
+                        url=url,
+                        status=status_code
+                    )
+                    self.season = season_str
+                    self.leaderboards_url = url
+                    return True
+                elif status_code == 404:
+                    self.logger.debug(
+                        f"✗ Season {season_str} not found (404)",
+                        url=url
+                    )
+                else:
+                    self.logger.warning(
+                        f"Unexpected status for season {season_str}: {status_code}",
+                        url=url
+                    )
+
+            except Exception as e:
+                self.logger.warning(
+                    f"Error checking season {season_str}: {e}",
+                    url=url
+                )
+                continue
+
+        # No season found
+        self.logger.error(
+            "No available season found after trying all fallbacks",
+            seasons_tried=[s[0] for s in seasons_to_try]
+        )
+        return False
 
     async def search_players(
         self,
@@ -102,17 +178,23 @@ class MNHubDataSource(BaseDataSource):
         Search for players in MN Hub leaderboards.
 
         Uses browser automation to render Angular app and extract stats.
+        Automatically detects available season using fallback strategy.
 
         Args:
             name: Player name (partial match)
             team: Team name (partial match)
-            season: Season (uses current if None)
+            season: Season (uses auto-detected season if None)
             limit: Maximum results
 
         Returns:
             List of Player objects
         """
         try:
+            # Auto-detect available season if not already done
+            if not await self._find_available_season():
+                self.logger.error("No available season found - cannot fetch player stats")
+                return []
+
             self.logger.info(f"Fetching MN Hub player stats (Angular rendering) - Season: {self.season}")
 
             # Use browser automation to render Angular app
@@ -297,16 +379,22 @@ class MNHubDataSource(BaseDataSource):
         Get player season statistics from leaderboards.
 
         Uses browser automation to render Angular app before extracting stats.
+        Automatically detects available season using fallback strategy.
 
         Args:
             player_id: Player identifier
-            season: Season (uses current if None)
+            season: Season (uses auto-detected season if None)
 
         Returns:
             PlayerSeasonStats object or None
         """
         try:
-            self.logger.info(f"Fetching season stats for player {player_id}")
+            # Auto-detect available season if not already done
+            if not await self._find_available_season():
+                self.logger.error("No available season found - cannot fetch stats")
+                return None
+
+            self.logger.info(f"Fetching season stats for player {player_id} - Season: {self.season}")
 
             # Render page with browser
             html = await self.browser_client.get_rendered_html(
@@ -388,6 +476,7 @@ class MNHubDataSource(BaseDataSource):
         Get statistical leaderboard.
 
         Uses browser automation to render Angular app before extracting leaderboard.
+        Automatically detects available season using fallback strategy.
 
         Args:
             stat: Type of stat (points, rebounds, assists, etc.)
@@ -397,7 +486,12 @@ class MNHubDataSource(BaseDataSource):
             List of leaderboard entries
         """
         try:
-            self.logger.info(f"Fetching MN Hub {stat} leaderboard")
+            # Auto-detect available season if not already done
+            if not await self._find_available_season():
+                self.logger.error("No available season found - cannot fetch leaderboard")
+                return []
+
+            self.logger.info(f"Fetching MN Hub {stat} leaderboard - Season: {self.season}")
 
             # Render leaderboards page
             html = await self.browser_client.get_rendered_html(

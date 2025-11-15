@@ -61,8 +61,8 @@ async def load_players_from_duckdb(
     #     LIMIT ?
     # """
 
-    print(f"⚠️  DuckDB players table not yet populated (Enhancement 9 pending)")
-    print(f"   Using sample test data for demonstration...")
+    print(f"[!] DuckDB players table not yet populated (Enhancement 9 pending)")
+    print(f"    Using sample test data for demonstration...")
 
     # Sample test data for demonstration
     test_players = [
@@ -113,8 +113,8 @@ def load_players_from_cohort_csv(
         >>> print(f"Loaded {len(players)} D1 college players")
     """
     if not cohort_csv_path.exists():
-        print(f"❌ Cohort CSV not found: {cohort_csv_path}")
-        print(f"   Run: python scripts/build_college_cohort.py --source csv")
+        print(f"[X] Cohort CSV not found: {cohort_csv_path}")
+        print(f"    Run: python scripts/build_college_cohort.py --source csv")
         return []
 
     players = []
@@ -136,7 +136,7 @@ def load_players_from_cohort_csv(
             if limit and len(players) >= limit:
                 break
 
-    print(f"✅ Loaded {len(players)} players from cohort CSV: {cohort_csv_path}")
+    print(f"[OK] Loaded {len(players)} players from cohort CSV: {cohort_csv_path}")
     return players
 
 
@@ -194,7 +194,7 @@ async def compute_coverage_for_players(
                 print()
 
         except Exception as e:
-            print(f"   ❌ Error: {e}")
+            print(f"    [X] Error: {e}")
             # Create zero coverage for failed players
             flags = CoverageFlags()
             score = compute_coverage_score(flags)
@@ -244,7 +244,7 @@ def print_coverage_report(
     for level in ['EXCELLENT', 'GOOD', 'FAIR', 'POOR']:
         count = dist[level]
         pct = dist_pct[level]
-        bar = '█' * int(pct / 2)  # Scale to 50 chars max
+        bar = '#' * int(pct / 2)  # Scale to 50 chars max (ASCII for Windows compatibility)
         print(f"{level:12} ({pct:5.1f}%): {bar} ({count} players)")
     print()
 
@@ -269,7 +269,7 @@ def print_coverage_report(
             pred = item['predictor']
             count = item['missing_count']
             pct = item['missing_pct']
-            bar = '▓' * int(pct / 2)  # Scale to 50 chars max
+            bar = '=' * int(pct / 2)  # Scale to 50 chars max (ASCII for Windows compatibility)
             print(f"{pred:30} ({pct:5.1f}%): {bar} ({count} players)")
     else:
         print("None - all players have full critical predictor coverage!")
@@ -282,7 +282,7 @@ def print_coverage_report(
 
     sorted_results = sorted(results, key=lambda x: x[2].overall_score, reverse=True)
 
-    print("\n🏆 TOP 5 COVERAGE (Best Data Quality):\n")
+    print("\n*** TOP 5 COVERAGE (Best Data Quality):\n")
     for i, (player_info, flags, score) in enumerate(sorted_results[:5], 1):
         name = player_info.get('player_name', 'Unknown')
         grad_year = player_info.get('grad_year', '?')
@@ -293,7 +293,7 @@ def print_coverage_report(
         print(f"   Data Sources: {flags.total_data_sources} | Seasons: {flags.total_stats_seasons}")
         print()
 
-    print("⚠️  BOTTOM 5 COVERAGE (Need More Data):\n")
+    print("[!] BOTTOM 5 COVERAGE (Need More Data):\n")
     for i, (player_info, flags, score) in enumerate(sorted_results[-5:], 1):
         name = player_info.get('player_name', 'Unknown')
         grad_year = player_info.get('grad_year', '?')
@@ -346,7 +346,7 @@ def print_coverage_report(
         for rec in recommendations:
             print(f"   {rec}")
     else:
-        print("   ✅ Coverage is excellent! No critical gaps identified.")
+        print("    [OK] Coverage is excellent! No critical gaps identified.")
 
     print()
     print(f"{'#'*80}\n")
@@ -462,11 +462,11 @@ def print_state_level_breakdown(
     # Export to CSV if requested
     if output_csv:
         export_coverage_gaps_csv(state_metrics, output_csv)
-        print(f"✅ State coverage gaps exported to: {output_csv}\n")
+        print(f"[OK] State coverage gaps exported to: {output_csv}\n")
 
     # Print top 5 priority states
     print(f"{'='*80}")
-    print(f"TOP 5 PRIORITY STATES (Most Players × Lowest Coverage)")
+    print(f"TOP 5 PRIORITY STATES (Most Players x Lowest Coverage)")
     print(f"{'='*80}")
 
     for i, metric in enumerate(state_metrics[:5], 1):
@@ -527,7 +527,7 @@ def export_coverage_gaps_csv(
         writer.writeheader()
         writer.writerows(state_metrics)
 
-    print(f"📊 State coverage gaps exported to: {output_csv}")
+    print(f"[DATA] State coverage gaps exported to: {output_csv}")
 
 
 async def main():
@@ -573,13 +573,13 @@ async def main():
     # Load players: either from cohort CSV or DuckDB
     if args.cohort:
         # Enhancement 12.2: Load from college cohort CSV for REAL coverage measurement
-        print(f"📊 Loading players from cohort CSV: {args.cohort}")
+        print(f"[DATA] Loading players from cohort CSV: {args.cohort}")
         cohort_path = Path(args.cohort)
         players = load_players_from_cohort_csv(cohort_path, limit=args.limit)
         segment_name = f"College Cohort ({cohort_path.name})"
     else:
         # Original: Load from DuckDB
-        print(f"📊 Loading players from DuckDB (segment: {args.segment})")
+        print(f"[DATA] Loading players from DuckDB (segment: {args.segment})")
         players = await load_players_from_duckdb(
             segment=args.segment,
             limit=args.limit or 100
@@ -587,7 +587,7 @@ async def main():
         segment_name = args.segment
 
     if not players:
-        print("⚠️  No players found.")
+        print("[!] No players found.")
         if args.cohort:
             print(f"   Cohort CSV not found or empty: {args.cohort}")
             print("   Run: python scripts/build_college_cohort.py --source csv")

@@ -1,0 +1,76 @@
+[
+  {
+    "timestamp": "2025-11-15T09:58:50.966482",
+    "summary": {
+      "total": 4,
+      "healthy": 0,
+      "failing": 4,
+      "degraded": 0,
+      "health_rate": "0.0%"
+    },
+    "sources": [
+      {
+        "source_name": "eybl",
+        "source_type": "eybl",
+        "status": "FAILED",
+        "tests_passed": 0,
+        "tests_failed": 3,
+        "success_rate": "0.0%",
+        "data_points": 0,
+        "historical_seasons": 0,
+        "errors": "",
+        "warnings": "search_players returned empty list | Cannot test stats - no players found",
+        "timestamp": "2025-11-15T09:57:34.112633"
+      },
+      {
+        "source_name": "mn_hub",
+        "source_type": "mn_hub",
+        "status": "FAILED",
+        "tests_passed": 0,
+        "tests_failed": 3,
+        "success_rate": "0.0%",
+        "data_points": 0,
+        "historical_seasons": 0,
+        "errors": "",
+        "warnings": "search_players returned empty list | Cannot test stats - no players found",
+        "timestamp": "2025-11-15T09:58:08.975022"
+      },
+      {
+        "source_name": "psal",
+        "source_type": "psal",
+        "status": "FAILED",
+        "tests_passed": 0,
+        "tests_failed": 3,
+        "success_rate": "0.0%",
+        "data_points": 0,
+        "historical_seasons": 0,
+        "errors": "",
+        "warnings": "search_players returned empty list | Cannot test stats - no players found",
+        "timestamp": "2025-11-15T09:58:50.942249"
+      },
+      {
+        "source_name": "fiba",
+        "source_type": "fiba",
+        "status": "FAILED",
+        "tests_passed": 0,
+        "tests_failed": 3,
+        "success_rate": "0.0%",
+        "data_points": 0,
+        "historical_seasons": 0,
+        "errors": "",
+        "warnings": "search_players returned empty list | Cannot test stats - no players found",
+        "timestamp": "2025-11-15T09:58:50.966301"
+      }
+    ],
+    "alerts": [
+      "[!] 4 source(s) currently failing",
+      "[!!] Overall health rate critically low: 0.0%"
+    ],
+    "trends": {
+      "eybl": "new",
+      "mn_hub": "new",
+      "psal": "new",
+      "fiba": "new"
+    }
+  }
+]

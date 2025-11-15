@@ -419,7 +419,7 @@ class NullCacheBackend(CacheBackend):
 _cache_service_instance: Optional[CacheService] = None
 
 
-def get_cache_service() -> CacheService:
+def get_cache() -> CacheService:
     """
     Get global cache service instance.
 

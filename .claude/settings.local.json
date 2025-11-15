@@ -50,7 +50,10 @@
       "Bash(then echo \"File exists\")",
       "Bash(timeout 90 .venv/Scripts/python.exe:*)",
       "Bash(timeout 120 .venv/Scripts/python.exe:*)",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nMerge claude/review-repository-structure-01LXMUgjibDpdU2jbqwToCLP into main\n\nResolved conflicts in PROJECT_LOG.md, README.md, and source registry files.\nCombined WIAA Wisconsin work from main with coverage helper scripts and\nrecruiting intelligence features from Claude branch.\n\nConflict resolutions:\n- PROJECT_LOG.md: Kept WIAA debugging notes + merged all new session logs\n- README.md: Used Claude''s comprehensive 67+ source documentation\n- src/datasources/us/__init__.py: Combined lazy loading docs with imports\n- src/models/source.py: Added both PLATFORM and recruiting service enums\n- src/services/aggregator.py: Merged vendor generics with recruiting sources\n\nNew features from Claude branch:\n- Coverage helper scripts (dashboard, cohort builder, state picker)\n- Recruiting intelligence (247Sports, CSV recruiting)\n- Advanced analytics (forecasting, trends, player comparison)\n- MaxPreps enhanced parser\n- DuckDB historical snapshots\n- 60+ new files for data enhancement\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(.venvScriptspython.exe scriptsdebug_psal.py)"
     ],
     "deny": [],
     "ask": []

@@ -17,7 +17,7 @@ from tenacity import (
 )
 
 from ..config import get_settings
-from ..services.cache import get_cache_service
+from ..services.cache import get_cache
 from ..services.rate_limiter import get_rate_limiter
 from .logger import get_logger
 
@@ -41,7 +41,7 @@ class HTTPClient:
         self.source = source
         self.settings = get_settings()
         self.rate_limiter = get_rate_limiter()
-        self.cache_service = get_cache_service()
+        self.cache_service = get_cache()
 
         # Build headers with browser-like defaults
         default_headers = {
