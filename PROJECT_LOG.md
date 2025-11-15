@@ -1311,6 +1311,43 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
 - **Testing patterns**: Fixtures for reusable data, parametrized tests, mock HTML for parsing, caplog for logging verification
 - **Run tests**: `pytest tests/test_utils/test_age_calculations.py tests/test_models/test_player_age_properties.py tests/test_datasources/test_sports_247_profile_parsing.py -v`
 
+#### [2025-11-15 18:00] Comprehensive Forecasting Data Aggregation Pipeline (Real Data Integration)
+- ✅ **Forecasting Service** (src/services/forecasting.py, ~600 lines): Multi-source data aggregation for ML forecasting
+  - ForecastingDataAggregator: Pulls ALL data from all sources (stats + recruiting + bio + advanced metrics)
+  - get_comprehensive_player_profile(): Orchestrates 4-phase data extraction:
+    * Phase 1: Get stats from ALL datasources (EYBL, UAA, 3SSB, state associations, FIBA Youth, ANGT, etc.)
+    * Phase 2: Aggregate season stats and calculate career averages, best metrics, trends
+    * Phase 3: Get recruiting data from 247Sports (rankings, offers, predictions)
+    * Phase 4: Calculate forecasting score (weighted by importance) and data completeness %
+  - Extracts 40+ forecasting features including:
+    * **CRITICAL**: Age-for-grade (#4 predictor, 8-10% importance)
+    * **CRITICAL**: Power 6 offer count (#3 predictor, 10% importance)
+    * **CRITICAL**: 247 Composite rating (#1 predictor, 15% importance)
+    * Advanced metrics: TS%, eFG%, A/TO ratio, per-40 stats
+    * Competition context: Circuits played, highest level, performance trends
+    * Multiple seasons: Trend analysis (improving/declining/stable)
+- ✅ **Real Data Validation Script** (scripts/test_forecasting_real_data.py, ~350 lines): Tests with REAL players
+  - 4 test players: Cooper Flagg (2025), Cameron Boozer (2026), Dylan Harper (2025), Noa Essengue (EU)
+  - Validates birth date extraction, age-for-grade calculation, multi-source aggregation, forecasting scores
+  - Extensive logging with ✅/❌ status for each metric
+  - Compares extracted data vs expected data for validation
+- ✅ **Example Usage Script** (scripts/example_forecasting_usage.py, ~280 lines): Simple CLI for testing
+  - Usage: `python scripts/example_forecasting_usage.py "Cooper Flagg" 2025`
+  - Displays all 40+ forecasting metrics in organized sections
+  - Exports full profile to JSON for ML feature engineering
+  - Provides forecasting interpretation (Elite NBA Prospect / High Major D1 / etc.)
+  - Shows age-for-grade impact, recruiting status, efficiency ratings
+- ✅ **Service Exports** (src/services/__init__.py): Added forecasting exports
+  - ForecastingDataAggregator, get_forecasting_data_for_player
+  - Convenience function for quick access to forecasting data
+- **Impact**: Enables REAL forecasting with actual player data, maximizes data extraction from 67+ datasources
+- **Use Cases**:
+  * Prospect evaluation (high school & young European players)
+  * Draft modeling (NBA/G-League)
+  * College recruiting analysis
+  * Player comparison tools
+  * ML model feature engineering
+
 ---
 
 ### IN PROGRESS
@@ -1339,4 +1376,4 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
 
 ---
 
-*Last Updated: 2025-11-15 17:00 UTC*
+*Last Updated: 2025-11-15 18:00 UTC*
