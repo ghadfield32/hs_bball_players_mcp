@@ -427,8 +427,32 @@ class DuckDBStorage:
 
             df = pd.DataFrame(data)
 
-            # Insert or replace
-            self.conn.execute("INSERT OR REPLACE INTO players SELECT * FROM df")
+            # Use ON CONFLICT for DuckDB 1.0+ compatibility
+            self.conn.execute("""
+                INSERT INTO players
+                SELECT * FROM df
+                ON CONFLICT (player_id)
+                DO UPDATE SET
+                    source_type = EXCLUDED.source_type,
+                    first_name = EXCLUDED.first_name,
+                    last_name = EXCLUDED.last_name,
+                    full_name = EXCLUDED.full_name,
+                    position = EXCLUDED.position,
+                    height_inches = EXCLUDED.height_inches,
+                    weight_lbs = EXCLUDED.weight_lbs,
+                    school_name = EXCLUDED.school_name,
+                    school_city = EXCLUDED.school_city,
+                    school_state = EXCLUDED.school_state,
+                    school_country = EXCLUDED.school_country,
+                    team_name = EXCLUDED.team_name,
+                    jersey_number = EXCLUDED.jersey_number,
+                    grad_year = EXCLUDED.grad_year,
+                    birth_date = EXCLUDED.birth_date,
+                    level = EXCLUDED.level,
+                    profile_url = EXCLUDED.profile_url,
+                    retrieved_at = EXCLUDED.retrieved_at,
+                    quality_flag = EXCLUDED.quality_flag
+            """)
 
             logger.info(f"Stored {len(players)} players in DuckDB")
             return len(players)
@@ -476,7 +500,29 @@ class DuckDBStorage:
                 )
 
             df = pd.DataFrame(data)
-            self.conn.execute("INSERT OR REPLACE INTO teams SELECT * FROM df")
+            # Use ON CONFLICT for DuckDB 1.0+ compatibility
+            self.conn.execute("""
+                INSERT INTO teams
+                SELECT * FROM df
+                ON CONFLICT (team_id)
+                DO UPDATE SET
+                    source_type = EXCLUDED.source_type,
+                    team_name = EXCLUDED.team_name,
+                    school_name = EXCLUDED.school_name,
+                    city = EXCLUDED.city,
+                    state = EXCLUDED.state,
+                    country = EXCLUDED.country,
+                    region = EXCLUDED.region,
+                    level = EXCLUDED.level,
+                    league = EXCLUDED.league,
+                    conference = EXCLUDED.conference,
+                    season = EXCLUDED.season,
+                    wins = EXCLUDED.wins,
+                    losses = EXCLUDED.losses,
+                    head_coach = EXCLUDED.head_coach,
+                    retrieved_at = EXCLUDED.retrieved_at,
+                    quality_flag = EXCLUDED.quality_flag
+            """)
 
             logger.info(f"Stored {len(teams)} teams in DuckDB")
             return len(teams)
@@ -642,7 +688,34 @@ class DuckDBStorage:
                 )
 
             df = pd.DataFrame(data)
-            self.conn.execute("INSERT OR REPLACE INTO recruiting_ranks SELECT * FROM df")
+            # Use ON CONFLICT for DuckDB 1.0+ compatibility
+            self.conn.execute("""
+                INSERT INTO recruiting_ranks
+                SELECT * FROM df
+                ON CONFLICT (rank_id)
+                DO UPDATE SET
+                    player_id = EXCLUDED.player_id,
+                    player_name = EXCLUDED.player_name,
+                    rank_national = EXCLUDED.rank_national,
+                    rank_position = EXCLUDED.rank_position,
+                    rank_state = EXCLUDED.rank_state,
+                    stars = EXCLUDED.stars,
+                    rating = EXCLUDED.rating,
+                    service = EXCLUDED.service,
+                    class_year = EXCLUDED.class_year,
+                    position = EXCLUDED.position,
+                    height = EXCLUDED.height,
+                    weight = EXCLUDED.weight,
+                    school = EXCLUDED.school,
+                    city = EXCLUDED.city,
+                    state = EXCLUDED.state,
+                    committed_to = EXCLUDED.committed_to,
+                    commitment_date = EXCLUDED.commitment_date,
+                    profile_url = EXCLUDED.profile_url,
+                    source_type = EXCLUDED.source_type,
+                    retrieved_at = EXCLUDED.retrieved_at,
+                    quality_flag = EXCLUDED.quality_flag
+            """)
 
             logger.info(f"Stored {len(ranks)} recruiting ranks in DuckDB")
             return len(ranks)
@@ -692,7 +765,27 @@ class DuckDBStorage:
                 )
 
             df = pd.DataFrame(data)
-            self.conn.execute("INSERT OR REPLACE INTO college_offers SELECT * FROM df")
+            # Use ON CONFLICT for DuckDB 1.0+ compatibility
+            self.conn.execute("""
+                INSERT INTO college_offers
+                SELECT * FROM df
+                ON CONFLICT (offer_id)
+                DO UPDATE SET
+                    player_id = EXCLUDED.player_id,
+                    player_name = EXCLUDED.player_name,
+                    college = EXCLUDED.college,
+                    conference = EXCLUDED.conference,
+                    conference_level = EXCLUDED.conference_level,
+                    offer_date = EXCLUDED.offer_date,
+                    offer_status = EXCLUDED.offer_status,
+                    commitment_date = EXCLUDED.commitment_date,
+                    decommitment_date = EXCLUDED.decommitment_date,
+                    recruited_by = EXCLUDED.recruited_by,
+                    notes = EXCLUDED.notes,
+                    source_type = EXCLUDED.source_type,
+                    retrieved_at = EXCLUDED.retrieved_at,
+                    quality_flag = EXCLUDED.quality_flag
+            """)
 
             logger.info(f"Stored {len(offers)} college offers in DuckDB")
             return len(offers)
@@ -741,7 +834,26 @@ class DuckDBStorage:
                 )
 
             df = pd.DataFrame(data)
-            self.conn.execute("INSERT OR REPLACE INTO recruiting_predictions SELECT * FROM df")
+            # Use ON CONFLICT for DuckDB 1.0+ compatibility
+            self.conn.execute("""
+                INSERT INTO recruiting_predictions
+                SELECT * FROM df
+                ON CONFLICT (prediction_id)
+                DO UPDATE SET
+                    player_id = EXCLUDED.player_id,
+                    player_name = EXCLUDED.player_name,
+                    predicted_college = EXCLUDED.predicted_college,
+                    predictor_name = EXCLUDED.predictor_name,
+                    predictor_org = EXCLUDED.predictor_org,
+                    prediction_date = EXCLUDED.prediction_date,
+                    confidence_level = EXCLUDED.confidence_level,
+                    confidence_score = EXCLUDED.confidence_score,
+                    prediction_type = EXCLUDED.prediction_type,
+                    notes = EXCLUDED.notes,
+                    source_type = EXCLUDED.source_type,
+                    retrieved_at = EXCLUDED.retrieved_at,
+                    quality_flag = EXCLUDED.quality_flag
+            """)
 
             logger.info(f"Stored {len(predictions)} recruiting predictions in DuckDB")
             return len(predictions)
