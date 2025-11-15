@@ -8,7 +8,7 @@ Stores all scraped basketball data in columnar format for fast analytics.
 import asyncio
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 import duckdb
 import pandas as pd

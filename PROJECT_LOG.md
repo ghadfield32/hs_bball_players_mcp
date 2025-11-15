@@ -538,6 +538,42 @@ python scripts/validate_dataset_coverage.py --year 2025
 python scripts/validate_dataset_coverage.py --year 2025 --min-stars 5
 ```
 
+### Test Results (2025-11-15 13:30 UTC)
+
+**✅ All Phase 15 Scripts Validated**
+
+**1. Mock Data Generation Test:**
+```bash
+python scripts/generate_multi_year_datasets.py --start-year 2024 --end-year 2025 \
+    --recruiting-count 50 --maxpreps-count 50 --eybl-count 25
+```
+- ✅ Generated 2 years (2024-2025): 100 total players
+- ✅ Output: 50 players/year × 48 columns
+- ✅ Coverage: 100% recruiting, 100% HS stats, 50% EYBL, 30% offers
+- ✅ Files: hs_player_seasons_2024.parquet (38KB), hs_player_seasons_2025.parquet (38KB)
+- ✅ Summary: coverage_summary.json with detailed metrics
+
+**2. Coverage Validation Test:**
+```bash
+python scripts/validate_dataset_coverage.py --year 2024
+```
+- ✅ Overall: 50 players, 100% recruiting, 100% HS stats, 50% EYBL
+- ✅ Top Recruits (≥4 stars): 21 players, 100% HS stats, 42.9% EYBL
+- ✅ Data Quality: 0 issues, 1.00 avg completeness
+- ✅ Join Coverage: 25 with all sources, 50 recruiting+HS, 25 HS+EYBL
+
+**3. Script Functionality:**
+- ✅ fetch_real_eybl_data.py: CLI working, imports fixed
+- ✅ generate_multi_year_datasets.py: Full pipeline working
+- ✅ validate_duckdb_pipeline.py: Validation working (no data yet)
+- ✅ validate_dataset_coverage.py: Full validation working
+
+**Bug Fixes Applied:**
+- Fixed missing `Dict` import in duckdb_storage.py
+- Fixed circular imports in fetch_real_eybl_data.py
+- Fixed Unicode encoding issues in validate_dataset_coverage.py
+- Added tqdm dependency to requirements
+
 ### Next Steps (Post-Phase 15)
 
 **Phase 16: College Outcome Labeling**
@@ -557,6 +593,7 @@ python scripts/validate_dataset_coverage.py --year 2025 --min-stars 5
 - [ ] MaxPreps scraping integration (with legal compliance)
 - [ ] Recruiting data refresh (247Sports, Rivals)
 - [ ] Dataset versioning and lineage tracking
+- [ ] Fix DuckDB field name mismatches (field_goal_percentage vs field_goals_made)
 
 ---
 

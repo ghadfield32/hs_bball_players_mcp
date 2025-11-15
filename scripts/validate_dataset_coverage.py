@@ -20,18 +20,22 @@ Phase: 15 - Dataset Coverage Validation
 """
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 from typing import Dict, List
 
 import pandas as pd
 
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from src.utils.logger import get_logger
-
-logger = get_logger(__name__)
 
 
 class DatasetCoverageValidator:
@@ -52,9 +56,7 @@ class DatasetCoverageValidator:
         self.df = pd.read_parquet(self.dataset_path)
 
         logger.info(
-            f"Loaded dataset from {dataset_path}",
-            shape=self.df.shape,
-            players=len(self.df)
+            f"Loaded dataset from {dataset_path}: shape={self.df.shape}, players={len(self.df)}"
         )
 
     def validate_overall_coverage(self) -> Dict:
@@ -98,7 +100,7 @@ class DatasetCoverageValidator:
         Returns:
             Dictionary with top recruit coverage metrics
         """
-        logger.info(f"Validating top recruit coverage (≥{min_stars} stars)")
+        logger.info(f"Validating top recruit coverage (>={min_stars} stars)")
 
         if 'stars' not in self.df.columns:
             logger.warning("No 'stars' column found, skipping top recruit validation")
@@ -272,7 +274,7 @@ class DatasetCoverageValidator:
 
         top_recruit = report['top_recruit_coverage']
         if top_recruit:
-            print(f"\nTop Recruit Coverage (≥{min_stars} stars):")
+            print(f"\nTop Recruit Coverage (>={min_stars} stars):")
             print(f"  Total: {top_recruit.get('total_top_recruits', 0)}")
             print(f"  With HS stats: {top_recruit.get('with_hs_stats', 0)} ({top_recruit.get('pct_hs_stats', 0):.1f}%)")
             print(f"  With EYBL stats: {top_recruit.get('with_eybl_stats', 0)} ({top_recruit.get('pct_eybl', 0):.1f}%)")

@@ -23,6 +23,7 @@ Phase: 15 - EYBL Data Pipeline
 
 import argparse
 import asyncio
+import logging
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -31,15 +32,15 @@ from typing import List, Optional
 import pandas as pd
 from tqdm import tqdm
 
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from src.datasources.us.eybl import EYBLDataSource
-from src.models import PlayerSeasonStats
-from src.services.duckdb_storage import get_duckdb_storage
-from src.utils.logger import get_logger
-
-logger = get_logger(__name__)
 
 
 class EYBLDataFetcher:
@@ -80,6 +81,10 @@ class EYBLDataFetcher:
 
     async def initialize(self):
         """Initialize data sources and storage."""
+        # Import here to avoid circular imports
+        from src.datasources.us.eybl import EYBLDataSource
+        from src.services.duckdb_storage import get_duckdb_storage
+
         self.eybl_source = EYBLDataSource()
 
         if self.save_to_duckdb:
@@ -265,6 +270,7 @@ class EYBLDataFetcher:
         for _, row in df.iterrows():
             try:
                 # Create minimal data source metadata
+                from src.models import PlayerSeasonStats
                 from src.models.source import DataSource, DataSourceType, DataQualityFlag
 
                 data_source = DataSource(
