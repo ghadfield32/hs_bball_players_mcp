@@ -1404,4 +1404,58 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
 
 ---
 
-*Last Updated: 2025-11-15 17:45 UTC*
+## Session Log: 2025-11-15 - Real Data Integration & Multi-Year Pipelines (Phase 15)
+
+### COMPLETED
+
+#### [2025-11-15 18:00] Phase 15.1: Real EYBL Data Integration Scripts
+- ✅ **Real EYBL Data Fetcher** (`scripts/fetch_real_eybl_data.py`, 350 lines)
+  - Async batch fetching with tqdm progress bars
+  - Retry logic: 3 attempts, exponential backoff (2s→4s→8s)
+  - Dual export: Parquet AND DuckDB
+  - Schema validation post-fetch
+  - Summary stats: PPG mean/max, sample players
+  - Usage: `python scripts/fetch_real_eybl_data.py --output data/raw/eybl/stats.parquet`
+
+- ✅ **Multi-Year Dataset Generator** (`scripts/generate_multi_year_datasets.py`, 320 lines)
+  - Batch process multiple grad years (e.g., 2023-2026)
+  - Hybrid mode: Real EYBL OR mock data
+  - Per-year validation + summary reporting
+  - Usage: `python scripts/generate_multi_year_datasets.py --start-year 2023 --end-year 2026 --use-real-eybl`
+
+- ✅ **DuckDB Pipeline Validator** (`scripts/validate_duckdb_pipeline.py`, 280 lines)
+  - Tests DuckDB → dataset_builder integration
+  - Mock data population for testing
+  - Schema + join compatibility validation
+  - Usage: `python scripts/validate_duckdb_pipeline.py --populate-with-mock`
+
+#### [2025-11-15 18:30] Phase 15.2: Validation Results
+- ✅ **Multi-Year Test PASSED**
+  - 2024: 52 rows × 38 cols (53.8% EYBL, PPG 12.2)
+  - 2025: 58 rows × 38 cols (62.1% EYBL, PPG 11.3)
+  - Total: 110 rows, 2 years, ~2s processing time
+  - Success rate: 100% (2/2)
+
+### Architecture (Phase 15)
+- **Async-first**: Browser automation via EYBL adapter
+- **Retry resilience**: Exponential backoff for network failures
+- **Dual persistence**: DuckDB (query) + Parquet (portability)
+- **Year independence**: Parallel processing, fail-safe per year
+
+### File Summary (Phase 15)
+| File | Lines | Purpose |
+|------|-------|---------|
+| `scripts/fetch_real_eybl_data.py` | 350 | Real EYBL scraper |
+| `scripts/generate_multi_year_datasets.py` | 320 | Multi-year batch generator |
+| `scripts/validate_duckdb_pipeline.py` | 280 | DuckDB validator |
+| **Total** | **950** | **3 new scripts** |
+
+### Next Steps (Phase 16 - Feature Engineering)
+1. Usage rate: Possessions-based usage metric
+2. True shooting %: TS% = PTS / (2 * (FGA + 0.44 * FTA))
+3. Strength of schedule metrics
+4. Outcome labeling from NCAA datasources
+
+---
+
+*Last Updated: 2025-11-15 18:45 UTC*
