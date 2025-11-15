@@ -42,6 +42,10 @@ from ..models import (
 )
 from ..utils.logger import get_logger
 from .aggregator import DataSourceAggregator
+from .coverage_metrics import (
+    extract_coverage_flags_from_profile,
+    compute_coverage_score,
+)
 
 logger = get_logger(__name__)
 
@@ -456,11 +460,46 @@ class ForecastingDataAggregator:
             profile["forecasting_score"] = self._calculate_forecasting_score(profile)
             profile["data_completeness"] = self._calculate_data_completeness(profile)
 
+            # ================================================================
+            # PHASE 5: Measure Data Coverage (NEW - Enhancement 9)
+            # ================================================================
+            self.logger.info("Phase 5: Measuring data coverage", player_name=player_name)
+
+            # Extract coverage flags from profile
+            coverage_flags = extract_coverage_flags_from_profile(profile)
+
+            # Compute coverage score
+            coverage_score = compute_coverage_score(coverage_flags)
+
+            # Add coverage summary to profile
+            profile["coverage_summary"] = {
+                "overall_score": coverage_score.overall_score,
+                "coverage_level": coverage_score.coverage_level,
+                "tier1_critical": coverage_score.tier1_score,
+                "tier2_important": coverage_score.tier2_score,
+                "tier3_supplemental": coverage_score.tier3_score,
+                "missing_critical": coverage_score.missing_critical,
+                "missing_important": coverage_score.missing_important,
+                "breakdown": {
+                    "recruiting": coverage_score.recruiting_score,
+                    "efficiency": coverage_score.efficiency_score,
+                    "development": coverage_score.development_score,
+                    "physical": coverage_score.physical_score,
+                    "competition": coverage_score.competition_score,
+                    "international": coverage_score.international_score,
+                },
+                "player_segment": coverage_flags.player_segment,
+                "total_data_sources": coverage_flags.total_data_sources,
+                "total_stats_seasons": coverage_flags.total_stats_seasons,
+            }
+
             self.logger.info(
                 "Comprehensive profile complete",
                 player_name=player_name,
                 forecasting_score=profile["forecasting_score"],
                 data_completeness=profile["data_completeness"],
+                coverage_score=coverage_score.overall_score,
+                coverage_level=coverage_score.coverage_level,
                 age_for_grade=profile["age_for_grade"],
                 power_6_offers=profile["power_6_offer_count"],
                 best_ts_pct=profile["best_ts_pct"]

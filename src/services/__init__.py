@@ -6,6 +6,13 @@ Provides high-level services for data aggregation, storage, and forecasting.
 
 from .aggregator import DataSourceAggregator
 from .cache import get_cache
+from .coverage_metrics import (
+    CoverageFlags,
+    CoverageScore,
+    compute_coverage_score,
+    extract_coverage_flags_from_profile,
+    get_coverage_summary,
+)
 from .duckdb_storage import get_duckdb_storage
 from .forecasting import ForecastingDataAggregator, get_forecasting_data_for_player
 from .historical_trends import HistoricalTrendsService
@@ -24,6 +31,12 @@ __all__ = [
     # Analytics (NEW - Enhancement 7 & 8)
     "HistoricalTrendsService",
     "PlayerComparisonService",
+    # Coverage Metrics (NEW - Enhancement 9)
+    "CoverageFlags",
+    "CoverageScore",
+    "compute_coverage_score",
+    "extract_coverage_flags_from_profile",
+    "get_coverage_summary",
     # Storage
     "get_duckdb_storage",
     "get_parquet_exporter",

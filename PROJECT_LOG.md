@@ -1371,21 +1371,53 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
 - **Impact**: +8% coverage, enables scouting comparisons and player archetype identification critical for recruiting evaluation
 - **Use Cases**: Draft preparation (prospect vs prospect), recruiting offers (player A vs B), scouting reports (similar player comps), archetype ID
 
+#### [2025-11-15 21:00] Enhancement 9: Coverage Measurement Framework (converts coverage from design score → runtime metric)
+- ✅ **Coverage Metrics Service** (src/services/coverage_metrics.py, ~600 lines): Per-player coverage measurement with weighted scoring
+  - `CoverageFlags` dataclass: Tracks presence/absence of critical forecasting predictors (Tier 1: 60%, Tier 2: 30%, Tier 3: 10%)
+  - `compute_coverage_score()`: Weighted coverage 0-100 (247 composite 15%, stars 12%, Power6 offers 10%, age-for-grade 10%, TS% 8%, eFG% 7%, A/TO 6%, multi-season 15%, etc.)
+  - `extract_coverage_flags_from_profile()`: Extracts flags from ForecastingDataAggregator profile → returns CoverageFlags
+  - `get_coverage_summary()`: Aggregates coverage across players → mean, median, distribution by level (EXCELLENT/GOOD/FAIR/POOR)
+  - Coverage levels: EXCELLENT (>85%), GOOD (70-85%), FAIR (50-70%), POOR (<50%)
+- ✅ **Coverage Dashboard** (scripts/report_coverage.py, ~400 lines): Real-time coverage reporting from DuckDB
+  - Computes coverage per player from forecasting profiles
+  - Distribution by segment (US_HS / Europe / Canada / College cohort)
+  - Top missing predictors report (actionable gaps)
+  - Recommendations based on actual data (e.g., "wire MaxPreps stats", "add ESPN/On3/Rivals", "tighten identity resolution")
+- ✅ **ForecastingDataAggregator Integration** (src/services/forecasting.py): Phase 5 added to profile generation
+  - Every profile now includes `coverage_summary` with overall_score, coverage_level, tier breakdowns, missing predictors
+  - Logged to forecasting output for visibility
+- ✅ **Service Exports** (src/services/__init__.py): Added CoverageFlags, CoverageScore, compute_coverage_score, extract_coverage_flags_from_profile, get_coverage_summary
+- ✅ **Validation Suite** (scripts/test_coverage_metrics.py, ~350 lines): Unit tests for excellent/poor/partial coverage, weighted scoring, profile extraction
+- **Impact**: Coverage is now a MEASURED METRIC computed per player, not a design-time assumption. Enables data-driven prioritization of missing sources.
+- **Next Steps** (8-step plan): Wire MaxPreps fully (Step 2), build college cohort (Step 3), add ESPN/On3/Rivals (Step 4), DuckDB historical snapshots (Step 6), run real-data tests (Step 8)
+
 ---
 
-### Current Coverage Status (2025-11-15 20:00)
+### Current Coverage Status (2025-11-15 21:00)
 
-**Data Coverage**: **73%** (target: 100%)
+**Coverage Measurement**: **NOW A RUNTIME METRIC** ✨
+- Previous "73%" was a design score (feature availability in principle)
+- **Enhancement 9** converts coverage to a per-player measured metric (actual feature completeness)
+- Coverage score (0-100) computed for every player profile via `ForecastingDataAggregator`
+- Weighted by forecasting importance: Tier 1 critical (60%), Tier 2 important (30%), Tier 3 supplemental (10%)
+
+**Design-Time Coverage**: **73%** (target: 100% measured on college-outcome cohort)
 - Enhancement 1 (Advanced Stats): +8% → 41%
 - Enhancement 2 (247Sports Profiles): +15% → 56% (adjusted to 48%)
 - Enhancement 4 (Age-for-Grade): +3% → 51%
 - Enhancement 5 (MaxPreps Stats): +5% → 56% (adjusted to 53%)
 - Enhancement 6 (ORB/DRB Split): +2% → 55% (adjusted to 53%)
-- **Enhancement 7 (Historical Trends)**: **+12% → 65%** ✨ **NEW**
-- **Enhancement 8 (Player Comparison)**: **+8% → 73%** ✨ **NEW**
+- Enhancement 7 (Historical Trends): +12% → 65%
+- Enhancement 8 (Player Comparison): +8% → 73%
 
-**Remaining to 100%**: 27 percentage points
-- Future: ML models, injury tracking, game-by-game logs, video analysis, etc.
+**Remaining to 100% measured coverage**:
+- Step 2: Wire MaxPreps advanced stats fully into forecasting
+- Step 3: Build college-outcome cohort (D1 players 2014-2023) and measure coverage on it
+- Step 4: Add missing recruiting sources (ESPN, On3, Rivals)
+- Step 5: Tighten identity resolution (birth date, height/weight, team, confidence scores)
+- Step 6: Create DuckDB historical_snapshots + player_vectors tables, backfill scripts
+- Step 7: Treat missingness as features (missing_reason fields, binary indicators)
+- Step 8: Get real-data tests + coverage dashboards running (pytest, report_coverage.py)
 
 ---
 
