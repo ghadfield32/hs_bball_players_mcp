@@ -928,6 +928,321 @@ class DuckDBStorage:
             logger.error("Failed to get analytics summary", error=str(e))
             return {}
 
+    def export_eybl_from_duckdb(
+        self,
+        season: Optional[str] = None,
+        grad_year: Optional[int] = None
+    ) -> pd.DataFrame:
+        """
+        Export EYBL player stats from DuckDB for dataset building.
+
+        Returns DataFrame with EYBL stats ready for merging with HS datasets.
+        Includes player_uid for identity resolution.
+
+        Args:
+            season: Filter by season (e.g., "2024")
+            grad_year: Filter by graduation year (if available in data)
+
+        Returns:
+            DataFrame with EYBL stats
+        """
+        if not self.conn:
+            logger.warning("DuckDB not initialized, returning empty DataFrame")
+            return pd.DataFrame()
+
+        query = """
+            SELECT
+                player_id as player_uid,
+                player_name,
+                season,
+                games_played,
+                points_per_game,
+                rebounds_per_game,
+                assists_per_game,
+                steals_per_game,
+                blocks_per_game,
+                field_goal_percentage,
+                three_point_percentage,
+                free_throw_percentage,
+                team_id,
+                retrieved_at
+            FROM player_season_stats
+            WHERE source_type = 'eybl'
+        """
+
+        params = []
+
+        if season:
+            query += " AND season = ?"
+            params.append(season)
+
+        query += " ORDER BY points_per_game DESC"
+
+        try:
+            df = self.conn.execute(query, params).fetchdf()
+            logger.info(f"Exported {len(df)} EYBL player season records from DuckDB")
+            return df
+        except Exception as e:
+            logger.error("Failed to export EYBL data from DuckDB", error=str(e))
+            return pd.DataFrame()
+
+    def export_recruiting_from_duckdb(
+        self,
+        class_year: Optional[int] = None,
+        min_stars: Optional[int] = None,
+        service: Optional[str] = None
+    ) -> pd.DataFrame:
+        """
+        Export recruiting rankings from DuckDB for dataset building.
+
+        Returns DataFrame with recruiting rankings ready for merging.
+
+        Args:
+            class_year: Filter by high school graduation year
+            min_stars: Minimum star rating (3-5)
+            service: Recruiting service filter (e.g., "247sports", "composite")
+
+        Returns:
+            DataFrame with recruiting rankings
+        """
+        if not self.conn:
+            logger.warning("DuckDB not initialized, returning empty DataFrame")
+            return pd.DataFrame()
+
+        query = """
+            SELECT
+                player_id as player_uid,
+                player_name,
+                rank_national,
+                rank_position,
+                rank_state,
+                stars,
+                rating,
+                service,
+                class_year,
+                position,
+                height,
+                weight,
+                school,
+                city,
+                state,
+                committed_to,
+                commitment_date,
+                profile_url,
+                retrieved_at
+            FROM recruiting_ranks
+            WHERE 1=1
+        """
+
+        params = []
+
+        if class_year:
+            query += " AND class_year = ?"
+            params.append(class_year)
+
+        if min_stars:
+            query += " AND stars >= ?"
+            params.append(min_stars)
+
+        if service:
+            query += " AND service = ?"
+            params.append(service)
+
+        query += " ORDER BY rank_national ASC NULLS LAST"
+
+        try:
+            df = self.conn.execute(query, params).fetchdf()
+            logger.info(
+                f"Exported {len(df)} recruiting rankings from DuckDB",
+                class_year=class_year,
+                min_stars=min_stars
+            )
+            return df
+        except Exception as e:
+            logger.error("Failed to export recruiting data from DuckDB", error=str(e))
+            return pd.DataFrame()
+
+    def export_college_offers_from_duckdb(
+        self,
+        class_year: Optional[int] = None,
+        min_conference_level: Optional[str] = None
+    ) -> pd.DataFrame:
+        """
+        Export college offers from DuckDB for dataset building.
+
+        Returns DataFrame with college offers ready for aggregation.
+
+        Args:
+            class_year: Filter by graduation year (if joined with recruiting)
+            min_conference_level: Minimum conference level (e.g., "power_6")
+
+        Returns:
+            DataFrame with college offers
+        """
+        if not self.conn:
+            logger.warning("DuckDB not initialized, returning empty DataFrame")
+            return pd.DataFrame()
+
+        query = """
+            SELECT
+                player_id as player_uid,
+                player_name,
+                college,
+                conference,
+                conference_level,
+                offer_date,
+                offer_status,
+                commitment_date,
+                retrieved_at
+            FROM college_offers
+            WHERE 1=1
+        """
+
+        params = []
+
+        if min_conference_level:
+            query += " AND conference_level = ?"
+            params.append(min_conference_level)
+
+        query += " ORDER BY player_name, offer_date DESC"
+
+        try:
+            df = self.conn.execute(query, params).fetchdf()
+            logger.info(f"Exported {len(df)} college offers from DuckDB")
+            return df
+        except Exception as e:
+            logger.error("Failed to export college offers from DuckDB", error=str(e))
+            return pd.DataFrame()
+
+    def export_maxpreps_from_duckdb(
+        self,
+        season: Optional[str] = None,
+        state: Optional[str] = None,
+        min_ppg: Optional[float] = None
+    ) -> pd.DataFrame:
+        """
+        Export MaxPreps HS stats from DuckDB for dataset building.
+
+        Returns DataFrame with HS stats ready for merging.
+
+        Args:
+            season: Filter by season (e.g., "2024")
+            state: Filter by school state
+            min_ppg: Minimum points per game filter
+
+        Returns:
+            DataFrame with MaxPreps stats
+        """
+        if not self.conn:
+            logger.warning("DuckDB not initialized, returning empty DataFrame")
+            return pd.DataFrame()
+
+        # Need to join with players table to get school info
+        query = """
+            SELECT
+                s.player_id as player_uid,
+                s.player_name,
+                s.season,
+                s.games_played,
+                s.points_per_game,
+                s.rebounds_per_game,
+                s.assists_per_game,
+                s.steals_per_game,
+                s.blocks_per_game,
+                s.field_goals_made,
+                s.field_goals_attempted,
+                s.three_pointers_made,
+                s.three_pointers_attempted,
+                s.free_throws_made,
+                s.free_throws_attempted,
+                s.turnovers,
+                s.minutes_played,
+                p.school_name,
+                p.school_state,
+                p.grad_year,
+                s.retrieved_at
+            FROM player_season_stats s
+            LEFT JOIN players p ON s.player_id = p.player_id AND s.source_type = p.source_type
+            WHERE s.source_type = 'maxpreps'
+        """
+
+        params = []
+
+        if season:
+            query += " AND s.season = ?"
+            params.append(season)
+
+        if state:
+            query += " AND p.school_state = ?"
+            params.append(state)
+
+        if min_ppg is not None:
+            query += " AND s.points_per_game >= ?"
+            params.append(min_ppg)
+
+        query += " ORDER BY s.points_per_game DESC"
+
+        try:
+            df = self.conn.execute(query, params).fetchdf()
+            logger.info(
+                f"Exported {len(df)} MaxPreps player season records from DuckDB",
+                season=season,
+                state=state
+            )
+            return df
+        except Exception as e:
+            logger.error("Failed to export MaxPreps data from DuckDB", error=str(e))
+            return pd.DataFrame()
+
+    def get_dataset_sources_summary(
+        self,
+        class_year: Optional[int] = None
+    ) -> Dict:
+        """
+        Get summary of available data sources for dataset building.
+
+        Useful for understanding data coverage before building datasets.
+
+        Args:
+            class_year: Filter by graduation year
+
+        Returns:
+            Dictionary with counts per source
+        """
+        if not self.conn:
+            return {}
+
+        try:
+            summary = {}
+
+            # EYBL stats count
+            eybl_query = "SELECT COUNT(*) FROM player_season_stats WHERE source_type = 'eybl'"
+            summary['eybl_stats'] = self.conn.execute(eybl_query).fetchone()[0]
+
+            # MaxPreps stats count
+            mp_query = "SELECT COUNT(*) FROM player_season_stats WHERE source_type = 'maxpreps'"
+            summary['maxpreps_stats'] = self.conn.execute(mp_query).fetchone()[0]
+
+            # Recruiting rankings count
+            if class_year:
+                rec_query = f"SELECT COUNT(*) FROM recruiting_ranks WHERE class_year = {class_year}"
+            else:
+                rec_query = "SELECT COUNT(*) FROM recruiting_ranks"
+            summary['recruiting_ranks'] = self.conn.execute(rec_query).fetchone()[0]
+
+            # College offers count
+            summary['college_offers'] = self.conn.execute("SELECT COUNT(*) FROM college_offers").fetchone()[0]
+
+            # Unique players count
+            summary['unique_players'] = self.conn.execute("SELECT COUNT(DISTINCT player_id) FROM players").fetchone()[0]
+
+            logger.info("Dataset sources summary generated", summary=summary)
+            return summary
+
+        except Exception as e:
+            logger.error("Failed to get dataset sources summary", error=str(e))
+            return {}
+
     def close(self) -> None:
         """Close DuckDB connection."""
         if self.conn:

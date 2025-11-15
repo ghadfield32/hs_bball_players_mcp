@@ -387,6 +387,179 @@
 
 ---
 
+## Session Log: 2025-11-15 - Phase 15: Multi-Year HS Dataset Pipeline
+
+### COMPLETED
+
+#### [2025-11-15 10:00] Phase 15.1: Dataset Builder Service
+- ✅ Created comprehensive HS dataset builder module (src/services/dataset_builder.py, 750+ lines)
+  - HSDatasetBuilder class for merging multi-source data
+  - build_dataset() - Merges MaxPreps + EYBL + recruiting + offers for single grad year
+  - build_multi_year_datasets() - Generates datasets for multiple years
+  - _merge_maxpreps_stats() - Joins HS stats with player UIDs
+  - _merge_eybl_stats() - Joins circuit stats with EYBL prefixed columns
+  - _merge_offers() - Aggregates college offers (total, Power 6, high major counts)
+  - _calculate_derived_fields() - Computes TS%, eFG%, A/TO ratio, played_eybl flags
+  - get_coverage_report() - Generates coverage metrics per dataset
+  - create_mock_data() - Creates test data for pipeline validation
+- ✅ Derived field calculations:
+  - played_eybl, has_hs_stats, has_recruiting_profile (boolean flags)
+  - ts_pct (true shooting %), efg_pct (effective FG%)
+  - ast_to_ratio (assist/turnover ratio)
+  - data_completeness (0-1 score)
+- ✅ Smart merge strategy: Start with recruiting (best identity), left join MaxPreps + EYBL
+- ✅ Output: Parquet files with snappy compression per grad year
+
+#### [2025-11-15 10:30] Phase 15.2: DuckDB Export Functions
+- ✅ Added 5 export methods to DuckDBStorage (src/services/duckdb_storage.py)
+  - export_eybl_from_duckdb() - Export EYBL stats with player_uid for joins
+  - export_recruiting_from_duckdb() - Export recruiting rankings filtered by class_year
+  - export_college_offers_from_duckdb() - Export offers with conference level filters
+  - export_maxpreps_from_duckdb() - Export HS stats joined with school info
+  - get_dataset_sources_summary() - Summary of available data by source
+- ✅ All exports return DataFrames with player_uid for identity resolution
+- ✅ Support for filtering: season, grad_year, class_year, min_stars, state, min_ppg
+- ✅ SQL-based queries with parameterization for safety
+- ✅ Performance logging for all export operations
+
+#### [2025-11-15 11:00] Phase 15.3: EYBL Data Fetcher Script
+- ✅ Created fetch_real_eybl_data.py script (scripts/, 450+ lines)
+  - EYBLDataFetcher class with retry logic and progress tracking
+  - Scrapes EYBL using adapter (search_players → get_player_season_stats loop)
+  - Saves to Parquet (snappy compression) + DuckDB (optional)
+  - Progress bar with tqdm for real-time feedback
+  - Exponential backoff retry (default: 3 attempts per player)
+  - Schema validation (required columns, data range checks)
+  - Deduplication by player_id + season
+  - CLI args: --limit, --season, --save-to-duckdb, --max-retries
+- ✅ Pipeline flow: search players → fetch stats → validate → save Parquet → save DuckDB
+- ✅ Error handling: Individual player failures don't stop full fetch
+- ✅ Summary report: Total players, seasons, sample stats, file size
+
+#### [2025-11-15 11:30] Phase 15.4: DuckDB Pipeline Validator Script
+- ✅ Created validate_duckdb_pipeline.py script (scripts/, 500+ lines)
+  - DuckDBPipelineValidator class for 4-level validation
+  - Test 1: validate_duckdb_exports() - All export functions work (EYBL, recruiting, MaxPreps, offers)
+  - Test 2: validate_schema_compatibility() - Exported schemas match dataset builder expectations
+  - Test 3: validate_joins() - Join operations succeed (recruiting + MaxPreps, recruiting + EYBL)
+  - Test 4: validate_performance() - Full pipeline timing (export → build → save)
+  - run_all_validations() - Comprehensive test suite with pass/fail summary
+- ✅ Metrics tracked: rows exported, columns matched, join match rates, time in ms
+- ✅ CLI args: --grad-year, --populate-mock (for testing without real data)
+- ✅ Output: Detailed validation report with ✓/✗ indicators
+
+#### [2025-11-15 12:00] Phase 15.5: Multi-Year Dataset Generator Script
+- ✅ Created generate_multi_year_datasets.py script (scripts/, 550+ lines)
+  - MultiYearDatasetGenerator class for batch dataset creation
+  - Supports real data (from DuckDB) and mock data (for testing)
+  - load_real_data_for_year() - Loads recruiting, MaxPreps, EYBL, offers for specific year
+  - generate_datasets() - Builds datasets for all years in range
+  - _save_coverage_summary() - Saves JSON report with coverage metrics
+  - CLI args: --start-year, --end-year, --use-real-data, --recruiting-count, --maxpreps-count, --eybl-count
+- ✅ Mock data mode: Generates realistic test data with configurable counts
+- ✅ Coverage report per year: recruiting %, HS stats %, EYBL %, offers %, avg completeness
+- ✅ Output: Parquet files (hs_player_seasons_YYYY.parquet) + coverage_summary.json
+- ✅ Sample output display: Shows top 10 rows with key columns
+
+#### [2025-11-15 12:30] Phase 15.6: Dataset Coverage Validator Script
+- ✅ Created validate_dataset_coverage.py script (scripts/, 400+ lines)
+  - DatasetCoverageValidator class for quality/coverage checks
+  - validate_overall_coverage() - Overall metrics (recruiting, HS, EYBL, offers %)
+  - validate_top_recruit_coverage() - Coverage for highly-ranked players (≥4 stars default)
+  - validate_data_quality() - Missing values, outliers, suspicious data ranges
+  - validate_join_coverage() - Overlap analysis (recruiting+HS+EYBL, only recruiting, etc.)
+  - generate_report() - Comprehensive validation report
+- ✅ Checks:
+  - Missing critical fields (name, grad_year, position)
+  - Suspicious PPG values (>50 PPG flagged)
+  - Low data completeness (<30% flagged)
+  - Top recruit coverage (ensure stars have stats)
+- ✅ CLI args: --dataset, --year, --min-stars
+- ✅ Output: Human-readable summary + detailed metrics dictionary
+
+### Technical Highlights
+
+**Dataset Builder Benefits**:
+- Unified player identity via player_uid across all sources
+- Smart merge strategy (recruiting base → left join stats)
+- Derived fields (TS%, eFG%, A/TO) for advanced analytics
+- Data completeness scoring for quality assessment
+- Flexible input (supports missing data sources gracefully)
+
+**Pipeline Validation**:
+- Three validation layers: export → schema → joins → performance
+- Ensures DuckDB → dataset_builder compatibility
+- Automated testing before production runs
+- Performance benchmarking (rows/sec throughput)
+
+**Phase 15 File Summary**:
+- src/services/dataset_builder.py (750 lines) - Core dataset merging logic
+- src/services/duckdb_storage.py (+320 lines) - Export functions added
+- scripts/fetch_real_eybl_data.py (450 lines) - EYBL scraper → Parquet + DuckDB
+- scripts/validate_duckdb_pipeline.py (500 lines) - Pipeline validation
+- scripts/generate_multi_year_datasets.py (550 lines) - Multi-year dataset generator
+- scripts/validate_dataset_coverage.py (400 lines) - Coverage quality checker
+
+**Total Phase 15 Additions**: ~2,970 lines of production code
+
+### Usage Examples
+
+**1. Fetch real EYBL data:**
+```bash
+# Fetch all EYBL players and save to Parquet + DuckDB
+python scripts/fetch_real_eybl_data.py --save-to-duckdb
+
+# Fetch limited sample for testing
+python scripts/fetch_real_eybl_data.py --limit 50 --output data/raw/eybl/sample.parquet
+```
+
+**2. Validate DuckDB pipeline:**
+```bash
+# Validate pipeline for 2025 grad year
+python scripts/validate_duckdb_pipeline.py --grad-year 2025
+```
+
+**3. Generate multi-year datasets:**
+```bash
+# Generate with real data from DuckDB
+python scripts/generate_multi_year_datasets.py --start-year 2023 --end-year 2026 --use-real-data
+
+# Generate with mock data for testing
+python scripts/generate_multi_year_datasets.py --start-year 2024 --end-year 2025 \\
+    --recruiting-count 50 --maxpreps-count 50 --eybl-count 25
+```
+
+**4. Validate dataset coverage:**
+```bash
+# Validate 2025 grad year dataset
+python scripts/validate_dataset_coverage.py --year 2025
+
+# Validate with custom min stars for top recruits
+python scripts/validate_dataset_coverage.py --year 2025 --min-stars 5
+```
+
+### Next Steps (Post-Phase 15)
+
+**Phase 16: College Outcome Labeling**
+- [ ] Define "college success" label (e.g., played D1, above-median BPM)
+- [ ] Join HS datasets with NCAA/CBB datasources
+- [ ] Add college outcome columns (played_d1, college_bpm, minutes_played)
+- [ ] Create labeled training dataset for ML models
+
+**Phase 17: Forecasting Models**
+- [ ] Baseline tree model (XGBoost/LightGBM) for sanity check
+- [ ] Hierarchical Bayes model for "true potential" by state/circuit/grad_year
+- [ ] Model evaluation (AUC, precision@k, calibration)
+- [ ] Feature importance analysis
+
+**Phase 18: Production Deployment**
+- [ ] Automated daily EYBL scraping (cron job)
+- [ ] MaxPreps scraping integration (with legal compliance)
+- [ ] Recruiting data refresh (247Sports, Rivals)
+- [ ] Dataset versioning and lineage tracking
+
+---
+
 ## Session Log: 2025-11-11 - Nationwide Coverage Expansion
 
 ### COMPLETED
