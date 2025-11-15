@@ -1147,9 +1147,37 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
   - Placeholder scraping tests (@pytest.mark.skip for ToS compliance)
   - Real-world test class (all skipped by default for legal safety)
 
+#### [2025-11-14 18:00] Phase 13.2.1: MaxPreps Enhanced Metrics Extraction
+- ✅ **Created validation script** (scripts/validate_maxpreps.py, 400+ lines):
+  - Automated testing of MaxPreps adapter with ToS warnings
+  - HTML snapshot capture for analysis (saves to data/validation/)
+  - JSON metrics report generation
+  - Multi-state comparison mode
+  - Detailed column analysis and recommendations
+- ✅ **Created enhanced parser** (src/datasources/us/maxpreps_enhanced_parser.py, 600+ lines):
+  - NEW: `_parse_player_and_stats_from_row()` - Extracts ALL available metrics
+  - NEW: `search_players_with_stats()` - Returns Player + PlayerSeasonStats tuples
+  - Comprehensive stat extraction: PPG, RPG, APG, SPG, BPG, FG%, 3P%, FT%, GP, MPG, TPG
+  - Volume stats: Total points, rebounds, assists, steals, blocks
+  - Handles missing data gracefully, multiple column name variations
+  - Ready for integration after validation
+- ✅ **Created validation guide** (docs/MAXPREPS_VALIDATION_GUIDE.md, 400+ lines):
+  - Complete testing procedures for all 51 states
+  - Troubleshooting guide for common issues
+  - Integration checklist for enhanced parser
+  - Legal compliance checklist
+  - State-by-state testing plan (Tier 1-4 prioritization)
+
 ---
 
 ### IN PROGRESS
+
+**Phase 13.2.2 (MANUAL TESTING REQUIRED)**:
+- ⏳ Run validation script on Tier 1 states (CA, TX, NY, FL, GA)
+- ⏳ Verify HTML structure and available metrics
+- ⏳ Adjust parser based on actual MaxPreps data
+- ⏳ Integrate enhanced parser into maxpreps.py after validation
+- ⏳ Obtain ToS compliance (commercial license recommended)
 
 **Phase 13.3 (NEXT)**:
 - ⏳ Implement 247Sports recruiting adapter (src/datasources/recruiting/247sports.py)
