@@ -220,6 +220,8 @@ def parse_season_stats_from_row(
     # Parse averages (per game stats)
     ppg = parse_float(row.get("PPG") or row.get("Points") or row.get("PTS/G"))
     rpg = parse_float(row.get("RPG") or row.get("Rebounds") or row.get("REB/G"))
+    orb_pg = parse_float(row.get("ORPG") or row.get("ORB/G") or row.get("OREB/G"))
+    drb_pg = parse_float(row.get("DRPG") or row.get("DRB/G") or row.get("DREB/G"))
     apg = parse_float(row.get("APG") or row.get("Assists") or row.get("AST/G"))
     spg = parse_float(row.get("SPG") or row.get("Steals") or row.get("STL/G"))
     bpg = parse_float(row.get("BPG") or row.get("Blocks") or row.get("BLK/G"))
@@ -227,6 +229,8 @@ def parse_season_stats_from_row(
     # Parse totals
     total_points = parse_int(row.get("PTS") or row.get("Points Total"))
     total_rebounds = parse_int(row.get("REB") or row.get("Rebounds Total"))
+    total_orb = parse_int(row.get("ORB") or row.get("OREB") or row.get("Off Reb"))
+    total_drb = parse_int(row.get("DRB") or row.get("DREB") or row.get("Def Reb"))
     total_assists = parse_int(row.get("AST") or row.get("Assists Total"))
     total_steals = parse_int(row.get("STL") or row.get("Steals Total"))
     total_blocks = parse_int(row.get("BLK") or row.get("Blocks Total"))
@@ -236,6 +240,10 @@ def parse_season_stats_from_row(
         total_points = int(ppg * games)
     if total_rebounds is None and rpg is not None and games:
         total_rebounds = int(rpg * games)
+    if total_orb is None and orb_pg is not None and games:
+        total_orb = int(orb_pg * games)
+    if total_drb is None and drb_pg is not None and games:
+        total_drb = int(drb_pg * games)
     if total_assists is None and apg is not None and games:
         total_assists = int(apg * games)
     if total_steals is None and spg is not None and games:
@@ -268,6 +276,10 @@ def parse_season_stats_from_row(
         "points_per_game": ppg,
         "total_rebounds": total_rebounds,
         "rebounds_per_game": rpg,
+        "offensive_rebounds": total_orb,
+        "defensive_rebounds": total_drb,
+        "offensive_rebounds_per_game": orb_pg,
+        "defensive_rebounds_per_game": drb_pg,
         "assists": total_assists,
         "assists_per_game": apg,
         "steals": total_steals,

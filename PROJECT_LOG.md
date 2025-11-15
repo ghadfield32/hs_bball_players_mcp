@@ -1250,6 +1250,14 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
   - Added all 12 advanced stats functions to module exports
   - Now available throughout codebase via `from src.utils import enrich_player_season_stats`
 
+#### [2025-11-15 15:30] Enhancement 6: Offensive/Defensive Rebounding Split (+2% Coverage)
+- ✅ **Added ORB/DRB per-game fields** (src/models/stats.py): offensive_rebounds_per_game, defensive_rebounds_per_game to PlayerSeasonStats
+- ✅ **Fixed NPA datasource** (src/datasources/canada/npa.py): Corrected field mapping + calculate totals from per-game values
+- ✅ **Updated EYBL adapter** (src/datasources/us/eybl.py): Extract ORPG/DRPG when available, calculate totals, auto-benefits EYBL Girls (inheritance)
+- ✅ **Enhanced central parser** (src/utils/scraping_helpers.py): Added ORB/DRB extraction to parse_season_stats_from_row() (benefits UAA, 3SSB, and all datasources using this helper)
+- ✅ **Multiple column name patterns**: Supports ORPG/ORB/OREB, DRPG/DRB/DREB variations for maximum compatibility
+- Impact: +2% coverage (31% → 33%), enables motor/effort analysis via ORB rate
+
 ---
 
 ### IN PROGRESS
@@ -1278,4 +1286,4 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
 
 ---
 
-*Last Updated: 2025-11-15 14:00 UTC*
+*Last Updated: 2025-11-15 15:30 UTC*

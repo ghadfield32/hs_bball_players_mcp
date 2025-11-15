@@ -331,9 +331,18 @@ class NPADataSource(BaseDataSource):
             ft_pct = parse_float(row.get("FT%"))
 
             # Additional stats
-            offensive_reb = parse_float(row.get("ORPG") or row.get("ORB"))
-            defensive_reb = parse_float(row.get("DRPG") or row.get("DRB"))
+            offensive_reb_pg = parse_float(row.get("ORPG") or row.get("ORB"))
+            defensive_reb_pg = parse_float(row.get("DRPG") or row.get("DRB"))
             fouls = parse_float(row.get("PF") or row.get("Fouls"))
+
+            # Calculate rebound totals from per-game if games_played available
+            offensive_reb_total = None
+            defensive_reb_total = None
+            if games:
+                if offensive_reb_pg:
+                    offensive_reb_total = int(offensive_reb_pg * games)
+                if defensive_reb_pg:
+                    defensive_reb_total = int(defensive_reb_pg * games)
 
             if not games and not points:
                 return None
@@ -352,8 +361,11 @@ class NPADataSource(BaseDataSource):
                 "field_goal_percentage": fg_pct,
                 "three_point_percentage": tp_pct,
                 "free_throw_percentage": ft_pct,
-                "offensive_rebounds_per_game": offensive_reb,
-                "defensive_rebounds_per_game": defensive_reb,
+                # ORB/DRB split (per-game and totals)
+                "offensive_rebounds_per_game": offensive_reb_pg,
+                "defensive_rebounds_per_game": defensive_reb_pg,
+                "offensive_rebounds": offensive_reb_total,
+                "defensive_rebounds": defensive_reb_total,
                 "fouls_per_game": fouls,
             }
 
