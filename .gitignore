@@ -75,3 +75,5 @@ site/
 # OS
 Thumbs.db
 .DS_Store
+data/raw/
+data/processed/

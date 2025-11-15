@@ -224,14 +224,20 @@ def standardize_eybl_stats(eybl_df: pd.DataFrame) -> pd.DataFrame:
     """
     Standardize EYBL stats into a canonical schema.
 
-    EXPECTED INPUT (adjust column names to your importer):
-      - player_name
-      - season (or grad_year proxy)
-      - gp
-      - pts_per_game
-      - three_pct
-      - reb_per_game
-      - ast_per_game
+    UPDATED (Phase 14): Now handles BOTH schema variants:
+      1. Direct adapter schema: pts_per_game, reb_per_game, ast_per_game
+      2. DuckDB export schema: points_per_game, rebounds_per_game, assists_per_game
+
+    EXPECTED INPUT (multiple naming conventions supported):
+      - player_name (required)
+      - season (optional, or grad_year proxy)
+      - gp OR games_played (required)
+      - pts_per_game OR points_per_game (optional)
+      - reb_per_game OR rebounds_per_game (optional)
+      - ast_per_game OR assists_per_game (optional)
+      - stl_per_game OR steals_per_game (optional)
+      - blk_per_game OR blocks_per_game (optional)
+      - three_pct OR three_point_percentage (optional)
     """
     if eybl_df.empty:
         logger.info("EYBL dataframe is empty; returning empty standardized frame.")
@@ -239,22 +245,59 @@ def standardize_eybl_stats(eybl_df: pd.DataFrame) -> pd.DataFrame:
 
     df = eybl_df.copy()
 
+    # Expanded rename map to handle BOTH schemas
     rename_map = {
+        # Player name variants
         "player_name": "full_name",
+        "full_name": "full_name",  # Already correct
+
+        # Games played variants
         "gp": "eybl_gp",
         "games_played": "eybl_gp",
+
+        # Points variants (SHORT form or LONG form)
         "pts_per_game": "eybl_pts_per_g",
+        "points_per_game": "eybl_pts_per_g",  # DuckDB schema
+
+        # Rebounds variants
         "reb_per_game": "eybl_reb_per_g",
+        "rebounds_per_game": "eybl_reb_per_g",  # DuckDB schema
+
+        # Assists variants
         "ast_per_game": "eybl_ast_per_g",
+        "assists_per_game": "eybl_ast_per_g",  # DuckDB schema
+
+        # Steals variants
+        "stl_per_game": "eybl_stl_per_g",
+        "steals_per_game": "eybl_stl_per_g",  # DuckDB schema
+
+        # Blocks variants
+        "blk_per_game": "eybl_blk_per_g",
+        "blocks_per_game": "eybl_blk_per_g",  # DuckDB schema
+
+        # Three-point percentage variants
         "three_pct": "eybl_three_pct",
+        "three_point_percentage": "eybl_three_pct",  # DuckDB schema
     }
+
+    # Only rename columns that actually exist in the DataFrame
     rename_map = {k: v for k, v in rename_map.items() if k in df.columns}
     df = df.rename(columns=rename_map)
 
-    df["full_name"] = df.get("full_name", "").fillna("")
+    # Ensure full_name exists
+    if "full_name" not in df.columns:
+        logger.warning("EYBL data missing 'player_name' or 'full_name' column")
+        df["full_name"] = ""
+
+    df["full_name"] = df["full_name"].fillna("")
     df["normalized_name"] = df["full_name"].map(normalize_name)
 
     # If you have a direct grad_year in EYBL, add it here later.
+    logger.info(
+        f"Standardized EYBL stats: {len(df)} rows, "
+        f"columns: {list(df.columns)}"
+    )
+
     return df
 
 
