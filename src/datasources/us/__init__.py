@@ -7,6 +7,14 @@ Import failures in one adapter (e.g., missing bs4 in bound.py) do NOT break othe
 Recommended Usage (fastest, most explicit):
     from src.datasources.us.wisconsin_wiaa import WisconsinWiaaDataSource
 
+# Regional/State platforms
+from .fhsaa import FHSAADataSource
+from .hhsaa import HHSAADataSource
+from .maxpreps import MaxPrepsDataSource
+from .mn_hub import MNHubDataSource
+from .psal import PSALDataSource
+from .wsn import WSNDataSource
+
 Registry Usage (dynamic loading):
     from src.datasources.us.registry import get_adapter_class, create_state_adapter
     WisconsinWiaaDataSource = get_adapter_class("WisconsinWiaaDataSource")
@@ -63,6 +71,7 @@ __all__ = [
     # Regional/State platforms (5 adapters)
     "FHSAADataSource",
     "HHSAADataSource",
+    "MaxPrepsDataSource",
     "MNHubDataSource",
     "PSALDataSource",
     "WSNDataSource",

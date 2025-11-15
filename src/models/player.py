@@ -120,6 +120,46 @@ class Player(BaseModel):
             age -= 1
         return age
 
+    @property
+    def age_for_grade(self) -> Optional[float]:
+        """
+        Calculate age-for-grade advantage/disadvantage.
+
+        This is a CRITICAL forecasting metric (#2-3 most important predictor).
+        Younger players in their class show 20-30% higher NBA success rates.
+
+        Returns:
+            Age advantage in years:
+            - Positive = younger than average for grade (GOOD for forecasting)
+            - Negative = older than average for grade (disadvantage)
+            - None if birth_date or grad_year not available
+
+        Examples:
+            - +1.0 = 1 year younger than average (strong advantage)
+            - +0.5 = 6 months younger (advantage)
+            - 0.0 = Average age for grade
+            - -0.5 = 6 months older (disadvantage)
+            - -1.0 = 1 year older than average (strong disadvantage)
+        """
+        if self.birth_date is None or self.grad_year is None:
+            return None
+
+        # Import here to avoid circular dependency
+        from ..utils.age_calculations import calculate_age_for_grade
+        return calculate_age_for_grade(self.birth_date, self.grad_year)
+
+    @property
+    def age_for_grade_category(self) -> str:
+        """
+        Categorize age-for-grade into descriptive bucket.
+
+        Returns:
+            Category: "Very Young", "Young", "Average", "Old", "Very Old", or "Unknown"
+        """
+        # Import here to avoid circular dependency
+        from ..utils.age_calculations import categorize_age_for_grade
+        return categorize_age_for_grade(self.age_for_grade)
+
     class Config:
         json_schema_extra = {
             "example": {

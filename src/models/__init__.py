@@ -32,6 +32,17 @@ from .stats import (
     TeamGameStats,
 )
 
+# Recruiting models
+from .recruiting import (
+    CollegeOffer,
+    ConferenceLevel,
+    OfferStatus,
+    RecruitingPrediction,
+    RecruitingProfile,
+    RecruitingRank,
+    RecruitingService,
+)
+
 __all__ = [
     # Source models
     "DataSource",
@@ -60,4 +71,12 @@ __all__ = [
     "PlayerSeasonStats",
     "TeamGameStats",
     "LeaderboardEntry",
+    # Recruiting models
+    "RecruitingRank",
+    "CollegeOffer",
+    "RecruitingPrediction",
+    "RecruitingProfile",
+    "RecruitingService",
+    "OfferStatus",
+    "ConferenceLevel",
 ]

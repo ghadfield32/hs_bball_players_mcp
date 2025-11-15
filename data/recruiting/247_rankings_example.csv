@@ -1,0 +1,27 @@
+player_id,player_name,class_year,state,position,rank_national,rank_state,rank_position,stars,rating,height,weight,high_school,city,committed_to,source
+247_cooper_flagg,Cooper Flagg,2025,FL,SF,1,1,1,5,0.9999,6-9,205,Montverde Academy,Montverde,Duke,247Sports
+247_ace_bailey,Ace Bailey,2024,NJ,SF,1,1,1,5,0.9998,6-10,200,Rutgers Prep,Somerset,Rutgers,247Sports
+247_dylan_harper,Dylan Harper,2024,NJ,SG,2,2,1,5,0.9997,6-6,215,Don Bosco Prep,Ramsey,Rutgers,247Sports
+247_cameron_boozer,Cameron Boozer,2025,FL,PF,2,2,1,5,0.9996,6-10,225,Christopher Columbus,Miami,Duke,247Sports
+247_cayden_boozer,Cayden Boozer,2025,FL,PG,3,3,1,5,0.9995,6-4,190,Christopher Columbus,Miami,Duke,247Sports
+247_aj_dybantsa,AJ Dybantsa,2026,UT,SF,1,1,1,5,0.9999,6-9,210,Utah Prep,West Valley City,BYU,247Sports
+247_darryn_peterson,Darryn Peterson,2025,WV,SG,4,1,2,5,0.9994,6-5,195,Huntington Prep,Huntington,Kansas,247Sports
+247_isaiah_collier,Isaiah Collier,2023,GA,PG,3,1,1,5,0.9980,6-5,205,Wheeler,Marietta,USC,247Sports
+247_ron_holland,Ron Holland,2023,TX,SF,5,1,2,5,0.9975,6-8,205,Duncanville,Duncanville,G League Ignite,247Sports
+247_reed_sheppard,Reed Sheppard,2023,KY,SG,4,1,2,5,0.9978,6-3,187,North Laurel,London,Kentucky,247Sports
+247_rob_dillingham,Rob Dillingham,2023,CA,SG,6,2,3,5,0.9970,6-2,175,Donda Academy,Simi Valley,Kentucky,247Sports
+247_stephon_castle,Stephon Castle,2023,MA,SG,7,1,4,5,0.9965,6-6,215,Newton,Newton,UConn,247Sports
+247_cody_williams,Cody Williams,2023,CO,SF,10,1,3,5,0.9955,6-7,185,Colorado Prep,Colorado Springs,Colorado,247Sports
+247_matas_buzelis,Matas Buzelis,2023,KS,SF,8,1,4,5,0.9960,6-10,210,Sunrise Christian,Bel Aire,G League Ignite,247Sports
+247_cade_cunningham,Cade Cunningham,2020,FL,PG,1,1,1,5,0.9999,6-8,220,Montverde Academy,Montverde,Oklahoma State,247Sports
+247_jalen_green,Jalen Green,2020,CA,SG,2,1,1,5,0.9998,6-5,186,Prolific Prep,Napa,G League Ignite,247Sports
+247_paolo_banchero,Paolo Banchero,2021,WA,PF,1,1,1,5,0.9999,6-10,250,O'Dea,Seattle,Duke,247Sports
+247_chet_holmgren,Chet Holmgren,2021,MN,C,1,1,1,5,0.9998,7-0,195,Minnehaha Academy,Minneapolis,Gonzaga,247Sports
+247_jabari_smith,Jabari Smith Jr,2021,GA,PF,3,1,1,5,0.9996,6-10,220,Sandy Creek,Tyrone,Auburn,247Sports
+247_zion_williamson,Zion Williamson,2018,SC,PF,2,1,1,5,0.9998,6-7,285,Spartanburg Day,Spartanburg,Duke,247Sports
+247_rj_barrett,RJ Barrett,2018,FL,SF,3,1,2,5,0.9997,6-7,214,Montverde Academy,Montverde,Duke,247Sports
+247_cam_reddish,Cam Reddish,2018,PA,SF,4,1,3,5,0.9996,6-8,218,Westtown,West Chester,Duke,247Sports
+247_jalen_suggs,Jalen Suggs,2020,MN,PG,5,1,2,5,0.9990,6-4,205,Minnehaha Academy,Minneapolis,Gonzaga,247Sports
+247_scottie_barnes,Scottie Barnes,2020,FL,SF,7,3,2,5,0.9985,6-9,225,University School,Fort Lauderdale,Florida State,247Sports
+247_donovan_clingan,Donovan Clingan,2022,CT,C,1,1,1,5,0.9992,7-2,265,Bristol Central,Bristol,UConn,247Sports
+247_bronny_james,Bronny James,2023,CA,PG,20,5,8,4,0.9850,6-2,190,Sierra Canyon,Chatsworth,USC,247Sports

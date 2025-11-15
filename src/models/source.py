@@ -30,6 +30,13 @@ class DataSourceType(str, Enum):
     BOUND = "bound"  # Bound (formerly Varsity Bound) (Multi-state: IA, SD, IL, MN)
     RANKONE = "rankone"  # RankOne Sport (Multi-state: TX, KY, IN, OH, TN - schedules/fixtures)
     PLATFORM = "platform"  # Generic platform/aggregator
+    MAXPREPS = "maxpreps"  # MaxPreps (All 50 states - UNIVERSAL COVERAGE)
+
+    # US - Recruiting Services
+    SPORTS_247 = "247sports"  # 247Sports recruiting rankings, offers, predictions
+    ESPN_RECRUITING = "espn_recruiting"  # ESPN recruiting rankings
+    RIVALS = "rivals"  # Rivals recruiting (now part of On3)
+    ON3 = "on3"  # On3 recruiting and rankings
 
     # US - Single State
     PSAL = "psal"  # NYC PSAL
@@ -118,6 +125,9 @@ class DataSourceType(str, Enum):
 
     # International - Australia
     PLAYHQ = "playhq"  # PlayHQ Australia
+
+    # CSV Imports (Enhancement 12.3)
+    CSV_RECRUITING = "csv_recruiting"  # CSV-based recruiting rankings import
 
     UNKNOWN = "unknown"  # Unknown/other source
 

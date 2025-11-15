@@ -292,12 +292,27 @@ class EYBLDataSource(BaseDataSource):
                 url=self.stats_url, quality_flag=DataQualityFlag.COMPLETE
             )
 
+            # Extract games played for calculating totals
+            games = parse_int(row.get("GP") or row.get("G") or row.get("Games"))
+
+            # Extract ORB/DRB per-game if available
+            orb_pg = parse_float(row.get("ORPG") or row.get("ORB/G"))
+            drb_pg = parse_float(row.get("DRPG") or row.get("DRB/G"))
+
+            # Calculate totals from per-game if available
+            orb_total = int(orb_pg * games) if orb_pg and games else None
+            drb_total = int(drb_pg * games) if drb_pg and games else None
+
             stats_data = {
                 "player_id": player_id,
                 "season": str(datetime.now().year),
-                "games_played": parse_int(row.get("GP") or row.get("G") or row.get("Games")),
+                "games_played": games,
                 "points_per_game": parse_float(row.get("PPG") or row.get("PTS")),
                 "rebounds_per_game": parse_float(row.get("RPG") or row.get("REB")),
+                "offensive_rebounds_per_game": orb_pg,
+                "defensive_rebounds_per_game": drb_pg,
+                "offensive_rebounds": orb_total,
+                "defensive_rebounds": drb_total,
                 "assists_per_game": parse_float(row.get("APG") or row.get("AST")),
                 "steals_per_game": parse_float(row.get("SPG") or row.get("STL")),
                 "blocks_per_game": parse_float(row.get("BPG") or row.get("BLK")),

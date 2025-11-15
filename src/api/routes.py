@@ -205,6 +205,17 @@ async def get_player_stats(
     Searches for the player across sources and retrieves their season stats.
     Returns stats from each source where the player is found.
 
+    **ADVANCED METRICS**: All stats are automatically enriched with calculated advanced metrics:
+    - `true_shooting_pct`: True Shooting % - Best overall shooting efficiency measure
+    - `effective_fg_pct`: Effective FG% - Adjusts for 3-point value
+    - `assist_to_turnover_ratio`: Assist-to-Turnover ratio - Decision making quality
+    - `two_point_pct`: 2-Point FG% - Inside scoring efficiency
+    - `three_point_attempt_rate`: 3PA Rate - 3-point shot selection frequency
+    - `free_throw_rate`: FT Rate - Ability to get to the free throw line
+    - `points_per_shot_attempt`: Points per Shot Attempt - Scoring efficiency
+    - `rebounds_per_40`: Rebounds per 40 minutes - Rebounding rate normalized
+    - `points_per_40`: Points per 40 minutes - Scoring rate normalized
+
     ### Parameters:
     - **player_name**: Player's full or partial name
     - **season**: Season filter (optional, defaults to current season)
@@ -212,7 +223,7 @@ async def get_player_stats(
     - **persist**: If true, automatically persist results to DuckDB (default: false)
 
     ### Returns:
-    - List of PlayerSeasonStats objects from different sources
+    - List of PlayerSeasonStats objects with basic stats + advanced metrics
 
     ### Example:
     ```

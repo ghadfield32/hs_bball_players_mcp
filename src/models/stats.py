@@ -190,6 +190,12 @@ class PlayerSeasonStats(BaseStats):
     # Per Game Averages (calculated from totals)
     points_per_game: Optional[float] = Field(default=None, ge=0, description="Points per game")
     rebounds_per_game: Optional[float] = Field(default=None, ge=0, description="Rebounds per game")
+    offensive_rebounds_per_game: Optional[float] = Field(
+        default=None, ge=0, description="Offensive rebounds per game"
+    )
+    defensive_rebounds_per_game: Optional[float] = Field(
+        default=None, ge=0, description="Defensive rebounds per game"
+    )
     assists_per_game: Optional[float] = Field(default=None, ge=0, description="Assists per game")
     steals_per_game: Optional[float] = Field(default=None, ge=0, description="Steals per game")
     blocks_per_game: Optional[float] = Field(default=None, ge=0, description="Blocks per game")
@@ -229,7 +235,11 @@ class PlayerSeasonStats(BaseStats):
                 "three_pointers_made": 60,
                 "three_pointers_attempted": 140,
                 "total_rebounds": 140,
+                "offensive_rebounds": 40,
+                "defensive_rebounds": 100,
                 "rebounds_per_game": 7.0,
+                "offensive_rebounds_per_game": 2.0,
+                "defensive_rebounds_per_game": 5.0,
                 "assists": 120,
                 "assists_per_game": 6.0,
                 "steals": 40,

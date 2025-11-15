@@ -1,0 +1,32 @@
+player_name,hs_name,hs_state,grad_year,birth_date,college,college_years,drafted,nba_team
+Cooper Flagg,Montverde Academy,FL,2025,2006-12-21,Duke,2025-2026,False,
+Cameron Boozer,Christopher Columbus,FL,2025,2007-05-13,Duke,2025-2026,False,
+Cayden Boozer,Christopher Columbus,FL,2025,2007-05-13,Duke,2025-2026,False,
+AJ Dybantsa,Utah Prep,UT,2026,2007-10-20,BYU,2026-2027,False,
+Darryn Peterson,Huntington Prep,WV,2025,2006-11-03,Kansas,2025-2026,False,
+Ace Bailey,Rutgers Prep,NJ,2024,2005-10-28,Rutgers,2024-2025,False,
+Dylan Harper,Don Bosco Prep,NJ,2024,2005-09-22,Rutgers,2024-2025,False,
+Isaiah Collier,Wheeler,GA,2023,2004-09-22,USC,2023-2024,True,LA Clippers
+Ron Holland,Duncanville,TX,2023,2005-07-28,G League Ignite,2023-2024,True,Detroit Pistons
+Reed Sheppard,North Laurel,KY,2023,2004-06-24,Kentucky,2023-2024,True,Houston Rockets
+Rob Dillingham,Donda Academy,CA,2023,2005-01-21,Kentucky,2023-2024,True,Minnesota Timberwolves
+Stephon Castle,Newton,MA,2023,2004-11-01,UConn,2023-2024,True,San Antonio Spurs
+Cody Williams,Colorado Prep,CO,2023,2004-12-26,Colorado,2023-2024,True,Utah Jazz
+Matas Buzelis,Sunrise Christian,KS,2023,2004-10-13,G League Ignite,2023-2024,True,Chicago Bulls
+Zach Edey,IMG Academy,FL,2020,2002-05-14,Purdue,2020-2024,True,Memphis Grizzlies
+Anthony Edwards,Holy Spirit Prep,GA,2019,2001-08-05,Georgia,2019-2020,True,Minnesota Timberwolves
+Cade Cunningham,Montverde Academy,FL,2020,2001-09-25,Oklahoma State,2020-2021,True,Detroit Pistons
+Jalen Green,Prolific Prep,CA,2020,2002-02-09,G League Ignite,2020-2021,True,Houston Rockets
+Paolo Banchero,O'Dea,WA,2021,2002-11-12,Duke,2021-2022,True,Orlando Magic
+Chet Holmgren,Minnehaha Academy,MN,2021,2002-05-01,Gonzaga,2021-2022,True,Oklahoma City Thunder
+Jabari Smith Jr,Sandy Creek,GA,2021,2003-05-13,Auburn,2021-2022,True,Houston Rockets
+Victor Wembanyama,ASVEL (France),International,2023,2004-01-04,Metropolitans 92,2023-2024,True,San Antonio Spurs
+Ja Morant,Crestwood,SC,2017,1999-08-10,Murray State,2017-2019,True,Memphis Grizzlies
+Zion Williamson,Spartanburg Day,SC,2018,2000-07-06,Duke,2018-2019,True,New Orleans Pelicans
+RJ Barrett,Montverde Academy,FL,2018,2000-06-14,Duke,2018-2019,True,Toronto Raptors
+Cam Reddish,Westtown,PA,2018,1999-09-01,Duke,2018-2019,True,Los Angeles Lakers
+Jalen Suggs,Minnehaha Academy,MN,2020,2001-06-03,Gonzaga,2020-2021,True,Orlando Magic
+Scottie Barnes,University School,FL,2020,2001-08-01,Florida State,2020-2021,True,Toronto Raptors
+Franz Wagner,Skyliners Frankfurt (Germany),International,2021,2001-08-27,Michigan,2021-2022,True,Orlando Magic
+Donovan Clingan,Bristol Central,CT,2022,2004-04-02,UConn,2022-2024,True,Portland Trail Blazers
+Bronny James,Sierra Canyon,CA,2023,2004-10-06,USC,2023-2024,True,Los Angeles Lakers

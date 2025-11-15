@@ -63,6 +63,15 @@ class Settings(BaseSettings):
     rate_limit_fhsaa: int = Field(default=15, ge=1, description="FHSAA (Florida) rate limit")
     rate_limit_hhsaa: int = Field(default=15, ge=1, description="HHSAA (Hawaii) rate limit")
 
+    # Universal Coverage Adapters
+    rate_limit_maxpreps: int = Field(default=10, ge=1, description="MaxPreps rate limit (CONSERVATIVE - ToS compliance)")
+
+    # Recruiting Services
+    rate_limit_247sports: int = Field(default=10, ge=1, description="247Sports rate limit (CONSERVATIVE - ToS compliance)")
+    rate_limit_espn_recruiting: int = Field(default=10, ge=1, description="ESPN Recruiting rate limit")
+    rate_limit_rivals: int = Field(default=10, ge=1, description="Rivals rate limit")
+    rate_limit_on3: int = Field(default=10, ge=1, description="On3 rate limit")
+
     rate_limit_default: int = Field(default=10, ge=1, description="Default rate limit")
 
     # Global rate limiting
@@ -203,6 +212,46 @@ class Settings(BaseSettings):
         default="https://www.playhq.com", description="PlayHQ base URL"
     )
     playhq_enabled: bool = Field(default=False, description="Enable PlayHQ datasource")
+
+    # Data Source Settings - MaxPreps (Universal US Coverage)
+    maxpreps_base_url: str = Field(
+        default="https://www.maxpreps.com", description="MaxPreps base URL"
+    )
+    maxpreps_enabled: bool = Field(
+        default=True, description="Enable MaxPreps datasource (WARNING: Check ToS compliance)"
+    )
+
+    # Data Source Settings - 247Sports Recruiting
+    sports_247_base_url: str = Field(
+        default="https://247sports.com", description="247Sports base URL"
+    )
+    sports_247_enabled: bool = Field(
+        default=False, description="Enable 247Sports datasource (WARNING: No public API)"
+    )
+
+    # Data Source Settings - ESPN Recruiting
+    espn_recruiting_base_url: str = Field(
+        default="https://www.espn.com/mens-college-basketball/recruiting", description="ESPN Recruiting base URL"
+    )
+    espn_recruiting_enabled: bool = Field(
+        default=False, description="Enable ESPN Recruiting datasource"
+    )
+
+    # Data Source Settings - Rivals
+    rivals_base_url: str = Field(
+        default="https://www.on3.com/rivals", description="Rivals base URL (now On3)"
+    )
+    rivals_enabled: bool = Field(
+        default=False, description="Enable Rivals datasource"
+    )
+
+    # Data Source Settings - On3
+    on3_base_url: str = Field(
+        default="https://www.on3.com", description="On3 base URL"
+    )
+    on3_enabled: bool = Field(
+        default=False, description="Enable On3 datasource"
+    )
 
     # Monitoring & Observability
     enable_request_logging: bool = Field(default=True, description="Enable request logging")
