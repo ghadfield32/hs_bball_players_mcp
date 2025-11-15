@@ -1168,6 +1168,37 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
   - Legal compliance checklist
   - State-by-state testing plan (Tier 1-4 prioritization)
 
+#### [2025-11-15 12:00] Phase 13.3: 247Sports Recruiting Adapter Implementation
+- ✅ **Created recruiting base class** (src/datasources/recruiting/base_recruiting.py, 294 lines):
+  - Abstract base class for all recruiting adapters (different interface from stats adapters)
+  - Abstract methods: get_rankings(), get_player_recruiting_profile(), search_players()
+  - Optional methods: get_offers(), get_predictions() - override if data available
+  - Shared utilities: create_data_source_metadata(), validate_and_log_data(), health_check()
+- ✅ **Implemented 247Sports adapter** (src/datasources/recruiting/sports_247.py, 605 lines):
+  - Complete implementation: get_rankings(), search_players(), _parse_ranking_from_row()
+  - Browser automation for React content (BrowserClient integration)
+  - Class year validation (2025-2035), URL building, player ID generation
+  - Composite rankings extraction (stars, rating, national/position/state ranks, commitments)
+  - Position mapping, height/weight parsing, school info extraction
+  - Placeholder: get_player_recruiting_profile() (marked TODO for future)
+  - Prominent ToS warnings (247Sports prohibits scraping - commercial license recommended)
+- ✅ **Added DuckDB recruiting tables** (src/services/duckdb_storage.py):
+  - recruiting_ranks table (player rankings with stars, ratings, service, class_year)
+  - college_offers table (offers with status, dates, recruiter, conference level)
+  - recruiting_predictions table (Crystal Ball predictions with confidence scores)
+  - Storage methods: store_recruiting_ranks(), store_college_offers(), store_recruiting_predictions()
+  - Indexes for efficient queries (player_id, class_year, national rank, prediction dates)
+- ✅ **Updated recruiting exports** (src/datasources/recruiting/__init__.py):
+  - Exported BaseRecruitingSource and Sports247DataSource
+- ✅ **Created comprehensive tests** (tests/test_datasources/test_recruiting/test_247sports.py, 450+ lines):
+  - Test initialization, class year validation, URL building, player ID generation
+  - Position mapping tests, config integration tests
+  - Placeholder scraping tests (@pytest.mark.skip for ToS compliance)
+  - Real-world test class (all skipped by default for legal safety)
+- ✅ **Created quick test script** (scripts/quick_test_maxpreps.py, 100+ lines):
+  - Simple MaxPreps test users can run manually
+  - ToS permission prompt, basic functionality tests (state validation, search 3 players)
+
 ---
 
 ### IN PROGRESS
@@ -1179,11 +1210,10 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
 - ⏳ Integrate enhanced parser into maxpreps.py after validation
 - ⏳ Obtain ToS compliance (commercial license recommended)
 
-**Phase 13.3 (NEXT)**:
-- ⏳ Implement 247Sports recruiting adapter (src/datasources/recruiting/247sports.py)
-- ⏳ Add DuckDB tables for recruiting data (recruiting_ranks, college_offers, recruiting_predictions)
-- ⏳ Create recruiting API endpoints (/api/v1/recruiting/*)
-- ⏳ Test MaxPreps adapter with one state (manual ToS compliance check)
+**Phase 13.3.1 (NEXT)**:
+- ⏳ Create recruiting API endpoints (/api/v1/recruiting/rankings, /offers, /predictions)
+- ⏳ Integrate 247Sports adapter into aggregator service
+- ⏳ Test 247Sports adapter manually (with ToS compliance check)
 
 **Phase 13.4 (UPCOMING)**:
 - ⏳ Create state association test framework (scripts/test_state_associations.py)

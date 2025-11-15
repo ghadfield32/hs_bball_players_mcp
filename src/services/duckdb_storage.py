@@ -193,6 +193,78 @@ class DuckDBStorage:
             )
         """)
 
+        # Recruiting ranks table
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS recruiting_ranks (
+                rank_id VARCHAR PRIMARY KEY,
+                player_id VARCHAR NOT NULL,
+                player_name VARCHAR NOT NULL,
+                rank_national INTEGER,
+                rank_position INTEGER,
+                rank_state INTEGER,
+                stars INTEGER CHECK (stars >= 3 AND stars <= 5),
+                rating DOUBLE CHECK (rating >= 0.0 AND rating <= 1.0),
+                service VARCHAR NOT NULL,
+                class_year INTEGER NOT NULL CHECK (class_year >= 2020 AND class_year <= 2035),
+                position VARCHAR,
+                height VARCHAR,
+                weight INTEGER,
+                school VARCHAR,
+                city VARCHAR,
+                state VARCHAR,
+                committed_to VARCHAR,
+                commitment_date DATE,
+                profile_url VARCHAR,
+                source_type VARCHAR NOT NULL,
+                retrieved_at TIMESTAMP NOT NULL,
+                quality_flag VARCHAR,
+                UNIQUE(player_id, service, class_year)
+            )
+        """)
+
+        # College offers table
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS college_offers (
+                offer_id VARCHAR PRIMARY KEY,
+                player_id VARCHAR NOT NULL,
+                player_name VARCHAR NOT NULL,
+                college VARCHAR NOT NULL,
+                conference VARCHAR,
+                conference_level VARCHAR,
+                offer_date DATE,
+                offer_status VARCHAR NOT NULL,
+                commitment_date DATE,
+                decommitment_date DATE,
+                recruited_by VARCHAR,
+                notes VARCHAR,
+                source_type VARCHAR NOT NULL,
+                retrieved_at TIMESTAMP NOT NULL,
+                quality_flag VARCHAR,
+                UNIQUE(player_id, college, offer_date)
+            )
+        """)
+
+        # Recruiting predictions table
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS recruiting_predictions (
+                prediction_id VARCHAR PRIMARY KEY,
+                player_id VARCHAR NOT NULL,
+                player_name VARCHAR NOT NULL,
+                predicted_college VARCHAR NOT NULL,
+                predictor_name VARCHAR NOT NULL,
+                predictor_org VARCHAR,
+                prediction_date DATE NOT NULL,
+                confidence_level VARCHAR,
+                confidence_score DOUBLE CHECK (confidence_score >= 0.0 AND confidence_score <= 1.0),
+                prediction_type VARCHAR,
+                notes VARCHAR,
+                source_type VARCHAR NOT NULL,
+                retrieved_at TIMESTAMP NOT NULL,
+                quality_flag VARCHAR,
+                UNIQUE(player_id, predicted_college, predictor_name, prediction_date)
+            )
+        """)
+
         # Create indexes for common queries
         self.conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_players_name ON players(full_name, source_type)"
@@ -210,7 +282,21 @@ class DuckDBStorage:
             "CREATE INDEX IF NOT EXISTS idx_games_date ON games(game_date, source_type)"
         )
 
-        logger.info("DuckDB schema initialized with 4 tables and indexes")
+        # Recruiting table indexes
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_recruiting_ranks_player ON recruiting_ranks(player_id, class_year)"
+        )
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_recruiting_ranks_national ON recruiting_ranks(rank_national, class_year)"
+        )
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_college_offers_player ON college_offers(player_id, offer_status)"
+        )
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_recruiting_predictions_player ON recruiting_predictions(player_id, prediction_date)"
+        )
+
+        logger.info("DuckDB schema initialized with 7 tables (4 stats + 3 recruiting) and indexes")
 
     async def store_players(self, players: list[Player]) -> int:
         """
@@ -382,6 +468,161 @@ class DuckDBStorage:
 
         except Exception as e:
             logger.error("Failed to store player stats in DuckDB", error=str(e))
+            return 0
+
+    async def store_recruiting_ranks(self, ranks: list) -> int:
+        """
+        Store recruiting rankings in DuckDB.
+
+        Args:
+            ranks: List of RecruitingRank objects
+
+        Returns:
+            Number of ranks stored
+        """
+        if not self.conn or not ranks:
+            return 0
+
+        try:
+            data = []
+            for rank in ranks:
+                # Create unique rank_id
+                rank_id = f"{rank.player_id}_{rank.service.value}_{rank.class_year}"
+
+                data.append(
+                    {
+                        "rank_id": rank_id,
+                        "player_id": rank.player_id,
+                        "player_name": rank.player_name,
+                        "rank_national": rank.rank_national,
+                        "rank_position": rank.rank_position,
+                        "rank_state": rank.rank_state,
+                        "stars": rank.stars,
+                        "rating": rank.rating,
+                        "service": rank.service.value,
+                        "class_year": rank.class_year,
+                        "position": rank.position.value if rank.position else None,
+                        "height": rank.height,
+                        "weight": rank.weight,
+                        "school": rank.school,
+                        "city": rank.city,
+                        "state": rank.state,
+                        "committed_to": rank.committed_to,
+                        "commitment_date": rank.commitment_date,
+                        "profile_url": rank.profile_url,
+                        "source_type": rank.data_source.source_type.value,
+                        "retrieved_at": rank.data_source.retrieved_at,
+                        "quality_flag": rank.data_source.quality_flag.value,
+                    }
+                )
+
+            df = pd.DataFrame(data)
+            self.conn.execute("INSERT OR REPLACE INTO recruiting_ranks SELECT * FROM df")
+
+            logger.info(f"Stored {len(ranks)} recruiting ranks in DuckDB")
+            return len(ranks)
+
+        except Exception as e:
+            logger.error("Failed to store recruiting ranks in DuckDB", error=str(e))
+            return 0
+
+    async def store_college_offers(self, offers: list) -> int:
+        """
+        Store college offers in DuckDB.
+
+        Args:
+            offers: List of CollegeOffer objects
+
+        Returns:
+            Number of offers stored
+        """
+        if not self.conn or not offers:
+            return 0
+
+        try:
+            data = []
+            for offer in offers:
+                # Create unique offer_id
+                offer_date_str = offer.offer_date.isoformat() if offer.offer_date else "unknown"
+                offer_id = f"{offer.player_id}_{offer.college}_{offer_date_str}"
+
+                data.append(
+                    {
+                        "offer_id": offer_id,
+                        "player_id": offer.player_id,
+                        "player_name": offer.player_name,
+                        "college": offer.college,
+                        "conference": offer.conference,
+                        "conference_level": offer.conference_level.value if offer.conference_level else None,
+                        "offer_date": offer.offer_date,
+                        "offer_status": offer.status.value,
+                        "commitment_date": offer.commitment_date,
+                        "decommitment_date": offer.decommitment_date,
+                        "recruited_by": offer.recruited_by,
+                        "notes": offer.notes,
+                        "source_type": offer.data_source.source_type.value,
+                        "retrieved_at": offer.data_source.retrieved_at,
+                        "quality_flag": offer.data_source.quality_flag.value,
+                    }
+                )
+
+            df = pd.DataFrame(data)
+            self.conn.execute("INSERT OR REPLACE INTO college_offers SELECT * FROM df")
+
+            logger.info(f"Stored {len(offers)} college offers in DuckDB")
+            return len(offers)
+
+        except Exception as e:
+            logger.error("Failed to store college offers in DuckDB", error=str(e))
+            return 0
+
+    async def store_recruiting_predictions(self, predictions: list) -> int:
+        """
+        Store recruiting predictions in DuckDB.
+
+        Args:
+            predictions: List of RecruitingPrediction objects
+
+        Returns:
+            Number of predictions stored
+        """
+        if not self.conn or not predictions:
+            return 0
+
+        try:
+            data = []
+            for pred in predictions:
+                # Create unique prediction_id
+                pred_date_str = pred.prediction_date.isoformat() if pred.prediction_date else "unknown"
+                prediction_id = f"{pred.player_id}_{pred.predicted_college}_{pred.predictor_name}_{pred_date_str}"
+
+                data.append(
+                    {
+                        "prediction_id": prediction_id,
+                        "player_id": pred.player_id,
+                        "player_name": pred.player_name,
+                        "predicted_college": pred.predicted_college,
+                        "predictor_name": pred.predictor_name,
+                        "predictor_org": pred.predictor_org,
+                        "prediction_date": pred.prediction_date,
+                        "confidence_level": pred.confidence_level,
+                        "confidence_score": pred.confidence_score,
+                        "prediction_type": pred.prediction_type,
+                        "notes": pred.notes,
+                        "source_type": pred.data_source.source_type.value,
+                        "retrieved_at": pred.data_source.retrieved_at,
+                        "quality_flag": pred.data_source.quality_flag.value,
+                    }
+                )
+
+            df = pd.DataFrame(data)
+            self.conn.execute("INSERT OR REPLACE INTO recruiting_predictions SELECT * FROM df")
+
+            logger.info(f"Stored {len(predictions)} recruiting predictions in DuckDB")
+            return len(predictions)
+
+        except Exception as e:
+            logger.error("Failed to store recruiting predictions in DuckDB", error=str(e))
             return 0
 
     def query_players(
