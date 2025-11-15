@@ -1429,9 +1429,20 @@ Investigate WSN (Wisconsin Sports Network) adapter failures - website exists (40
 - **Files Changed**: dashboard_coverage.py (+350 NEW), college_cohort_example.csv (+30 NEW), 247_rankings_example.csv (+26 NEW), COVERAGE_WORKFLOW.md (+500 NEW) = 906 lines total
 - **Usage**: `python scripts/dashboard_coverage.py --cohort data/college_cohort_example.csv` → see baseline with example data, identifies state gaps, shows what "high coverage" actually looks like
 
+#### [2025-11-16 02:00] Enhancement 12 Helper Scripts: Copy-Paste Execution Tools → Turn 6-step plan into instant commands
+- ✅ **Helper: Build Mini Cohort** (scripts/helpers/build_mini_cohort.py, ~120 lines): Creates 2018-2020 starter cohort from example + provides DuckDB SQL template for appending real players → Step 1 helper, filters by year, auto-generates output filename, includes DB export examples
+- ✅ **Helper: Run Coverage Baseline** (scripts/helpers/run_coverage_baseline.sh, ~80 lines): One command to run dashboard + export state gaps CSV → Step 3 helper, validates cohort exists, shows next steps (recruiting or state datasource)
+- ✅ **Helper: Activate Recruiting** (scripts/helpers/activate_recruiting.sh, ~50 lines): Copies example recruiting CSV to active location → Step 2 helper, activates CSVRecruitingDataSource immediately, shows expected +20-30% impact
+- ✅ **Helper: Compare Coverage** (scripts/helpers/compare_coverage.sh, ~70 lines): Diffs before/after state gap CSVs + includes Python snippet for clean comparison → shows improvement from changes (recruiting import, state datasource)
+- ✅ **Helper: Pick First State** (scripts/helpers/pick_first_state.py, ~200 lines): Analyzes state gaps CSV, recommends top state to implement based on priority score, provides state-specific hints (FHSAA FL, UIL TX, CIF CA, etc.) → Step 4 helper, shows action plan per state
+- ✅ **Quick Start Guide** (docs/QUICKSTART.md, ~300 lines): One-page reference → 30-minute weekend plan (4 steps), all commands in one place, file path reference, realistic targets, troubleshooting
+- **Impact**: All 6 steps from "Weekend Plan" now have copy-paste helpers → reduces friction from "infra complete but don't know where to start" to "run these 4 commands and you're measuring coverage in 30 min"
+- **Files Created**: build_mini_cohort.py (+120 NEW), run_coverage_baseline.sh (+80 NEW), activate_recruiting.sh (+50 NEW), compare_coverage.sh (+70 NEW), pick_first_state.py (+200 NEW), QUICKSTART.md (+300 NEW) = 820 lines total
+- **Usage**: `bash scripts/helpers/run_coverage_baseline.sh` → instant baseline measurement, or see `docs/QUICKSTART.md` for complete weekend plan
+
 ---
 
-### Current Coverage Status (2025-11-16 01:00) - REALITY CHECK ⚠️
+### Current Coverage Status (2025-11-16 02:00) - REALITY CHECK ⚠️
 
 **Coverage Measurement**: **NOW A RUNTIME METRIC** ✨
 - Previous "73%" was a design score (feature availability in principle)
