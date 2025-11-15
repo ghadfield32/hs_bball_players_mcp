@@ -115,6 +115,98 @@ class MaxPrepsDataSource(BaseDataSource):
         "WI": "Wisconsin", "WY": "Wyoming", "DC": "District of Columbia"
     }
 
+    # State normalization map - handles common variants and abbreviations
+    # Maps all possible input formats to canonical 2-letter state codes
+    # Enhancement 12.1: State Normalization (handles "Florida" → "FL", "Fla" → "FL", etc.)
+    STATE_NORMALIZATION = {
+        # Full state names (lowercase for case-insensitive matching)
+        "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
+        "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE",
+        "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID",
+        "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS",
+        "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD",
+        "massachusetts": "MA", "michigan": "MI", "minnesota": "MN", "mississippi": "MS",
+        "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV",
+        "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY",
+        "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK",
+        "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC",
+        "south dakota": "SD", "tennessee": "TN", "texas": "TX", "utah": "UT",
+        "vermont": "VT", "virginia": "VA", "washington": "WA", "west virginia": "WV",
+        "wisconsin": "WI", "wyoming": "WY", "district of columbia": "DC",
+
+        # Common abbreviations and variants
+        "ala": "AL", "alas": "AK", "ariz": "AZ", "ark": "AR",
+        "calif": "CA", "cal": "CA", "cali": "CA", "colo": "CO", "conn": "CT", "del": "DE",
+        "fla": "FL", "ga": "GA", "haw": "HI", "ida": "ID",
+        "ill": "IL", "ind": "IN", "ia": "IA", "kans": "KS", "kan": "KS",
+        "ky": "KY", "la": "LA", "mass": "MA", "mich": "MI", "minn": "MN", "miss": "MS",
+        "mo": "MO", "mont": "MT", "neb": "NE", "nebr": "NE", "nev": "NV",
+        "n.h.": "NH", "n.j.": "NJ", "n.m.": "NM", "n.y.": "NY",
+        "n.c.": "NC", "n.d.": "ND", "okla": "OK",
+        "ore": "OR", "oreg": "OR", "penn": "PA", "pa": "PA", "penna": "PA",
+        "r.i.": "RI", "s.c.": "SC", "s.d.": "SD", "tenn": "TN",
+        "tex": "TX", "vt": "VT", "va": "VA", "wash": "WA", "w.v.": "WV", "w.va.": "WV",
+        "wis": "WI", "wisc": "WI", "wyo": "WY", "d.c.": "DC", "washington dc": "DC",
+
+        # Already canonical (2-letter codes)
+        "al": "AL", "ak": "AK", "az": "AZ", "ar": "AR",
+        "ca": "CA", "co": "CO", "ct": "CT", "de": "DE",
+        "fl": "FL", "ga": "GA", "hi": "HI", "id": "ID",
+        "il": "IL", "in": "IN", "ia": "IA", "ks": "KS",
+        "ky": "KY", "la": "LA", "me": "ME", "md": "MD",
+        "ma": "MA", "mi": "MI", "mn": "MN", "ms": "MS",
+        "mo": "MO", "mt": "MT", "ne": "NE", "nv": "NV",
+        "nh": "NH", "nj": "NJ", "nm": "NM", "ny": "NY",
+        "nc": "NC", "nd": "ND", "oh": "OH", "ok": "OK",
+        "or": "OR", "pa": "PA", "ri": "RI", "sc": "SC",
+        "sd": "SD", "tn": "TN", "tx": "TX", "ut": "UT",
+        "vt": "VT", "va": "VA", "wa": "WA", "wv": "WV",
+        "wi": "WI", "wy": "WY", "dc": "DC",
+    }
+
+    @staticmethod
+    def normalize_state(raw_state: Optional[str]) -> Optional[str]:
+        """
+        Normalize state input to canonical 2-letter state code.
+
+        Handles all common variants:
+        - Full names: "Florida" → "FL"
+        - Abbreviations: "Fla" → "FL", "Calif" → "CA"
+        - Already canonical: "FL" → "FL"
+        - Case-insensitive: "florida", "FLORIDA", "Florida" → "FL"
+        - With periods: "N.Y." → "NY", "D.C." → "DC"
+
+        Args:
+            raw_state: Raw state input (any format)
+
+        Returns:
+            Canonical 2-letter state code or None if not recognized
+
+        Examples:
+            >>> MaxPrepsDataSource.normalize_state("Florida")
+            "FL"
+            >>> MaxPrepsDataSource.normalize_state("Fla")
+            "FL"
+            >>> MaxPrepsDataSource.normalize_state("fl")
+            "FL"
+            >>> MaxPrepsDataSource.normalize_state("N.Y.")
+            "NY"
+            >>> MaxPrepsDataSource.normalize_state("International")
+            None
+        """
+        if not raw_state:
+            return None
+
+        # Clean input: strip whitespace, lowercase, remove extra periods
+        cleaned = raw_state.strip().lower()
+
+        # Try direct lookup in normalization map
+        if cleaned in MaxPrepsDataSource.STATE_NORMALIZATION:
+            return MaxPrepsDataSource.STATE_NORMALIZATION[cleaned]
+
+        # Not found - likely international or invalid
+        return None
+
     def __init__(self):
         """
         Initialize MaxPreps datasource with universal US coverage.
@@ -162,38 +254,51 @@ class MaxPrepsDataSource(BaseDataSource):
         """
         Validate and normalize state parameter.
 
+        Uses normalize_state() to handle all variants (full names, abbreviations, etc.)
         Ensures state is valid 2-letter US state code.
         Fails fast to avoid unnecessary network calls.
 
+        Enhancement 12.1: Now accepts "Florida", "Fla", "FL", etc.
+
         Args:
-            state: State code (e.g., "CA", "TX", "NY")
+            state: State input (any format: "FL", "Florida", "Fla", etc.)
 
         Returns:
-            Uppercase state code
+            Canonical 2-letter uppercase state code
 
         Raises:
-            ValueError: If state is None, empty, or not in ALL_US_STATES
+            ValueError: If state is None, empty, or not recognized
 
         Example:
             >>> self._validate_state("ca")
             "CA"
+            >>> self._validate_state("California")
+            "CA"
+            >>> self._validate_state("Calif")
+            "CA"
             >>> self._validate_state("ZZ")
-            ValueError: State 'ZZ' not supported
+            ValueError: State 'ZZ' not recognized
         """
         if not state:
             raise ValueError(
-                f"State parameter required. Supported: {', '.join(self.ALL_US_STATES)}"
+                f"State parameter required. "
+                f"Supported formats: 2-letter codes (CA, FL, TX), "
+                f"full names (California, Florida, Texas), "
+                f"or common abbreviations (Calif, Fla, Tex)"
             )
 
-        state = state.upper().strip()
+        # Use normalize_state to handle all variants
+        normalized = self.normalize_state(state)
 
-        if state not in self.ALL_US_STATES:
+        if not normalized:
             raise ValueError(
-                f"State '{state}' not supported. "
-                f"Supported: {', '.join(self.ALL_US_STATES)}"
+                f"State '{state}' not recognized. "
+                f"Supported: {', '.join(self.ALL_US_STATES[:10])}... "
+                f"(and {len(self.ALL_US_STATES) - 10} more). "
+                f"Use 2-letter codes, full names, or common abbreviations."
             )
 
-        return state
+        return normalized
 
     def _get_state_url(self, state: str, endpoint: str = "") -> str:
         """

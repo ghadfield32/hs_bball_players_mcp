@@ -15,9 +15,11 @@ Methodology: 8-Step Coverage Measurement Plan (Step 1)
 
 import sys
 import asyncio
+import csv
 from pathlib import Path
 from typing import List, Dict, Any
 import argparse
+from collections import defaultdict
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -85,6 +87,57 @@ async def load_players_from_duckdb(
     ]
 
     return test_players[:limit]
+
+
+def load_players_from_cohort_csv(
+    cohort_csv_path: Path,
+    limit: int = None
+) -> List[Dict[str, Any]]:
+    """
+    Load player profiles from college cohort CSV for REAL coverage measurement.
+
+    Enhancement 12.2: Closes the coverage loop by loading actual D1 college players.
+
+    Expected CSV format (from build_college_cohort.py):
+        player_name,hs_name,hs_state,grad_year,birth_date,college,college_years,drafted,nba_team
+
+    Args:
+        cohort_csv_path: Path to cohort CSV file
+        limit: Max number of players to load (None = all)
+
+    Returns:
+        List of player records with basic info
+
+    Example:
+        >>> players = load_players_from_cohort_csv(Path("data/college_cohort_filtered.csv"))
+        >>> print(f"Loaded {len(players)} D1 college players")
+    """
+    if not cohort_csv_path.exists():
+        print(f"❌ Cohort CSV not found: {cohort_csv_path}")
+        print(f"   Run: python scripts/build_college_cohort.py --source csv")
+        return []
+
+    players = []
+    with open(cohort_csv_path, 'r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            # Map cohort CSV columns to coverage format
+            players.append({
+                "player_name": row.get("player_name", ""),
+                "grad_year": int(row["grad_year"]) if row.get("grad_year") else None,
+                "state": row.get("hs_state", ""),  # hs_state from cohort
+                "hs_name": row.get("hs_name", ""),
+                "country": "USA",  # D1 cohort is US-only
+                "college": row.get("college", ""),
+                "drafted": row.get("drafted", "").lower() == "true",
+            })
+
+            # Stop at limit if specified
+            if limit and len(players) >= limit:
+                break
+
+    print(f"✅ Loaded {len(players)} players from cohort CSV: {cohort_csv_path}")
+    return players
 
 
 async def compute_coverage_for_players(
@@ -299,38 +352,247 @@ def print_coverage_report(
     print(f"{'#'*80}\n")
 
 
+def print_state_level_breakdown(
+    results: List[tuple],
+    output_csv: Path = None
+):
+    """
+    Print state-level coverage breakdown with gap analysis.
+
+    Enhancement 12.2: Aggregate coverage by hs_state to identify which states
+    need more data sources (MaxPreps, state associations, etc.)
+
+    Args:
+        results: List of (player_info, flags, score) tuples
+        output_csv: Optional path to export state gaps CSV
+
+    Example output:
+        STATE COVERAGE BREAKDOWN
+        ========================
+        State  Players  Avg Coverage  Missing MaxPreps  Missing Recruiting  Priority
+        CA     150      68.5%         15%               25%                 Medium
+        TX     120      42.3%         65%               45%                 HIGH
+        FL     110      71.2%         12%               18%                 Low
+    """
+    print(f"\n{'='*80}")
+    print(f"STATE-LEVEL COVERAGE BREAKDOWN")
+    print(f"{'='*80}\n")
+
+    # Aggregate by state
+    state_data = defaultdict(lambda: {
+        "players": [],
+        "coverage_scores": [],
+        "missing_maxpreps": 0,
+        "missing_recruiting": 0,
+        "missing_advanced_stats": 0,
+        "missing_multi_season": 0,
+    })
+
+    for player_info, flags, score in results:
+        state = player_info.get("state", "Unknown")
+        if not state or state == "Unknown":
+            continue
+
+        state_data[state]["players"].append(player_info)
+        state_data[state]["coverage_scores"].append(score.overall_score)
+
+        # Count missing data types
+        if flags.missing_maxpreps_data:
+            state_data[state]["missing_maxpreps"] += 1
+        if flags.missing_247_profile:
+            state_data[state]["missing_recruiting"] += 1
+        if flags.missing_advanced_stats:
+            state_data[state]["missing_advanced_stats"] += 1
+        if flags.missing_multi_season_data:
+            state_data[state]["missing_multi_season"] += 1
+
+    # Calculate state metrics
+    state_metrics = []
+    for state, data in state_data.items():
+        player_count = len(data["players"])
+        avg_coverage = sum(data["coverage_scores"]) / player_count if player_count > 0 else 0
+        maxpreps_missing_pct = (data["missing_maxpreps"] / player_count * 100) if player_count > 0 else 0
+        recruiting_missing_pct = (data["missing_recruiting"] / player_count * 100) if player_count > 0 else 0
+        advanced_stats_missing_pct = (data["missing_advanced_stats"] / player_count * 100) if player_count > 0 else 0
+
+        # Calculate priority score: (players * (100 - avg_coverage))
+        # Higher score = more players with lower coverage = higher priority
+        priority_score = player_count * (100 - avg_coverage)
+
+        # Determine priority level
+        if avg_coverage >= 70:
+            priority = "Low"
+        elif avg_coverage >= 50:
+            priority = "Medium"
+        else:
+            priority = "HIGH"
+
+        state_metrics.append({
+            "state": state,
+            "player_count": player_count,
+            "avg_coverage": avg_coverage,
+            "maxpreps_missing_pct": maxpreps_missing_pct,
+            "recruiting_missing_pct": recruiting_missing_pct,
+            "advanced_stats_missing_pct": advanced_stats_missing_pct,
+            "priority_score": priority_score,
+            "priority": priority,
+        })
+
+    # Sort by priority score (descending)
+    state_metrics.sort(key=lambda x: x["priority_score"], reverse=True)
+
+    # Print table header
+    print(f"{'State':<6} {'Players':<8} {'Avg Cov':<10} {'MaxPreps':<12} {'Recruiting':<12} {'Adv Stats':<12} {'Priority':<10}")
+    print(f"{'-'*6} {'-'*8} {'-'*10} {'-'*12} {'-'*12} {'-'*12} {'-'*10}")
+
+    # Print state rows
+    for metric in state_metrics:
+        state = metric["state"]
+        players = metric["player_count"]
+        avg_cov = f"{metric['avg_coverage']:.1f}%"
+        maxpreps = f"{metric['maxpreps_missing_pct']:.0f}% miss"
+        recruiting = f"{metric['recruiting_missing_pct']:.0f}% miss"
+        adv_stats = f"{metric['advanced_stats_missing_pct']:.0f}% miss"
+        priority = metric["priority"]
+
+        print(f"{state:<6} {players:<8} {avg_cov:<10} {maxpreps:<12} {recruiting:<12} {adv_stats:<12} {priority:<10}")
+
+    print()
+
+    # Export to CSV if requested
+    if output_csv:
+        export_coverage_gaps_csv(state_metrics, output_csv)
+        print(f"✅ State coverage gaps exported to: {output_csv}\n")
+
+    # Print top 5 priority states
+    print(f"{'='*80}")
+    print(f"TOP 5 PRIORITY STATES (Most Players × Lowest Coverage)")
+    print(f"{'='*80}")
+
+    for i, metric in enumerate(state_metrics[:5], 1):
+        state = metric["state"]
+        players = metric["player_count"]
+        avg_cov = metric["avg_coverage"]
+        priority = metric["priority"]
+
+        print(f"{i}. {state} - {players} players, {avg_cov:.1f}% avg coverage ({priority} priority)")
+        print(f"   MaxPreps missing: {metric['maxpreps_missing_pct']:.0f}% | "
+              f"Recruiting missing: {metric['recruiting_missing_pct']:.0f}% | "
+              f"Advanced stats missing: {metric['advanced_stats_missing_pct']:.0f}%")
+
+        # Recommendations for this state
+        recs = []
+        if metric['maxpreps_missing_pct'] > 50:
+            recs.append("Fix MaxPreps state matching (normalize_state)")
+        if metric['recruiting_missing_pct'] > 50:
+            recs.append("Add CSV recruiting import for this state")
+        if metric['advanced_stats_missing_pct'] > 60:
+            recs.append("Consider state association adapter (UIL, CIF, etc.)")
+
+        if recs:
+            print(f"   Recommendations: {', '.join(recs)}")
+        print()
+
+    print(f"{'='*80}\n")
+
+
+def export_coverage_gaps_csv(
+    state_metrics: List[Dict],
+    output_csv: Path
+):
+    """
+    Export state coverage gaps to CSV for further analysis.
+
+    Enhancement 12.2: Creates CSV file with state-level gaps for prioritization.
+
+    Args:
+        state_metrics: List of state metric dicts
+        output_csv: Path to output CSV file
+
+    Output CSV columns:
+        state, player_count, avg_coverage, maxpreps_missing_pct,
+        recruiting_missing_pct, advanced_stats_missing_pct,
+        priority_score, priority
+    """
+    output_csv.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_csv, 'w', newline='') as f:
+        fieldnames = [
+            "state", "player_count", "avg_coverage",
+            "maxpreps_missing_pct", "recruiting_missing_pct",
+            "advanced_stats_missing_pct",
+            "priority_score", "priority"
+        ]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(state_metrics)
+
+    print(f"📊 State coverage gaps exported to: {output_csv}")
+
+
 async def main():
-    """Main entry point for coverage dashboard."""
+    """
+    Main entry point for coverage dashboard.
+
+    Enhancement 12.2: Added --cohort argument to load from college cohort CSV
+    and --state-gaps to export state-level gap analysis.
+    """
     parser = argparse.ArgumentParser(description="Measure real data coverage for forecasting")
     parser.add_argument(
         "--segment",
         choices=["US_HS", "Europe", "Canada", "All"],
         default="All",
-        help="Player segment to analyze"
+        help="Player segment to analyze (only used without --cohort)"
     )
     parser.add_argument(
         "--limit",
         type=int,
-        default=100,
-        help="Max number of players to analyze"
+        default=None,
+        help="Max number of players to analyze (None = all)"
     )
     parser.add_argument(
         "--verbose",
         action="store_true",
         help="Print per-player details"
     )
+    parser.add_argument(
+        "--cohort",
+        type=str,
+        default=None,
+        help="Path to college cohort CSV (from build_college_cohort.py)"
+    )
+    parser.add_argument(
+        "--state-gaps",
+        type=str,
+        default=None,
+        help="Export state coverage gaps to CSV file"
+    )
 
     args = parser.parse_args()
 
-    # Load players from DuckDB
-    players = await load_players_from_duckdb(
-        segment=args.segment,
-        limit=args.limit
-    )
+    # Load players: either from cohort CSV or DuckDB
+    if args.cohort:
+        # Enhancement 12.2: Load from college cohort CSV for REAL coverage measurement
+        print(f"📊 Loading players from cohort CSV: {args.cohort}")
+        cohort_path = Path(args.cohort)
+        players = load_players_from_cohort_csv(cohort_path, limit=args.limit)
+        segment_name = f"College Cohort ({cohort_path.name})"
+    else:
+        # Original: Load from DuckDB
+        print(f"📊 Loading players from DuckDB (segment: {args.segment})")
+        players = await load_players_from_duckdb(
+            segment=args.segment,
+            limit=args.limit or 100
+        )
+        segment_name = args.segment
 
     if not players:
-        print("⚠️  No players found. Ensure DuckDB is populated with player data.")
-        print("   Run Enhancement 9 (DuckDB population) to load players.")
+        print("⚠️  No players found.")
+        if args.cohort:
+            print(f"   Cohort CSV not found or empty: {args.cohort}")
+            print("   Run: python scripts/build_college_cohort.py --source csv")
+        else:
+            print("   Ensure DuckDB is populated with player data.")
         return
 
     # Compute coverage scores
@@ -339,8 +601,13 @@ async def main():
         verbose=args.verbose
     )
 
-    # Print report
-    print_coverage_report(results, segment=args.segment)
+    # Print standard coverage report
+    print_coverage_report(results, segment=segment_name)
+
+    # Enhancement 12.2: Print state-level breakdown if cohort mode
+    if args.cohort or len(players) > 20:  # Only for cohorts or large samples
+        state_gaps_path = Path(args.state_gaps) if args.state_gaps else None
+        print_state_level_breakdown(results, output_csv=state_gaps_path)
 
 
 if __name__ == "__main__":

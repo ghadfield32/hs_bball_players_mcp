@@ -108,6 +108,9 @@ class DataSourceType(str, Enum):
     # International - Australia
     PLAYHQ = "playhq"  # PlayHQ Australia
 
+    # CSV Imports (Enhancement 12.3)
+    CSV_RECRUITING = "csv_recruiting"  # CSV-based recruiting rankings import
+
     UNKNOWN = "unknown"  # Unknown/other source
 
 
