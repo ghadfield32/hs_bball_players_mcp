@@ -4,14 +4,15 @@ OSBA (Ontario Scholastic Basketball Association) DataSource Adapter
 Scrapes player statistics from Ontario prep basketball leagues.
 OSBA covers Canadian prep academies and high school basketball.
 
-Implementation Status: REQUIRES WEBSITE INSPECTION
-Before implementing, visit https://www.osba.ca and:
-1. Locate stats/players page
-2. Inspect HTML table structure
-3. Identify divisions (U17, U19, Prep)
-4. Note column names for stats
-5. Check robots.txt for scraping permissions
-6. Understand league structure and divisions
+Implementation Status: ACTIVATED (2025-11-16)
+Website Inspection Findings:
+1. Correct URL: https://www.ontariosba.ca (NOT osba.ca)
+2. Platform: RAMP Interactive (team-centric navigation)
+3. Divisions: OSBA Mens, OSBA Womens, Trillium Mens, D-League Girls/Boys
+4. Features: Schedule, Standings, Player Leaders, Rosters
+5. Navigation: Division -> Team -> Roster/Stats (no centralized stats page)
+6. Recent games visible (active league as of November 2025)
+7. May require team-by-team scraping approach
 """
 
 from datetime import datetime
@@ -31,13 +32,17 @@ from ...models import (
 )
 from ...utils import (
     build_leaderboard_entry,
+    clean_player_name,
     extract_table_data,
     find_stat_table,
+    get_text_or_none,
     parse_float,
     parse_html,
+    parse_int,
     parse_player_from_row,
     parse_season_stats_from_row,
 )
+from ...utils.browser_client import BrowserClient
 from ..base import BaseDataSource
 
 
@@ -57,32 +62,53 @@ class OSBADataSource(BaseDataSource):
 
     source_type = DataSourceType.OSBA
     source_name = "OSBA"
-    base_url = "https://www.osba.ca"
+    base_url = "https://www.ontariosba.ca"
     region = DataSourceRegion.CANADA
 
     def __init__(self):
-        """Initialize OSBA datasource."""
+        """Initialize OSBA datasource with browser automation."""
         super().__init__()
 
-        # STEP 1: Update these URLs after inspecting the website
-        # Visit https://www.osba.ca and find actual paths
-        # Common patterns to check:
-        # - /stats, /statistics, /leaders
-        # - /players, /rosters
-        # - /teams, /schools
-        # - /schedule, /games, /scores
-        # - /divisions/{division-name}/stats
-        # - /season/{season-id}/stats
+        # OSBA URLs (verified 2025-11-16)
+        # Base: https://www.ontariosba.ca
+        # Platform: RAMP Interactive (team-centric navigation)
 
-        # TODO: Replace with actual OSBA URLs
-        self.stats_url = f"{self.base_url}/stats"  # UPDATE AFTER INSPECTION
-        self.players_url = f"{self.base_url}/players"  # UPDATE AFTER INSPECTION
-        self.teams_url = f"{self.base_url}/teams"  # UPDATE AFTER INSPECTION
-        self.schedule_url = f"{self.base_url}/schedule"  # UPDATE AFTER INSPECTION
-        self.leaders_url = f"{self.base_url}/leaders"  # UPDATE AFTER INSPECTION
+        # Note: OSBA uses RAMP Interactive platform with team-centric navigation
+        # Stats are accessed via Division -> Team -> Roster/Leaders
+        # No centralized stats page found during inspection
 
-        # Division-specific URL patterns (update after inspection)
-        # self.division_stats_url = f"{self.base_url}/division/{{division}}/stats"
+        # Division pages (known divisions)
+        self.divisions = {
+            'osba_mens': 'OSBA Mens',
+            'osba_womens': 'OSBA Womens',
+            'trillium_mens': 'Trillium Mens',
+            'dleague_girls': 'D-League Girls',
+            'dleague_boys': 'D-League Boys',
+        }
+
+        # Main URLs (may require further inspection for exact paths)
+        self.schedule_url = f"{self.base_url}/schedule"
+        self.standings_url = f"{self.base_url}/standings"
+
+        # Team-based URLs (template - requires division/team IDs)
+        # Example pattern: /division/{division_id}/team/{team_id}/roster
+        # Example pattern: /division/{division_id}/team/{team_id}/stats
+
+        # Initialize browser client for RAMP Interactive navigation
+        self.browser_client = BrowserClient(
+            settings=self.settings,
+            browser_type=self.settings.browser_type if hasattr(self.settings, 'browser_type') else "chromium",
+            headless=self.settings.browser_headless if hasattr(self.settings, 'browser_headless') else True,
+            timeout=self.settings.browser_timeout if hasattr(self.settings, 'browser_timeout') else 60000,
+            cache_enabled=self.settings.browser_cache_enabled if hasattr(self.settings, 'browser_cache_enabled') else True,
+            cache_ttl=self.settings.browser_cache_ttl if hasattr(self.settings, 'browser_cache_ttl') else 3600,
+        )
+
+        self.logger.info(
+            "OSBA initialized with browser automation",
+            base_url=self.base_url,
+            divisions=list(self.divisions.keys())
+        )
 
     async def get_player(self, player_id: str) -> Optional[Player]:
         """
@@ -107,124 +133,189 @@ class OSBADataSource(BaseDataSource):
         name: Optional[str] = None,
         team: Optional[str] = None,
         season: Optional[str] = None,
+        division: Optional[str] = None,
         limit: int = 50,
     ) -> list[Player]:
         """
         Search for players in OSBA leagues.
 
-        IMPLEMENTATION STEPS:
-        1. Visit https://www.osba.ca/stats (or similar)
-        2. Select a division (U17, U19, Prep) if organized by division
-        3. Open browser DevTools (F12) -> Network tab
-        4. Locate the stats table on the page
-        5. Right-click the table -> Inspect
-        6. Note the table's class name (e.g., "stats-table", "player-stats")
-        7. Note column headers: Player, School, Pos, Class, GP, PPG, RPG, APG, etc.
-        8. Update find_stat_table() parameter below with actual class name
-        9. Test the implementation
-        10. May need to iterate through divisions to get all players
+        Uses browser automation to navigate RAMP Interactive platform.
+        OSBA uses team-centric navigation with division-specific leaders pages.
+
+        NOTE: This is a baseline implementation. Full implementation requires:
+        1. Discovering exact URLs for division-specific leaders pages
+        2. Iterating through all divisions if division parameter is None
+        3. Handling RAMP Interactive's dynamic content loading
+        4. Team-by-team scraping if no centralized leaders exist
 
         Args:
             name: Player name filter (partial match)
             team: Team/school name filter
             season: Season filter (e.g., "2024-25")
+            division: Division filter (osba_mens, osba_womens, etc.)
             limit: Maximum results
 
         Returns:
             List of Player objects
         """
         try:
-            # Fetch stats page with 1-hour cache
-            html = await self.http_client.get_text(self.stats_url, cache_ttl=3600)
+            self.logger.info("Fetching OSBA player stats (browser automation with RAMP Interactive)")
+
+            # Use browser automation for RAMP Interactive platform
+            from playwright.async_api import async_playwright
+            import asyncio
+
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(
+                    headless=self.browser_client.headless
+                )
+                page = await browser.new_page()
+
+                # Navigate to homepage first
+                self.logger.debug(f"Loading OSBA homepage: {self.base_url}")
+                await page.goto(self.base_url, wait_until="networkidle", timeout=60000)
+
+                # Wait for page to load
+                await asyncio.sleep(3)
+
+                # Try to find "Leaders" or "Stats" links
+                # RAMP Interactive typically has navigation menus
+                self.logger.debug("Looking for Leaders/Stats links...")
+
+                # Try multiple strategies to find stats
+                stats_found = False
+
+                # Strategy 1: Look for "Leaders" link in navigation
+                leaders_link = await page.query_selector("a:has-text('Leaders')")
+                if leaders_link:
+                    self.logger.debug("Found 'Leaders' link, clicking...")
+                    await leaders_link.click()
+                    await asyncio.sleep(5)
+                    stats_found = True
+
+                # Strategy 2: Look for "Stats" link
+                if not stats_found:
+                    stats_link = await page.query_selector("a:has-text('Stats')")
+                    if stats_link:
+                        self.logger.debug("Found 'Stats' link, clicking...")
+                        await stats_link.click()
+                        await asyncio.sleep(5)
+                        stats_found = True
+
+                # Strategy 3: Look for "Player Rankings" or "Player Power Rankings"
+                if not stats_found:
+                    rankings_link = await page.query_selector("a:has-text('Player')")
+                    if rankings_link:
+                        self.logger.debug("Found 'Player' link, clicking...")
+                        await rankings_link.click()
+                        await asyncio.sleep(5)
+                        stats_found = True
+
+                if not stats_found:
+                    self.logger.warning("Could not find stats/leaders navigation in OSBA")
+
+                # Get rendered HTML
+                html = await page.content()
+                await browser.close()
+
+                self.logger.debug("OSBA page loaded")
+
+            # Parse rendered HTML
             soup = parse_html(html)
 
-            # STEP 2: Find stats table
-            # After inspecting website, update table_class_hint parameter
-            # Try one of these strategies:
-
-            # Strategy 1: Find by class hint
-            table = find_stat_table(soup, table_class_hint="stats")
-
-            # Strategy 2: Find by header text (uncomment if needed)
-            # table = find_stat_table(soup, header_text="Player Statistics")
-
-            # Strategy 3: Find by ID (uncomment if needed)
-            # table = soup.find("table", id="player-stats")
-
-            # Strategy 4: Fallback - first table (uncomment if needed)
-            # if not table:
-            #     table = soup.find("table")
+            # Try to find stats table
+            table = soup.find("table") or soup.find("div", class_=lambda x: x and "table" in x.lower())
 
             if not table:
-                self.logger.warning("No stats table found on OSBA stats page")
+                self.logger.warning("No stats table found on OSBA page")
+                self.logger.info("OSBA may require manual URL discovery for division-specific leaders pages")
                 return []
 
-            # Extract table rows as dictionaries
-            rows = extract_table_data(table)
+            # Extract rows
+            rows = table.find_all("tr") if hasattr(table, 'find_all') else []
+            self.logger.info(f"Found {len(rows)} rows in OSBA table")
 
-            # Create data source metadata
-            data_source = self.create_data_source_metadata(
-                url=self.stats_url, quality_flag=DataQualityFlag.COMPLETE
-            )
+            if not rows:
+                return []
 
             players = []
-            for row in rows[: limit * 2]:  # Get extra for filtering
-                # Use helper to parse common player fields
-                player_data = parse_player_from_row(
-                    row,
-                    source_prefix="osba",
-                    default_level="HIGH_SCHOOL",  # OSBA is prep/high school
-                )
+            seen_players = set()
 
-                if not player_data:
+            data_source = self.create_data_source_metadata(
+                url=self.base_url, quality_flag=DataQualityFlag.PARTIAL
+            )
+
+            # Skip header row
+            data_rows = rows[1:] if len(rows) > 1 else []
+
+            for row in data_rows:
+                cells = row.find_all("td")
+                if len(cells) < 2:  # Need at least player and one stat
                     continue
 
-                # Add OSBA-specific fields
-                player_data["data_source"] = data_source
-                player_data["level"] = PlayerLevel.HIGH_SCHOOL
+                # Parse row (OSBA format may vary)
+                player_text = cells[0].get_text(strip=True) if len(cells) > 0 else ""
+                school_text = cells[1].get_text(strip=True) if len(cells) > 1 else ""
 
-                # OSBA may use "School" instead of "Team"
-                if not player_data.get("team_name"):
-                    school = row.get("School") or row.get("SCHOOL")
-                    if school:
-                        player_data["team_name"] = school
+                if not player_text:
+                    continue
 
-                # Extract class/grade if available
-                player_class = row.get("Class") or row.get("GRADE")
-                if player_class:
-                    # Add to notes
-                    class_note = f"Class: {player_class}"
-                    if player_data.get("notes"):
-                        player_data["notes"] = f"{player_data['notes']} | {class_note}"
-                    else:
-                        player_data["notes"] = class_note
+                # Clean player name
+                player_name = clean_player_name(player_text)
+                if not player_name:
+                    continue
 
-                # Validate with Pydantic model
-                player = self.validate_and_log_data(
-                    Player, player_data, f"player {player_data.get('full_name')}"
-                )
+                # Split name into first/last
+                name_parts = player_name.split()
+                if len(name_parts) >= 2:
+                    first_name = name_parts[0]
+                    last_name = " ".join(name_parts[1:])
+                else:
+                    first_name = ""
+                    last_name = player_name
 
-                if not player:
+                # Generate player ID
+                player_id = f"osba_{player_name.lower().replace(' ', '_')}"
+
+                # Avoid duplicates
+                if player_id in seen_players:
                     continue
 
                 # Apply filters
-                if name and name.lower() not in player.full_name.lower():
+                if name and name.lower() not in player_name.lower():
                     continue
-                if team and (
-                    not player.team_name or team.lower() not in player.team_name.lower()
-                ):
+                if team and (not school_text or team.lower() not in school_text.lower()):
                     continue
 
+                # Create Player object
+                player = Player(
+                    player_id=player_id,
+                    first_name=first_name,
+                    last_name=last_name,
+                    full_name=player_name,
+                    team_name=school_text if school_text else None,
+                    level=PlayerLevel.HIGH_SCHOOL,  # OSBA is prep/high school
+                    school_state="ON",  # Ontario
+                    school_country="CA",  # Canada
+                    data_source=data_source,
+                )
+
                 players.append(player)
+                seen_players.add(player_id)
 
                 if len(players) >= limit:
                     break
 
-            self.logger.info(f"Found {len(players)} OSBA players")
+            self.logger.info(f"Found {len(players)} OSBA players", filters={"name": name, "team": team, "division": division})
+
+            if len(players) == 0:
+                self.logger.warning("No OSBA players found - may need manual URL discovery")
+                self.logger.info("Next steps: 1) Inspect OSBA site manually, 2) Find division-specific leaders URLs, 3) Update adapter")
+
             return players
 
         except Exception as e:
-            self.logger.error("OSBA player search failed", error=str(e))
+            self.logger.error("Failed to search OSBA players", error=str(e))
             return []
 
     async def get_player_season_stats(

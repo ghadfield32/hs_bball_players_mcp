@@ -9,6 +9,10 @@ Uses deterministic key-based matching with optional fuzzy fallback.
 - Confidence scoring (1.0 = perfect match, 0.5 = weak fuzzy match)
 - Duplicate detection with candidate suggestions
 - Merge history tracking
+
+**ENHANCED (Phase HS-3b):**
+- Manual player link overrides from DuckDB
+- Cross-source identity resolution with manual verification support
 """
 
 from __future__ import annotations
@@ -21,6 +25,9 @@ from ..models import Player
 from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+# DuckDB connection holder (lazy initialized)
+_duckdb_conn = None
 
 
 # In-memory caches
@@ -35,6 +42,156 @@ _duplicate_candidates: Dict[str, List[Tuple[str, float]]] = {}
 
 # Merge history: merged_uid -> canonical_uid
 _merge_history: Dict[str, str] = {}
+
+
+# ==============================================================================
+# DUCKDB INTEGRATION FOR MANUAL OVERRIDES (Phase HS-3b)
+# ==============================================================================
+
+
+def _get_duckdb_connection():
+    """Get or create DuckDB connection for manual overrides."""
+    global _duckdb_conn
+    if _duckdb_conn is None:
+        try:
+            from .duckdb_storage import get_duckdb_storage
+            storage = get_duckdb_storage()
+            _duckdb_conn = storage.conn
+            logger.debug("DuckDB connection initialized for identity service")
+        except Exception as e:
+            logger.warning(f"Could not initialize DuckDB connection for identity service: {e}")
+            _duckdb_conn = None
+    return _duckdb_conn
+
+
+def check_manual_player_link(
+    source_type: str,
+    player_id: str
+) -> Optional[str]:
+    """
+    Check if a manual player link exists for this source + player_id.
+
+    Args:
+        source_type: Data source type (e.g., 'bound', 'eybl', '247sports')
+        player_id: Source-specific player ID
+
+    Returns:
+        Canonical player_uid if manual link exists, None otherwise
+    """
+    conn = _get_duckdb_connection()
+    if not conn:
+        return None
+
+    try:
+        # Check both source1 and source2 columns (link can be bidirectional)
+        query = """
+            SELECT canonical_player_uid, link_type, confidence_score
+            FROM manual_player_links
+            WHERE (
+                (source1_type = ? AND source1_player_id = ?)
+                OR (source2_type = ? AND source2_player_id = ?)
+            )
+            AND link_type = 'SAME_PLAYER'
+            ORDER BY confidence_score DESC
+            LIMIT 1
+        """
+        result = conn.execute(query, [source_type, player_id, source_type, player_id]).fetchone()
+
+        if result:
+            canonical_uid, link_type, confidence = result
+            logger.debug(
+                "Manual player link found",
+                source_type=source_type,
+                player_id=player_id,
+                canonical_uid=canonical_uid,
+                confidence=confidence
+            )
+            return canonical_uid
+
+        return None
+
+    except Exception as e:
+        logger.warning(f"Error checking manual player link: {e}")
+        return None
+
+
+def add_manual_player_link(
+    source1_type: str,
+    source1_player_id: str,
+    source2_type: str,
+    source2_player_id: str,
+    canonical_player_uid: str,
+    confidence_score: float = 1.0,
+    link_type: str = "SAME_PLAYER",
+    notes: Optional[str] = None,
+    created_by: str = "manual"
+) -> bool:
+    """
+    Add a manual player link to DuckDB.
+
+    Args:
+        source1_type: First source type
+        source1_player_id: First source player ID
+        source2_type: Second source type
+        source2_player_id: Second source player ID
+        canonical_player_uid: Canonical UID to use for both
+        confidence_score: Match confidence (0.0-1.0)
+        link_type: 'SAME_PLAYER', 'NOT_SAME_PLAYER', or 'UNCERTAIN'
+        notes: Human-readable notes
+        created_by: Who created this link
+
+    Returns:
+        True if link was added successfully
+    """
+    conn = _get_duckdb_connection()
+    if not conn:
+        logger.error("Cannot add manual link: DuckDB not available")
+        return False
+
+    try:
+        import uuid
+
+        link_id = str(uuid.uuid4())
+
+        conn.execute("""
+            INSERT INTO manual_player_links (
+                link_id, source1_type, source1_player_id,
+                source2_type, source2_player_id,
+                canonical_player_uid, confidence_score,
+                link_type, notes, created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT (source1_type, source1_player_id, source2_type, source2_player_id)
+            DO UPDATE SET
+                canonical_player_uid = EXCLUDED.canonical_player_uid,
+                confidence_score = EXCLUDED.confidence_score,
+                link_type = EXCLUDED.link_type,
+                notes = EXCLUDED.notes,
+                created_by = EXCLUDED.created_by
+        """, [
+            link_id, source1_type, source1_player_id,
+            source2_type, source2_player_id,
+            canonical_player_uid, confidence_score,
+            link_type, notes, created_by
+        ])
+
+        logger.info(
+            "Manual player link added",
+            source1=f"{source1_type}:{source1_player_id}",
+            source2=f"{source2_type}:{source2_player_id}",
+            canonical_uid=canonical_player_uid,
+            link_type=link_type
+        )
+
+        return True
+
+    except Exception as e:
+        logger.error(f"Failed to add manual player link: {e}")
+        return False
+
+
+# ==============================================================================
+# NORMALIZATION FUNCTIONS
+# ==============================================================================
 
 
 def _normalize_name(name: str) -> str:
@@ -121,9 +278,58 @@ def resolve_player_uid(
     return uid
 
 
+def resolve_player_uid_with_source(
+    name: str,
+    school: str,
+    grad_year: Optional[int] = None,
+    source_type: Optional[str] = None,
+    player_id: Optional[str] = None
+) -> str:
+    """
+    Resolve a player to a stable UID with manual override support.
+
+    **NEW (Phase HS-3b):** Checks manual_player_links table first before using
+    automated matching.
+
+    Args:
+        name: Player's full name
+        school: School name
+        grad_year: Graduation year (optional)
+        source_type: Data source type (e.g., 'bound', 'eybl', '247sports')
+        player_id: Source-specific player ID
+
+    Returns:
+        Canonical player UID string
+
+    Example:
+        >>> resolve_player_uid_with_source(
+        ...     "John Smith", "Lincoln HS", 2025,
+        ...     source_type="bound", player_id="bound_ia_john_smith"
+        ... )
+        'john_smith::lincoln::2025'
+    """
+    # Step 1: Check manual overrides (if source info provided)
+    if source_type and player_id:
+        manual_uid = check_manual_player_link(source_type, player_id)
+        if manual_uid:
+            logger.debug(
+                "Using manual override for player identity",
+                source_type=source_type,
+                player_id=player_id,
+                manual_uid=manual_uid
+            )
+            return manual_uid
+
+    # Step 2: Fall back to automated matching
+    return resolve_player_uid(name, school, grad_year)
+
+
 def enrich_player_with_uid(player: Player) -> Player:
     """
     Add a stable player_uid field to a Player model.
+
+    **UPDATED (Phase HS-3b):** Now checks manual_player_links table for overrides
+    before using automated matching.
 
     Args:
         player: Player model instance
@@ -131,8 +337,18 @@ def enrich_player_with_uid(player: Player) -> Player:
     Returns:
         Player with player_uid field set
     """
-    uid = resolve_player_uid(
-        player.full_name, player.school_name or "", player.grad_year
+    # Extract source info if available
+    source_type = None
+    if hasattr(player, 'data_source') and player.data_source:
+        source_type = player.data_source.source_type.value if hasattr(player.data_source.source_type, 'value') else str(player.data_source.source_type)
+
+    # Use enhanced resolution with manual override support
+    uid = resolve_player_uid_with_source(
+        name=player.full_name,
+        school=player.school_name or "",
+        grad_year=player.grad_year,
+        source_type=source_type,
+        player_id=player.player_id
     )
 
     # Use model_copy to add the uid field

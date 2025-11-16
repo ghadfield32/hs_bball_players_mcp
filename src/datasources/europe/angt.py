@@ -4,14 +4,15 @@ ANGT (Adidas Next Generation Tournament) DataSource Adapter
 Scrapes player statistics from EuroLeague Next Generation Tournament.
 ANGT is the premier U18 club tournament in Europe.
 
-Implementation Status: REQUIRES WEBSITE INSPECTION
-Before implementing, visit https://www.euroleaguebasketball.net/next-generation and:
-1. Locate stats/players page for latest tournament
-2. Inspect HTML table structure
-3. Identify column names including PIR (Performance Index Rating)
-4. Note URL patterns for competitions, players, and games
-5. Check robots.txt for scraping permissions
-6. Understand tournament structure (group stage + finals)
+Implementation Status: ACTIVATED (2025-11-16)
+Website Inspection Findings:
+1. Base URL: https://www.euroleaguebasketball.net/ngt
+2. JavaScript-rendered stats (React/AJAX) - requires browser automation
+3. URL patterns: /ngt/stats, /ngt/players, /ngt/teams, /ngt/game-center
+4. Current season: 2025-26
+5. Stats available: PIR, Points, Assists, Rebounds, Steals, Blocks
+6. Filters: statisticMode, seasonMode, sortDirection, statistic
+7. Pagination: size parameter (up to 1000 entries)
 """
 
 from datetime import datetime
@@ -31,13 +32,17 @@ from ...models import (
 )
 from ...utils import (
     build_leaderboard_entry,
+    clean_player_name,
     extract_table_data,
     find_stat_table,
+    get_text_or_none,
     parse_float,
     parse_html,
+    parse_int,
     parse_player_from_row,
     parse_season_stats_from_row,
 )
+from ...utils.browser_client import BrowserClient
 from ..base import BaseDataSource
 
 
@@ -57,32 +62,48 @@ class ANGTDataSource(BaseDataSource):
 
     source_type = DataSourceType.ANGT
     source_name = "ANGT (Next Generation)"
-    base_url = "https://www.euroleaguebasketball.net/next-generation"
+    base_url = "https://www.euroleaguebasketball.net/ngt"
     region = DataSourceRegion.EUROPE
 
     def __init__(self):
-        """Initialize ANGT datasource."""
+        """Initialize ANGT datasource with browser automation."""
         super().__init__()
 
-        # STEP 1: Update these URLs after inspecting the website
-        # Visit https://www.euroleaguebasketball.net/next-generation
-        # Common patterns to check:
-        # - /next-generation/stats
-        # - /next-generation/competition/2024-25/players
-        # - /next-generation/teams
-        # - /next-generation/games
-        # - /next-generation/player/{player-code}
-        # - /next-generation/game/{game-code}/boxscore
+        # ANGT URLs (verified 2025-11-16)
+        # Base: https://www.euroleaguebasketball.net/ngt
+        # JavaScript-rendered (React/AJAX) - requires browser automation
 
-        # TODO: Replace with actual ANGT URLs
-        self.competition_url = f"{self.base_url}/competition"  # UPDATE AFTER INSPECTION
-        self.stats_url = f"{self.base_url}/stats"  # UPDATE AFTER INSPECTION
-        self.players_url = f"{self.base_url}/players"  # UPDATE AFTER INSPECTION
-        self.teams_url = f"{self.base_url}/teams"  # UPDATE AFTER INSPECTION
-        self.games_url = f"{self.base_url}/games"  # UPDATE AFTER INSPECTION
+        self.stats_url = f"{self.base_url}/stats"
+        self.players_url = f"{self.base_url}/players"
+        self.teams_url = f"{self.base_url}/teams"
+        self.games_url = f"{self.base_url}/game-center"
 
-        # Current season (update as needed)
-        self.current_season = "2024-25"
+        # Stats filters (for API parameters)
+        # statisticMode: total, perGame, per40Minutes
+        # seasonMode: Season, Tournament
+        # statistic: PIR, points, assists, rebounds, steals, blocks
+        # sortDirection: asc, desc
+        # size: pagination limit (default 25, max appears to be 1000)
+
+        # Current season (verified from website)
+        self.current_season = "2025-26"
+
+        # Initialize browser client for JavaScript rendering
+        # ANGT uses React to load stats from API, requires browser automation
+        self.browser_client = BrowserClient(
+            settings=self.settings,
+            browser_type=self.settings.browser_type if hasattr(self.settings, 'browser_type') else "chromium",
+            headless=self.settings.browser_headless if hasattr(self.settings, 'browser_headless') else True,
+            timeout=self.settings.browser_timeout if hasattr(self.settings, 'browser_timeout') else 60000,
+            cache_enabled=self.settings.browser_cache_enabled if hasattr(self.settings, 'browser_cache_enabled') else True,
+            cache_ttl=self.settings.browser_cache_ttl if hasattr(self.settings, 'browser_cache_ttl') else 3600,
+        )
+
+        self.logger.info(
+            "ANGT initialized with browser automation",
+            base_url=self.base_url,
+            stats_url=self.stats_url
+        )
 
     async def get_player(self, player_id: str) -> Optional[Player]:
         """
@@ -111,116 +132,162 @@ class ANGTDataSource(BaseDataSource):
         """
         Search for players in ANGT tournaments.
 
-        IMPLEMENTATION STEPS:
-        1. Visit https://www.euroleaguebasketball.net/next-generation/stats
-        2. Find the stats page for current or specified season
-        3. Open browser DevTools (F12) -> Network tab
-        4. Locate the stats table on the page
-        5. Right-click the table -> Inspect
-        6. Note the table's class name (may use EuroLeague's standard classes)
-        7. Note column headers: Player, Club, Pos, GP, MIN, PTS, REB, AST, PIR, etc.
-        8. PIR = Performance Index Rating (key EuroLeague metric)
-        9. Update find_stat_table() parameter below with actual class name
-        10. Test the implementation
+        Uses browser automation to render JavaScript-based stats (React/AJAX).
+        ANGT website loads stats dynamically from EuroLeague API after page load.
 
         Args:
             name: Player name filter (partial match)
             team: Team/club name filter
-            season: Season filter (e.g., "2024-25")
+            season: Season filter (e.g., "2025-26"), defaults to current
             limit: Maximum results
 
         Returns:
             List of Player objects
         """
         try:
-            # Use specified season or default to current
-            season_to_use = season or self.current_season
+            self.logger.info("Fetching ANGT player stats (browser automation with React)")
 
-            # Fetch stats page with 1-hour cache
-            # May need to adjust URL format based on actual site structure
-            stats_url = f"{self.stats_url}/{season_to_use}"
-            html = await self.http_client.get_text(stats_url, cache_ttl=3600)
+            # Use browser automation for JavaScript-rendered stats
+            from playwright.async_api import async_playwright
+            import asyncio
+
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(
+                    headless=self.browser_client.headless
+                )
+                page = await browser.new_page()
+
+                # Build URL with query parameters for better data loading
+                # size=1000 gets max players in one page (efficient)
+                # statistic=PIR gets players sorted by Performance Index Rating
+                stats_url = f"{self.stats_url}?size=1000&statistic=PIR&statisticMode=perGame"
+
+                self.logger.debug(f"Loading ANGT stats page: {stats_url}")
+                await page.goto(stats_url, wait_until="networkidle", timeout=60000)
+
+                # Wait for React table to render
+                # ANGT likely uses standard table or div-based table structure
+                self.logger.debug("Waiting for stats table to load...")
+
+                # Try multiple selectors (React apps vary)
+                table_selectors = [
+                    "table",  # Standard table
+                    "div[class*='table']",  # Div-based table
+                    "div[class*='stats']",  # Stats container
+                    "div[class*='players']",  # Players container
+                ]
+
+                table_loaded = False
+                for selector in table_selectors:
+                    try:
+                        await page.wait_for_selector(selector, timeout=10000)
+                        self.logger.debug(f"Found stats table with selector: {selector}")
+                        table_loaded = True
+                        break
+                    except:
+                        continue
+
+                if not table_loaded:
+                    self.logger.warning("No stats table found, waiting for network idle")
+
+                # Wait for network to settle (React may still be loading)
+                await asyncio.sleep(5)
+
+                # Get rendered HTML
+                html = await page.content()
+                await browser.close()
+
+                self.logger.debug("ANGT stats loaded successfully")
+
+            # Parse rendered HTML
             soup = parse_html(html)
 
-            # STEP 2: Find stats table
-            # After inspecting website, update table_class_hint parameter
-            # Try one of these strategies:
-
-            # Strategy 1: Find by class hint (EuroLeague often uses specific classes)
-            table = find_stat_table(soup, table_class_hint="stats")
-
-            # Strategy 2: Find by header text (uncomment if needed)
-            # table = find_stat_table(soup, header_text="Player Statistics")
-
-            # Strategy 3: Find by ID (uncomment if needed)
-            # table = soup.find("table", id="player-stats")
-
-            # Strategy 4: Fallback - first table (uncomment if needed)
-            # if not table:
-            #     table = soup.find("table")
+            # Find stats table (EuroLeague standard structure)
+            table = soup.find("table") or soup.find("div", class_=lambda x: x and "table" in x.lower())
 
             if not table:
-                self.logger.warning("No stats table found on ANGT stats page")
+                self.logger.warning("No stats table found in ANGT page")
                 return []
 
-            # Extract table rows as dictionaries
-            rows = extract_table_data(table)
+            # Extract rows
+            rows = table.find_all("tr") if hasattr(table, 'find_all') else []
+            self.logger.info(f"Found {len(rows)} rows in ANGT stats table")
 
-            # Create data source metadata
+            if not rows:
+                return []
+
+            players = []
+            seen_players = set()
+
             data_source = self.create_data_source_metadata(
                 url=stats_url, quality_flag=DataQualityFlag.COMPLETE
             )
 
-            players = []
-            for row in rows[: limit * 2]:  # Get extra for filtering
-                # Use helper to parse common player fields
-                player_data = parse_player_from_row(
-                    row,
-                    source_prefix="angt",
-                    default_level="YOUTH",  # ANGT is U18 youth tournament
-                )
+            # Skip header row
+            data_rows = rows[1:] if len(rows) > 1 else []
 
-                if not player_data:
+            for row in data_rows:
+                cells = row.find_all("td")
+                if len(cells) < 3:  # Need at least player, club, stat
                     continue
 
-                # Add ANGT-specific fields
-                player_data["data_source"] = data_source
-                player_data["level"] = PlayerLevel.YOUTH
+                # Parse row into player
+                # ANGT format (typical): Player | Club | Games | Points | Rebounds | Assists | PIR
+                player_text = cells[0].get_text(strip=True) if len(cells) > 0 else ""
+                club_text = cells[1].get_text(strip=True) if len(cells) > 1 else ""
 
-                # ANGT includes club names (Real Madrid, Barcelona, etc.)
-                # The team_name should be extracted by parse_player_from_row
-                # but may need "Club" column instead of "Team"
-                if not player_data.get("team_name"):
-                    club = row.get("Club") or row.get("CLUB")
-                    if club:
-                        player_data["team_name"] = club
+                if not player_text:
+                    continue
 
-                # Validate with Pydantic model
-                player = self.validate_and_log_data(
-                    Player, player_data, f"player {player_data.get('full_name')}"
-                )
+                # Clean player name
+                player_name = clean_player_name(player_text)
+                if not player_name:
+                    continue
 
-                if not player:
+                # Split name into first/last
+                name_parts = player_name.split()
+                if len(name_parts) >= 2:
+                    first_name = name_parts[0]
+                    last_name = " ".join(name_parts[1:])
+                else:
+                    first_name = ""
+                    last_name = player_name
+
+                # Generate player ID
+                player_id = f"angt_{player_name.lower().replace(' ', '_')}"
+
+                # Avoid duplicates
+                if player_id in seen_players:
                     continue
 
                 # Apply filters
-                if name and name.lower() not in player.full_name.lower():
+                if name and name.lower() not in player_name.lower():
                     continue
-                if team and (
-                    not player.team_name or team.lower() not in player.team_name.lower()
-                ):
+                if team and (not club_text or team.lower() not in club_text.lower()):
                     continue
 
+                # Create Player object
+                player = Player(
+                    player_id=player_id,
+                    first_name=first_name,
+                    last_name=last_name,
+                    full_name=player_name,
+                    team_name=club_text if club_text else None,
+                    level=PlayerLevel.YOUTH,  # ANGT is U18
+                    data_source=data_source,
+                )
+
                 players.append(player)
+                seen_players.add(player_id)
 
                 if len(players) >= limit:
                     break
 
-            self.logger.info(f"Found {len(players)} ANGT players")
+            self.logger.info(f"Found {len(players)} ANGT players", filters={"name": name, "team": team})
             return players
 
         except Exception as e:
-            self.logger.error("ANGT player search failed", error=str(e))
+            self.logger.error("Failed to search ANGT players", error=str(e))
             return []
 
     async def get_player_season_stats(

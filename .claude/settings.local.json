@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "Bash(timeout 20 powershell:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(timeout 30 powershell:*)",
+      "Bash(timeout 180 .venv/Scripts/python.exe:*)",
+      "Bash(if [ -f \"data/debug/psal_browser_debug.html\" ])",
+      "Bash(then echo \"HTML exists\")",
+      "Bash(else echo \"HTML not found\")",
+      "Bash(fi)",
+      "Bash(timeout 120 .venv/Scripts/python.exe:*)",
+      "Bash(timeout 10 powershell:*)"
     ],
     "deny": [],
     "ask": []

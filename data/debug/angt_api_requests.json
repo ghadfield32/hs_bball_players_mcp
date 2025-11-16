@@ -1,0 +1,718 @@
+[
+  {
+    "url": "https://www.euroleaguebasketball.net/ngt/stats?size=1000&statistic=PIR&statisticMode=perGame",
+    "method": "GET",
+    "resource_type": "document",
+    "headers": {
+      "upgrade-insecure-requests": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+    "method": "GET",
+    "resource_type": "document",
+    "headers": {
+      "upgrade-insecure-requests": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/static/chunks/pages/ngt/stats-0676d9290c43035e.js",
+    "method": "GET",
+    "resource_type": "script",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/ngt/stats/undefined",
+    "method": "GET",
+    "resource_type": "image",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/ngt/stats/undefined/",
+    "method": "GET",
+    "resource_type": "image",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame"
+    }
+  },
+  {
+    "url": "https://www.google.com/ccm/collect?frm=0&en=page_view&dl=https%3A%2F%2Fwww.euroleaguebasketball.net%2Fngt%2Fstats%2F&scrsrc=www.googletagmanager.com&rnd=227277977.1763308717&dt=Next%20Gen%20Team%20and%20Player%20Stats%20%7C%20Next%20Gen&auid=1059405189.1763308717&navt=n&npa=0&gtm=45He5bd0h2v77783276za200zd77783276xea&gcd=13l3l3l3l1l1&dma=0&tag_exp=103116026~103200004~104527907~104528500~104684208~104684211~115583767~115616985~115938465~115938468~116194002~116217636~116217638&tft=1763308717148&tfd=530&apve=1&apvf=f",
+    "method": "POST",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://cdn.cookielaw.org/scripttemplates/otSDKStub.js?did=f2b6abb4-401d-4c00-8cc5-a98441ffccaa&data-document-language=true",
+    "method": "GET",
+    "resource_type": "script",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://promoblocks-cms-api.incrowdsports.com/v1/EUROLEAGUE/campaigns/content/96eab038-6859-5514-bb7f-bc861f82d021",
+    "method": "GET",
+    "resource_type": "xhr",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/stats.json?size=1000&statistic=PIR&statisticMode=perGame",
+    "method": "HEAD",
+    "resource_type": "fetch",
+    "headers": {
+      "x-nextjs-data": "1",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/stats/players.json?size=1000&viewType=traditional&statisticMode=perGame&seasonCode=JTF424&seasonMode=Single&sortDirection=descending",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/stats/key-stats-teams.json?size=200&misc=&seasonCode=JTF424&category=Score&seasonMode=Single&phase=&sortDirection=descending&aggregate=perGame",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/players/atamna-adam/012268.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/players/srzentic-ognjen/012436.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/players/aiyamenkhue-endurance/012987.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/players/towo-nansi-aaron/012847.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/players/georgas-christos/013076.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/stats/expanded.json?size=25&viewType=traditional&seasonCode=JTU24&statisticMode=perGame&seasonMode=Single&sortDirection=descending&statistic=valuation",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/players/morano-mark/012331.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/players/sermpezis-nikolas/012840.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/stats/expanded.json?size=25&viewType=traditional&seasonCode=JTU24&statisticMode=perGame&seasonMode=Single&sortDirection=descending&statistic=score",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/players/huelves-andy/012991.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/players/bousmpouras-evangelos/013071.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/players/guedegbe-isaac/013497.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/players/petrovics-helmuts/013112.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/players/kinney-taylen/013792.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/data/G9U1I06QZsA2Ho8HJr2bf/en/ngt/stats/expanded.json?size=25&viewType=traditional&seasonCode=JTU24&statisticMode=perGame&seasonMode=Single&sortDirection=descending&statistic=assistances",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "purpose": "prefetch",
+      "x-middleware-prefetch": "1",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-nextjs-data": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/static/chunks/pages/ngt/stats/key-stats-teams-0ec05eeb67d49dba.js",
+    "method": "GET",
+    "resource_type": "other",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-purpose": "prefetch",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/static/chunks/pages/ngt/players/%5Bname%5D/%5Bid%5D-068131ee382b95d0.js",
+    "method": "GET",
+    "resource_type": "other",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-purpose": "prefetch",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/static/chunks/pages/ngt/stats/expanded-3e43c47ec11b6dfa.js",
+    "method": "GET",
+    "resource_type": "other",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-purpose": "prefetch",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/static/chunks/pages/ngt/stats/players-d5eacf436077a8c1.js",
+    "method": "GET",
+    "resource_type": "other",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-purpose": "prefetch",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://t.co/1/i/adsct?bci=4&dv=America%2FNew_York%26en-US%26Google%20Inc.%26Win32%26255%261280%26720%2624%2624%261280%26720%262%26na&eci=3&event=%7B%7D&event_id=2284c9f9-cdb7-4b29-9cc2-6c9f43627169&integration=gtm&p_id=Twitter&p_user_id=0&pl_id=7b9985bc-01f2-4c58-83c4-f3c45656f477&pt=Next%20Gen%20Team%20and%20Player%20Stats%20%7C%20Next%20Gen&tw_document_href=https%3A%2F%2Fwww.euroleaguebasketball.net%2Fngt%2Fstats%2F%3Fsize%3D1000%26statistic%3DPIR%26statisticMode%3DperGame&tw_iframe_status=0&txn_id=obnth&type=javascript&version=2.3.34",
+    "method": "GET",
+    "resource_type": "image",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://analytics.twitter.com/1/i/adsct?bci=4&dv=America%2FNew_York%26en-US%26Google%20Inc.%26Win32%26255%261280%26720%2624%2624%261280%26720%262%26na&eci=3&event=%7B%7D&event_id=2284c9f9-cdb7-4b29-9cc2-6c9f43627169&integration=gtm&p_id=Twitter&p_user_id=0&pl_id=7b9985bc-01f2-4c58-83c4-f3c45656f477&pt=Next%20Gen%20Team%20and%20Player%20Stats%20%7C%20Next%20Gen&tw_document_href=https%3A%2F%2Fwww.euroleaguebasketball.net%2Fngt%2Fstats%2F%3Fsize%3D1000%26statistic%3DPIR%26statisticMode%3DperGame&tw_iframe_status=0&txn_id=obnth&type=javascript&version=2.3.34",
+    "method": "GET",
+    "resource_type": "image",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://cdn.cookielaw.org/consent/f2b6abb4-401d-4c00-8cc5-a98441ffccaa/f2b6abb4-401d-4c00-8cc5-a98441ffccaa.json",
+    "method": "GET",
+    "resource_type": "xhr",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/static/chunks/pages/ngt/players/%5Bname%5D/%5Bid%5D-068131ee382b95d0.js",
+    "method": "GET",
+    "resource_type": "script",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/static/chunks/pages/ngt/stats/expanded-3e43c47ec11b6dfa.js",
+    "method": "GET",
+    "resource_type": "script",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/static/chunks/pages/ngt/stats/key-stats-teams-0ec05eeb67d49dba.js",
+    "method": "GET",
+    "resource_type": "script",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.euroleaguebasketball.net/_next/static/chunks/pages/ngt/stats/players-d5eacf436077a8c1.js",
+    "method": "GET",
+    "resource_type": "script",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/ngt/stats/?size=1000&statistic=PIR&statisticMode=perGame",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.facebook.com/tr/?id=235901380418176&ev=PageView&dl=https%3A%2F%2Fwww.euroleaguebasketball.net%2Fngt%2Fstats%2F%3Fsize%3D1000%26statistic%3DPIR%26statisticMode%3DperGame&rl=&if=false&ts=1763308717680&sw=1280&sh=720&v=2.9.241&r=stable&ec=0&o=12446&fbp=fb.1.1763308717676.877670518483488558&cs_est=true&ler=empty&bfs[b]=1&pmd[title]=Next%20Gen%20Team%20and%20Player%20Stats%20%7C%20Next%20Gen&pmd[description]=From%20three%20pointers%20to%20steals%20and%20blocks%2C%20see%20how%20your%20favorite%20players%20and%20teams%20are%20performing%20with%20our%20Next%20Gen%20stats.&plt=596.6999999992549&it=1763308717633&coo=false&expv2[0]=pl1&expv2[1]=el2&expv2[2]=bc1&expv2[3]=mr0&rqm=GET",
+    "method": "GET",
+    "resource_type": "image",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://capig.datah04.com/events/0ed540c50c6dc53612e8903538c87b1025aaaca39d71174a8068c40b0d0282fe",
+    "method": "POST",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "content-type": "text/plain;charset=UTF-8",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.facebook.com/tr/?id=989037752022880&ev=PageView&dl=https%3A%2F%2Fwww.euroleaguebasketball.net%2Fngt%2Fstats%2F%3Fsize%3D1000%26statistic%3DPIR%26statisticMode%3DperGame&rl=&if=false&ts=1763308717811&sw=1280&sh=720&v=2.9.241&r=stable&ec=0&o=12446&fbp=fb.1.1763308717676.877670518483488558&cs_est=true&ler=empty&bfs[b]=1&pmd[title]=Next%20Gen%20Team%20and%20Player%20Stats%20%7C%20Next%20Gen&pmd[description]=From%20three%20pointers%20to%20steals%20and%20blocks%2C%20see%20how%20your%20favorite%20players%20and%20teams%20are%20performing%20with%20our%20Next%20Gen%20stats.&plt=596.6999999992549&eid=ob3_plugin-set_3d6d89203a6d96c5f03936339040ebb8008d98ddc6779709698272bbd96a2c0a&it=1763308717633&coo=false&cf=1&expv2[0]=pl1&expv2[1]=el2&expv2[2]=bc1&expv2[3]=mr0&rqm=GET",
+    "method": "GET",
+    "resource_type": "image",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://analytics.tiktok.com/api/v2/pixel",
+    "method": "POST",
+    "resource_type": "ping",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "content-type": "text/plain;charset=UTF-8",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://analytics.tiktok.com/api/v2/pixel",
+    "method": "POST",
+    "resource_type": "ping",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "content-type": "text/plain;charset=UTF-8",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://cdn.cookielaw.org/consent/f2b6abb4-401d-4c00-8cc5-a98441ffccaa/0195dd05-34e4-7312-969f-206948bab2d0/en.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://cdn.cookielaw.org/scripttemplates/202503.2.0/assets/otCenterRounded.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://cdn.cookielaw.org/scripttemplates/202503.2.0/assets/v2/otPcCenter.json",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://analytics.tiktok.com/api/v2/pixel/act",
+    "method": "POST",
+    "resource_type": "ping",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "content-type": "text/plain;charset=UTF-8",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-PJ74M6XFB3&gtm=45je5bd0h2v889942423z877783276za200zb77783276zd77783276&_p=1763308716894&gcs=G100&gcd=13p3p3p3p5l1&npa=1&dma_cps=-&dma=0&gdid=dYWJhMj&cid=1025813022.1763308718&ul=en-us&sr=1280x720&ir=1&uaa=x86&uab=64&uafvl=HeadlessChrome%3B141.0.7390.37%7CNot%253FA_Brand%3B8.0.0.0%7CChromium%3B141.0.7390.37&uamb=0&uam=&uap=Windows&uapv=19.0.0&uaw=0&are=1&frm=0&pscdl=denied&_eu=EA&_s=1&tag_exp=103116026~103200004~104527907~104528501~104684208~104684211~105322303~115497441~115583767~115616986~115938465~115938469~116217636~116217638&sid=1763308717&sct=1&seg=0&dl=https%3A%2F%2Fwww.euroleaguebasketball.net%2Fngt%2Fstats%2F%3Fsize%3D1000%26statistic%3DPIR%26statisticMode%3DperGame&dt=Next%20Gen%20Team%20and%20Player%20Stats%20%7C%20Next%20Gen&_tu=CA&en=page_view&_fv=1&_nsi=1&_ss=1&tfd=1670",
+    "method": "POST",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-3YNMBSR8L3&gtm=45je5bd0h2v867721006z877783276za200zb77783276zd77783276&_p=1763308716894&gcs=G100&gcd=13p3p3p3p5l1&npa=1&dma_cps=-&dma=0&gdid=dYWJhMj&cid=1025813022.1763308718&ecid=1644574750&ul=en-us&sr=1280x720&ir=1&uaa=x86&uab=64&uafvl=HeadlessChrome%3B141.0.7390.37%7CNot%253FA_Brand%3B8.0.0.0%7CChromium%3B141.0.7390.37&uamb=0&uam=&uap=Windows&uapv=19.0.0&uaw=0&are=1&frm=0&pscdl=denied&ec_mode=a&_eu=EA&_s=1&tag_exp=103116026~103200004~104527907~104528501~104684208~104684211~105391253~115583767~115616986~115938465~115938468~116217636~116217638&sid=1763308717&sct=1&seg=0&dl=https%3A%2F%2Fwww.euroleaguebasketball.net%2Fngt%2Fstats%2F%3Fsize%3D1000%26statistic%3DPIR%26statisticMode%3DperGame&dt=Next%20Gen%20Team%20and%20Player%20Stats%20%7C%20Next%20Gen&_tu=CA&en=page_view&_fv=1&_ss=1&tfd=1679",
+    "method": "POST",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-3KS4J6B4QL&gtm=45je5bc1v893483468z8848478577za200zb848478577zd848478577&_p=1763308716894&gcs=G100&gcd=13p3p3p3p5l1&npa=1&dma_cps=-&dma=0&gdid=dYWJhMj&cid=1025813022.1763308718&ul=en-us&sr=1280x720&uaa=x86&uab=64&uafvl=HeadlessChrome%3B141.0.7390.37%7CNot%253FA_Brand%3B8.0.0.0%7CChromium%3B141.0.7390.37&uamb=0&uam=&uap=Windows&uapv=19.0.0&uaw=0&are=1&frm=0&pscdl=denied&_s=1&tag_exp=103116026~103200004~104527907~104528501~104684208~104684211~115583767~115938465~115938468~116217636~116217638&sid=1763308717&sct=1&seg=0&dl=https%3A%2F%2Fwww.euroleaguebasketball.net%2Fngt%2Fstats%2F%3Fsize%3D1000%26statistic%3DPIR%26statisticMode%3DperGame&dt=Next%20Gen%20Team%20and%20Player%20Stats%20%7C%20Next%20Gen&_tu=CA&en=page_view&_fv=1&_ss=1&ep.content_group=NGT%20Stats&tfd=1688",
+    "method": "POST",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://securepubads.g.doubleclick.net/gampad/ads?pvsid=1380667608271656&correlator=3697851617489900&eid=31095251%2C31095782%2C83321073&output=ldjh&gdfp_req=1&vrg=202511100101&ptt=17&impl=fifs&iu_parts=3087246%2CEL_Home5_728x90_300x50&enc_prev_ius=%2F0%2F1&prev_iu_szs=728x90&ifi=1&dids=gtp-ad-hq9wJMdHp_&adfs=997664228&sfv=1-0-45&sc=1&lrm=100&cookie_enabled=1&abxe=1&dt=1763308718359&lmt=1763308718&adxs=276&adys=1058&biw=1280&bih=720&scr_x=0&scr_y=0&btvi=1&ucis=1&oid=2&u_his=2&u_h=720&u_w=1280&u_ah=720&u_aw=1280&u_cd=24&u_sd=1&u_tz=-300&dmc=8&bc=31&nvt=1&uach=WyJXaW5kb3dzIiwiMTkuMC4wIiwieDg2IiwiIiwiMTQxLjAuNzM5MC4zNyIsbnVsbCwwLG51bGwsIjY0IixbWyJIZWFkbGVzc0Nocm9tZSIsIjE0MS4wLjczOTAuMzciXSxbIk5vdD9BX0JyYW5kIiwiOC4wLjAuMCJdLFsiQ2hyb21pdW0iLCIxNDEuMC43MzkwLjM3Il1dLDBd&url=https%3A%2F%2Fwww.euroleaguebasketball.net%2Fngt%2Fstats%2F%3Fsize%3D1000%26statistic%3DPIR%26statisticMode%3DperGame&vis=1&psz=1280x2951&msz=1280x80&fws=132&ohw=1280&topics=9&tps=9&htps=10&nt=1&psd=WzMxLFtdLG51bGwsM10.&dlt=1763308716889&idt=1332&adks=3654039124&frm=20&eoidce=1&pgls=CAk.&td=1&egid=49502&tan=f6ca3ea1-3631-499e-91d9-1bc69e600fd3&tdf=2",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://securepubads.g.doubleclick.net/gampad/ads?pvsid=1380667608271656&correlator=3697851617489900&eid=31095251%2C31095782%2C83321073&output=ldjh&gdfp_req=1&vrg=202511100101&ptt=17&impl=fifs&iu_parts=3087246%2CEL_Home5_728x90_300x50&enc_prev_ius=%2F0%2F1&prev_iu_szs=728x90&ifi=2&dids=gtp-ad-BatyZDRUuS&adfs=1185367427&sfv=1-0-45&sc=1&lrm=100&cookie_enabled=1&abxe=1&dt=1763308718374&lmt=1763308718&adxs=276&adys=2395&biw=1280&bih=720&scr_x=0&scr_y=0&btvi=3&ucis=2&oid=2&u_his=2&u_h=720&u_w=1280&u_ah=720&u_aw=1280&u_cd=24&u_sd=1&u_tz=-300&dmc=8&bc=31&nvt=1&uach=WyJXaW5kb3dzIiwiMTkuMC4wIiwieDg2IiwiIiwiMTQxLjAuNzM5MC4zNyIsbnVsbCwwLG51bGwsIjY0IixbWyJIZWFkbGVzc0Nocm9tZSIsIjE0MS4wLjczOTAuMzciXSxbIk5vdD9BX0JyYW5kIiwiOC4wLjAuMCJdLFsiQ2hyb21pdW0iLCIxNDEuMC43MzkwLjM3Il1dLDBd&url=https%3A%2F%2Fwww.euroleaguebasketball.net%2Fngt%2Fstats%2F%3Fsize%3D1000%26statistic%3DPIR%26statisticMode%3DperGame&vis=1&psz=1280x2951&msz=1280x80&fws=132&ohw=1280&topics=9&tps=9&htps=10&nt=1&psd=WzMxLFtdLG51bGwsM10.&dlt=1763308716889&idt=1332&adks=3919522280&frm=20&eoidce=1&pgls=CAk.&td=1&egid=49502&tan=f6ca3ea1-3631-499e-91d9-1bc69e600fd4&tdf=2",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://oajs.openx.net/esp?url=https%3A%2F%2Fwww.euroleaguebasketball.net%2Fngt%2Fstats%2F%3Fsize%3D1000%26statistic%3DPIR%26statisticMode%3DperGame&rid=esp",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  },
+  {
+    "url": "https://oajs.openx.net/esp?url=https%3A%2F%2Fwww.euroleaguebasketball.net%2Fngt%2Fstats%2F%3Fsize%3D1000%26statistic%3DPIR%26statisticMode%3DperGame&rid=esp&cc=1",
+    "method": "GET",
+    "resource_type": "fetch",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "referer": "https://www.euroleaguebasketball.net/"
+    }
+  },
+  {
+    "url": "https://www.google.com/recaptcha/api2/aframe",
+    "method": "GET",
+    "resource_type": "document",
+    "headers": {
+      "referer": "https://www.euroleaguebasketball.net/",
+      "upgrade-insecure-requests": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    }
+  },
+  {
+    "url": "https://actor-okay.euroleaguebasketball.net/?h=https%3A%2F%2Fwww.euroleaguebasketball.net&p=%2Fngt%2Fstats%2F&r=&sid=TJXDZLIF&qs=%7B%7D&cid=61729524",
+    "method": "GET",
+    "resource_type": "image",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://www.euroleaguebasketball.net/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "sec-ch-ua": "\"HeadlessChrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+      "sec-ch-ua-mobile": "?0"
+    }
+  }
+]

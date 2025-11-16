@@ -8,9 +8,15 @@ Builds comprehensive high school basketball player datasets by merging data from
 
 Output: Unified Parquet datasets with player_uid joins for multi-year tracking.
 
+**ENHANCED (Phase HS-3b):**
+- Generates player_uid using identity resolution service
+- Supports manual player link overrides from DuckDB
+- Ensures player_uid exists before all merges
+
 Author: Claude Code
 Date: 2025-11-15
 Phase: 15 - Multi-Year HS Dataset Pipeline
+Updated: Phase HS-3b - Cross-Source Identity Resolution
 """
 
 import logging
@@ -21,6 +27,7 @@ from typing import Dict, List, Optional
 import pandas as pd
 
 from ..models.recruiting import ConferenceLevel, OfferStatus
+from ..services.identity import resolve_player_uid_with_source
 from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -44,6 +51,95 @@ class HSDatasetBuilder:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"HSDatasetBuilder initialized with output_dir={output_dir}")
+
+    def _enrich_with_player_uid(
+        self,
+        df: pd.DataFrame,
+        source_type: str,
+        name_col: str = 'player_name',
+        school_col: str = 'school_name',
+        grad_year_col: str = 'grad_year',
+        player_id_col: str = 'player_id'
+    ) -> pd.DataFrame:
+        """
+        Add player_uid column to DataFrame using identity resolution.
+
+        **NEW (Phase HS-3b):** Generates player_uid using identity service with
+        manual override support from DuckDB.
+
+        Args:
+            df: DataFrame with player data
+            source_type: Data source type (e.g., 'bound', 'eybl', '247sports')
+            name_col: Name of the player name column
+            school_col: Name of the school name column
+            grad_year_col: Name of the grad year column
+            player_id_col: Name of the player ID column
+
+        Returns:
+            DataFrame with player_uid column added
+        """
+        if df.empty:
+            logger.warning(f"Empty DataFrame provided for {source_type}, returning as-is")
+            return df
+
+        logger.info(f"Enriching {len(df)} records from {source_type} with player_uid")
+
+        # Generate player_uid for each row
+        player_uids = []
+        for idx, row in df.iterrows():
+            try:
+                # Extract fields (handle None/NaN)
+                name = row.get(name_col, '')
+                school = row.get(school_col, '')
+                grad_year = row.get(grad_year_col, None)
+                player_id = row.get(player_id_col, None)
+
+                # Handle NaN values from pandas
+                if pd.isna(name):
+                    name = ''
+                if pd.isna(school):
+                    school = ''
+                if pd.isna(grad_year):
+                    grad_year = None
+                if pd.isna(player_id):
+                    player_id = None
+
+                # Also check for class_year as alternative to grad_year
+                if grad_year is None and 'class_year' in row:
+                    grad_year = row.get('class_year', None)
+                    if pd.isna(grad_year):
+                        grad_year = None
+
+                # Generate UID
+                uid = resolve_player_uid_with_source(
+                    name=str(name),
+                    school=str(school),
+                    grad_year=int(grad_year) if grad_year is not None else None,
+                    source_type=source_type,
+                    player_id=str(player_id) if player_id is not None else None
+                )
+
+                player_uids.append(uid)
+
+            except Exception as e:
+                logger.warning(
+                    f"Failed to generate player_uid for row {idx}: {e}",
+                    row_data=row.to_dict()
+                )
+                # Fallback to player_id if UID generation fails
+                player_uids.append(row.get(player_id_col, f"unknown_{idx}"))
+
+        # Add player_uid column
+        df_enriched = df.copy()
+        df_enriched['player_uid'] = player_uids
+
+        logger.info(
+            f"Enriched {len(df_enriched)} records with player_uid",
+            source=source_type,
+            unique_uids=df_enriched['player_uid'].nunique()
+        )
+
+        return df_enriched
 
     def build_dataset(
         self,
@@ -81,7 +177,72 @@ class HSDatasetBuilder:
         """
         logger.info(f"Building HS dataset for grad year {grad_year}")
 
-        # Start with recruiting data as the base (most complete player identities)
+        # Step 1: Enrich all datasources with player_uid BEFORE merging
+        # This ensures unified player identity across all sources
+
+        # Enrich recruiting data
+        if recruiting_data is not None and not recruiting_data.empty:
+            logger.info(f"Enriching {len(recruiting_data)} recruiting records with player_uid")
+            recruiting_data = self._enrich_with_player_uid(
+                df=recruiting_data,
+                source_type='recruiting',
+                name_col='player_name',
+                school_col='school' if 'school' in recruiting_data.columns else 'school_name',
+                grad_year_col='class_year',
+                player_id_col='player_id'
+            )
+
+        # Enrich MaxPreps data
+        if maxpreps_data is not None and not maxpreps_data.empty:
+            logger.info(f"Enriching {len(maxpreps_data)} MaxPreps records with player_uid")
+            maxpreps_data = self._enrich_with_player_uid(
+                df=maxpreps_data,
+                source_type='maxpreps',
+                name_col='player_name',
+                school_col='school_name',
+                grad_year_col='grad_year',
+                player_id_col='player_id'
+            )
+
+        # Enrich state HS data (SBLive/Bound)
+        if state_hs_data is not None and not state_hs_data.empty:
+            logger.info(f"Enriching {len(state_hs_data)} state HS records with player_uid")
+            # Detect source type from player_id prefix (bound_*, sblive_*)
+            state_source = 'bound' if state_hs_data['player_uid'].str.startswith('bound').any() else 'state_hs'
+            state_hs_data = self._enrich_with_player_uid(
+                df=state_hs_data,
+                source_type=state_source,
+                name_col='player_name',
+                school_col='school_name',
+                grad_year_col='grad_year',
+                player_id_col='player_uid'  # State HS already has player_uid from export
+            )
+
+        # Enrich EYBL data
+        if eybl_data is not None and not eybl_data.empty:
+            logger.info(f"Enriching {len(eybl_data)} EYBL records with player_uid")
+            eybl_data = self._enrich_with_player_uid(
+                df=eybl_data,
+                source_type='eybl',
+                name_col='player_name',
+                school_col='school_name' if 'school_name' in eybl_data.columns else 'team_name',
+                grad_year_col='grad_year' if 'grad_year' in eybl_data.columns else 'class_year',
+                player_id_col='player_uid'  # EYBL already has player_uid from export
+            )
+
+        # Enrich offers data
+        if offers_data is not None and not offers_data.empty:
+            logger.info(f"Enriching {len(offers_data)} college offers records with player_uid")
+            offers_data = self._enrich_with_player_uid(
+                df=offers_data,
+                source_type='offers',
+                name_col='player_name',
+                school_col='school_name' if 'school_name' in offers_data.columns else 'school',
+                grad_year_col='grad_year' if 'grad_year' in offers_data.columns else 'class_year',
+                player_id_col='player_uid'  # Offers already has player_uid from export
+            )
+
+        # Step 2: Start with recruiting data as the base (most complete player identities)
         if recruiting_data is not None and not recruiting_data.empty:
             logger.info(f"Starting with {len(recruiting_data)} players from recruiting data")
             base_df = recruiting_data.copy()
@@ -97,14 +258,13 @@ class HSDatasetBuilder:
             logger.warning("No recruiting data provided, starting with MaxPreps as base")
             if maxpreps_data is not None and not maxpreps_data.empty:
                 base_df = maxpreps_data.copy()
-                base_df['player_uid'] = base_df.get('player_id', None)
             else:
                 logger.error("No base data provided (recruiting or MaxPreps)")
                 return pd.DataFrame()
 
-        # Ensure player_uid exists (required for joins)
+        # Ensure player_uid exists (should already exist from enrichment above)
         if 'player_uid' not in base_df.columns:
-            logger.warning("player_uid not found in base data, using player_id as fallback")
+            logger.error("player_uid not found after enrichment - this should not happen!")
             base_df['player_uid'] = base_df.get('player_id', None)
 
         # Filter by grad year

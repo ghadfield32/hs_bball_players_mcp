@@ -339,6 +339,32 @@ class DuckDBStorage:
             )
         """)
 
+        # ======================================================================
+        # NEW TABLE (Phase HS-3b): Manual Player Identity Links
+        # ======================================================================
+        # Manual override table for cross-source player identity resolution
+        # Purpose: Handle edge cases where automated matching fails
+        # Examples: Name changes, transfers, typos, fuzzy matches needing verification
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS manual_player_links (
+                link_id VARCHAR PRIMARY KEY,
+                source1_type VARCHAR NOT NULL,
+                source1_player_id VARCHAR NOT NULL,
+                source2_type VARCHAR NOT NULL,
+                source2_player_id VARCHAR NOT NULL,
+                canonical_player_uid VARCHAR NOT NULL,
+                confidence_score DOUBLE DEFAULT 1.0,
+                link_type VARCHAR NOT NULL DEFAULT 'SAME_PLAYER',
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR DEFAULT 'manual',
+                verified BOOLEAN DEFAULT FALSE,
+                UNIQUE(source1_type, source1_player_id, source2_type, source2_player_id),
+                CHECK (link_type IN ('SAME_PLAYER', 'NOT_SAME_PLAYER', 'UNCERTAIN')),
+                CHECK (confidence_score >= 0.0 AND confidence_score <= 1.0)
+            )
+        """)
+
         # Create indexes for common queries
         self.conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_players_name ON players(full_name, source_type)"
@@ -381,7 +407,18 @@ class DuckDBStorage:
             "CREATE INDEX IF NOT EXISTS idx_player_vectors_player ON player_vectors(player_uid, season)"
         )
 
-        logger.info("DuckDB schema initialized with 9 tables (4 stats + 3 recruiting + 2 historical) and indexes")
+        # Manual player links indexes (NEW - Phase HS-3b)
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_manual_links_source1 ON manual_player_links(source1_type, source1_player_id)"
+        )
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_manual_links_source2 ON manual_player_links(source2_type, source2_player_id)"
+        )
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_manual_links_canonical ON manual_player_links(canonical_player_uid)"
+        )
+
+        logger.info("DuckDB schema initialized with 10 tables (4 stats + 3 recruiting + 2 historical + 1 identity) and indexes")
 
     async def store_players(self, players: list[Player]) -> int:
         """
