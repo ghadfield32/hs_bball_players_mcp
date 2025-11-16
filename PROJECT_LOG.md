@@ -2032,4 +2032,303 @@ Phase 15.1 built the semantic validation framework (Tracks A & C). Phase 15.2 ta
 
 ---
 
-*Last Updated: 2025-11-16 23:45 UTC*
+## PHASE 16: FIRST HS PLAYER-SEASON EXPORTS (DATA PRODUCTION)
+
+**Date**: 2025-11-16
+**Status**: Implementation Ready
+**Goal**: Shift from framework/meta-work to actual data production - establish canonical schema and backfill pipelines
+
+### CONTEXT
+
+Phases 13-15 built comprehensive infrastructure (audit, legal triage, validation framework, research, investigation guides). Phase 16 shifts to **producing actual parquet files** and establishing the data pipeline from datasource → canonical schema → DuckDB → QA.
+
+**Key Insight from User**: "Stop adding meta layers and start driving the pipeline end-to-end for one source."
+
+**End Goal**: All high school player stats, historically and accurately at player level, to forecast best college players.
+
+### WORK COMPLETED
+
+#### Canonical HS_PLAYER_SEASON Schema ✅
+
+**Objective**: Define single universal schema that all datasources output to, enabling downstream forecasting models to consume data without caring about original source.
+
+**Created**: `config/hs_player_season_schema.yaml` (800+ lines)
+
+**Schema Highlights**:
+- **Required fields**: Identifiers (global_player_id, source, source_player_id, season), player metadata (name), context (league, team, state), core stats (GP, shooting, rebounding, assists, etc.)
+- **Optional fields**: Player attributes (height, position, grad year), calculated stats (percentages, per-game averages), advanced metrics (TS%, eFG%)
+- **Validation rules**: Built-in constraints (FGM ≤ FGA, 3PM ≤ 3PA, percentage bounds, reasonable PPG limits)
+- **Composite key**: (source, source_player_id, season) ensures one record per player-season-source
+- **Metadata**: per_game_stats flag, data_quality_flag, source_url, scraped_at timestamp
+
+**Design Decisions**:
+- Accommodate both totals (SBLive: games=28, points=550) and averages (EYBL: games=18, ppg=23.7)
+- Nullable optional fields preferred over fabricated data
+- Prefer raw counts (FGM/FGA) over percentages when available
+- global_player_id initially = source_player_id (entity resolution separate process)
+
+**Impact**: Single schema eliminates per-source friction. New sources "snap in" without downstream pipeline changes.
+
+#### EYBL Backfill Script ✅
+
+**Objective**: First data-producing script - fetch EYBL player-season stats and export to canonical parquet.
+
+**Created**: `scripts/backfill_eybl_player_seasons.py` (650+ lines)
+
+**Functionality**:
+- Fetches player season stats from Nike EYBL for specified seasons (2024, 2023, 2022)
+- Maps EYBL PlayerSeasonStats → canonical HS_PLAYER_SEASON schema
+- Handles EYBL specifics (per-game averages, no raw counts, national circuit)
+- Writes per-season parquet: `data/eybl/eybl_player_seasons_{season}.parquet`
+- Writes combined parquet: `data/eybl/eybl_player_seasons_all.parquet`
+- PyArrow schema enforcement for consistent types
+
+**Usage**:
+```bash
+python scripts/backfill_eybl_player_seasons.py --seasons 2024 2023 2022
+python scripts/backfill_eybl_player_seasons.py --seasons 2024 --limit 100 --dry-run
+```
+
+**EYBL Specifics**:
+- per_game_stats = True (EYBL provides averages)
+- No raw shooting counts (only FG%, 3P%, FT%)
+- National circuit (state_code = None)
+- League = "Nike EYBL"
+
+**Next Step**: Extract 3 real player names (15-min manual task) → run backfill → EYBL green status ✅
+
+#### SBLive Backfill Script ✅
+
+**Objective**: Multi-state backfill script for SBLive (highest ROI source - 20+ states with one adapter).
+
+**Created**: `scripts/backfill_sblive_player_seasons.py` (600+ lines)
+
+**Functionality**:
+- Fetches player season stats from SBLive for specified states and season
+- Multi-state support: WA, OR, CA, TX, FL, GA, NC, OH, PA, IN, etc.
+- Maps SBLive PlayerSeasonStats → canonical schema
+- Handles SBLive specifics (season totals, state-based, raw counts available)
+- Writes per-state parquet: `data/sblive/sblive_{state}_{season}.parquet`
+- Writes combined parquet: `data/sblive/sblive_all_states_{season}.parquet`
+
+**Usage**:
+```bash
+python scripts/backfill_sblive_player_seasons.py --states WA OR CA --season 2024-25
+python scripts/backfill_sblive_player_seasons.py --states TX FL --season 2024-25 --limit 50
+```
+
+**SBLive Specifics**:
+- per_game_stats = False (SBLive provides season totals)
+- Raw counts available (FGM, FGA, 3PM, 3PA, FTM, FTA, etc.)
+- State-specific (state_code = WA/OR/CA/etc.)
+- League = "SBLive {State}"
+
+**Next Step**: Add test cases for 2-3 states → run validator → backfill WA/OR/CA → SBLive green status
+
+#### DuckDB Loader ✅
+
+**Objective**: Combine all datasources into single queryable DuckDB table.
+
+**Created**: `scripts/load_to_duckdb.py` (350+ lines)
+
+**Functionality**:
+- Scans data/ directory for all parquet files
+- Creates `hs_player_seasons` table with canonical schema
+- Loads parquet files with INSERT OR REPLACE (handles re-runs)
+- Creates indexes for common queries (source, season, state, league, grad_year)
+- Provides summary stats (records by source, season, state)
+
+**Schema**: Matches `hs_player_season_schema.yaml` exactly (50+ columns)
+
+**Usage**:
+```bash
+python scripts/load_to_duckdb.py  # Load all parquet from data/
+python scripts/load_to_duckdb.py --rebuild  # Drop and recreate table
+python scripts/load_to_duckdb.py --sources eybl sblive  # Load specific sources
+```
+
+**Output**: `data/hs_player_seasons.duckdb` - unified table combining EYBL, SBLive, future sources
+
+**Next Step**: After backfilling EYBL + SBLive → load to DuckDB → ready for forecasting models
+
+#### QA Validation Script ✅
+
+**Objective**: Automated data quality checks on hs_player_seasons DuckDB table.
+
+**Created**: `scripts/qa_player_seasons.py` (450+ lines)
+
+**Functionality**:
+- Runs 8 validation checks from schema (shooting sanity, percentage bounds, negative stats, etc.)
+- Coverage metrics (by source, season, state, data completeness)
+- Statistical summaries (avg PPG, RPG, APG, shooting percentages)
+- Exports markdown QA report
+
+**Validation Checks**:
+1. shooting_sanity: FGM ≤ FGA (ERROR)
+2. three_point_sanity: 3PM ≤ 3PA (ERROR)
+3. free_throw_sanity: FTM ≤ FTA (ERROR)
+4. three_pointers_subset: 3PM ≤ FGM (WARNING)
+5. games_started_sanity: GS ≤ GP (ERROR)
+6. negative_stats: All stats ≥ 0 (ERROR)
+7. reasonable_ppg: 0 ≤ PPG ≤ 100 (WARNING)
+8. percentage_bounds: 0 ≤ percentages ≤ 1 (ERROR)
+
+**Usage**:
+```bash
+python scripts/qa_player_seasons.py  # Run all checks
+python scripts/qa_player_seasons.py --source eybl  # QA specific source
+python scripts/qa_player_seasons.py --export-report qa_report.md
+```
+
+**Next Step**: Run QA after each backfill → ensure data quality → iteratively improve adapters
+
+### FILES CREATED
+
+**Schema & Configuration**:
+- `config/hs_player_season_schema.yaml` - Canonical schema definition (800+ lines)
+
+**Data Production Scripts** (2,050+ lines total):
+- `scripts/backfill_eybl_player_seasons.py` - EYBL backfill (650 lines)
+- `scripts/backfill_sblive_player_seasons.py` - SBLive backfill (600 lines)
+- `scripts/load_to_duckdb.py` - DuckDB loader (350 lines)
+- `scripts/qa_player_seasons.py` - QA validation (450 lines)
+
+### IMPACT
+
+**Paradigm Shift**:
+- **Before Phase 16**: Framework building, meta-work, audit, research
+- **After Phase 16**: Actual data production, parquet files, DuckDB tables, QA loops
+
+**Data Pipeline Established**:
+1. **Config**: datasource_status.yaml + datasource_test_cases.yaml + hs_player_season_schema.yaml
+2. **Adapters**: One per datasource (eybl.py, sblive.py, etc.)
+3. **Validation**: validate_datasource_stats.py ensures per-player correctness
+4. **Backfill**: Per-source scripts generate parquet in canonical schema
+5. **Storage**: DuckDB combines everything into hs_player_seasons table
+6. **QA**: Automated validation checks + coverage metrics
+7. **Modeling**: Future forecast/scouting models read from hs_player_seasons only
+
+**Repeatable Playbook** (applies to any future datasource):
+1. Implement/patch adapter in src/datasources/
+2. Add 2-5 test cases to datasource_test_cases.yaml
+3. Run validate_datasource_stats.py --source {name}
+4. Fix parsing until sanity checks pass
+5. Write backfill script → canonical parquet
+6. Load to DuckDB → run QA
+7. Update datasource_status.yaml (status="green", seasons_supported=[])
+8. Log in PROJECT_LOG.md (1-2 lines)
+
+**Efficiency Gains**:
+- Schema defined once → all sources output same format
+- DuckDB loader source-agnostic → new sources auto-combine
+- QA script reusable → consistent quality standards
+- Backfill scripts templated → copy/modify for new sources
+
+### NEXT STEPS
+
+**Immediate (Unblock First Green Datasources)**:
+
+1. **EYBL Green Status** (30-50 minutes total)
+   - **MANUAL (15 min)**: Extract 3 real player names from nikeeyb.com
+   - Guide: `scripts/EYBL_PLAYER_EXTRACTION_GUIDE.md`
+   - Update: `config/datasource_test_cases.yaml` lines 55-77
+   - Validate: `python scripts/validate_datasource_stats.py --source eybl --verbose`
+   - Backfill: `python scripts/backfill_eybl_player_seasons.py --seasons 2024 2023 2022`
+   - Load: `python scripts/load_to_duckdb.py --sources eybl`
+   - QA: `python scripts/qa_player_seasons.py --source eybl`
+   - Mark: datasource_status.yaml status="green"
+   - **Result**: First fully green datasource ✅
+
+2. **SBLive Green Status** (3-4 hours total)
+   - Add test cases for WA, OR, CA to datasource_test_cases.yaml
+   - Validate: `python scripts/validate_datasource_stats.py --source sblive --verbose`
+   - Fix adapter if validation fails
+   - Backfill: `python scripts/backfill_sblive_player_seasons.py --states WA OR CA --season 2024-25`
+   - Load: `python scripts/load_to_duckdb.py --sources sblive`
+   - QA: `python scripts/qa_player_seasons.py --source sblive`
+   - Mark: datasource_status.yaml status="green" for WA/OR/CA
+   - **Result**: Second green datasource, 3 states coverage
+
+**Short-Term (Next 1-2 Weeks)**:
+
+3. **SBLive Expansion** (3-4 hours)
+   - Add TX, FL, GA to SUPPORTED_STATES (per SBLIVE_EXPANSION_PLAN.md)
+   - Add test cases for new states
+   - Run validator → fix issues
+   - Backfill new states
+   - **Result**: 6+ states coverage (WA, OR, CA, TX, FL, GA)
+
+4. **OSBA Investigation** (1 hour)
+   - Follow OSBA_INVESTIGATION_GUIDE.md
+   - Make GREEN/YELLOW/RED decision
+   - If GREEN: Implement adapter → run playbook
+   - **Result**: Canadian coverage (if viable)
+
+5. **FIBA Partnership** (30 min + 2-4 week wait)
+   - Submit API access request to FIBA GDAP
+   - Reference FIBA_API_RESEARCH.md
+   - **Result**: Official API access for global youth data (if approved)
+
+**Medium-Term (Weeks 3-4)**:
+
+6. **Additional Sources** (use playbook for each)
+   - 3SSB (national circuit)
+   - UAA (national circuit)
+   - State associations (per legal triage)
+   - **Result**: Comprehensive US HS coverage
+
+7. **Entity Resolution** (Phase 17 candidate)
+   - Merge same player across sources (eybl_cooper_flagg + sblive_wa_cooper_flagg)
+   - Update global_player_id to link records
+   - **Result**: Complete player career timelines
+
+8. **Downstream Models** (Phase 18 candidate)
+   - Read from hs_player_seasons DuckDB
+   - Feature engineering (career PPG progression, competition level, etc.)
+   - College success forecasting models
+   - **Result**: Actual prediction capability
+
+### BLOCKERS
+
+**EYBL Green Status**:
+- ⚠️ **MANUAL (15 min)**: Need 3 real player names from nikeeyb.com
+- Anti-bot blocks programmatic access
+- Guide ready: `scripts/EYBL_PLAYER_EXTRACTION_GUIDE.md`
+
+**SBLive Green Status**:
+- Need to add real test cases for validation
+- ~30 min to extract player names from WA/OR/CA SBLive sites
+
+**General**:
+- No technical blockers
+- All infrastructure complete
+- Only need manual data extraction → run backfill scripts
+
+### METRICS
+
+**Code Created**:
+- 2,050+ lines backfill/QA scripts
+- 800+ lines schema definition
+- 4 production data scripts (backfill EYBL, backfill SBLive, DuckDB loader, QA validator)
+
+**Data Pipeline**:
+- 1 canonical schema (50+ fields)
+- 2 backfill scripts ready (EYBL, SBLive)
+- 1 DuckDB loader (source-agnostic)
+- 1 QA validator (8 checks, coverage metrics)
+- Repeatable playbook established
+
+**Immediate Output Potential**:
+- EYBL: 500+ player-seasons per year × 3 years = 1,500+ records
+- SBLive: 200+ players per state × 3 states = 600+ records
+- **Total**: 2,100+ player-season records in first data production run
+
+**Efficiency vs Phases 13-15**:
+- Phases 13-15: 5,500+ lines of meta-work (audit, validation, guides, research)
+- Phase 16: 2,850+ lines of data production code
+- **Ratio**: 2:1 (framework to data) - appropriate for foundational phases
+- **Future**: Each new source adds ~200 lines (backfill script) vs thousands for framework
+
+---
+
+*Last Updated: 2025-11-16 23:59 UTC*
