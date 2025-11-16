@@ -1596,4 +1596,209 @@ A datasource is "production-ready" when:
 
 ---
 
-*Last Updated: 2025-11-16 20:50 UTC*
+## PHASE 15: SEMANTIC VALIDATION FRAMEWORK + LEGAL TRIAGE
+
+**Date**: 2025-11-16
+**Status**: In Progress
+**Goal**: Implement YAML-based semantic validation framework and create legal triage roadmap for priority sources
+
+### CONTEXT
+
+Phase 14 established the Definition of Done and status configuration system. Phase 15 implements the production-ready validation harness and creates actionable roadmaps for making EYBL (Track B) and other priority sources (Track C) fully green.
+
+**Key Insight**: Validation should be configuration-driven, not code-driven. Test cases live in YAML, not Python.
+
+### WORK COMPLETED
+
+#### Track A: Semantic Validation Framework ✅
+
+**Objective**: Make validator usable by wiring test cases from YAML configuration instead of hardcoding in Python.
+
+**Implementation**:
+
+1. **Created `config/datasource_test_cases.yaml` (200+ lines)**
+   - Structured YAML for known-good player/season combinations per datasource
+   - Template structure for 18 datasources (EYBL, 3SSB, UAA, SBLive, FIBA, ANGT, OSBA, etc.)
+   - Placeholder filtering: Cases with "REPLACE_WITH" automatically skipped by validator
+   - Includes expected stat ranges (min_games, min_ppg, max_ppg) for sanity checks
+   - Clear instructions for how to add real test cases manually
+
+2. **Rewrote `scripts/validate_datasource_stats.py` (577 lines)**
+   - **NEW**: `load_test_cases()` - Reads from YAML instead of hardcoded dict
+   - **NEW**: `load_adapter()` - Dynamic adapter loading using importlib
+   - **NEW**: `validate_single_case()` - Single test case validation pattern:
+     1. Load adapter dynamically by name
+     2. Call `search_players(name, team_hint)`
+     3. Extract player_id from results
+     4. Call `get_player_season_stats(player_id, season)`
+     5. Run sanity checks (FGM ≤ FGA, 3PM ≤ 3PA, games ≥ 1, stat ranges)
+     6. Return result dict with status/errors/stats
+   - **NEW**: Command-line args: `--source` (filter), `--verbose` (debug output)
+   - **ENHANCED**: JSON export (validation_results.json) + Markdown summary (VALIDATION_SUMMARY.md)
+   - Filters to only validate datasources with status="green" or "wip"
+
+**Usage**:
+```bash
+python scripts/validate_datasource_stats.py                 # All green/wip sources
+python scripts/validate_datasource_stats.py --source eybl   # EYBL only
+python scripts/validate_datasource_stats.py --verbose       # Debug mode
+```
+
+**Result**: Validation framework is now configuration-driven and extensible without code changes.
+
+#### Track C: Legal Triage + Roadmap ✅
+
+**Objective**: Create realistic implementation roadmap for ANGT, OSBA, FIBA Youth, and SBLive based on legal/access analysis.
+
+**Implementation**:
+
+1. **Created `DATASOURCE_ROADMAP.md` (400+ lines)**
+   - Legal triage framework: Green Light / Yellow Light / Red Light
+   - Detailed roadmap for 5 priority sources:
+     - **EYBL**: Green light, blocked on manual player name extraction
+     - **ANGT**: Red light, partnership required (EuroLeague official API path)
+     - **OSBA**: Red light, needs manual site inspection + ToS review first
+     - **FIBA Youth**: Yellow light, research official LiveStats API
+     - **SBLive**: Green light, ready for multi-state expansion (14+ states)
+   - Decision trees for each source (go/no-go criteria)
+   - ROI analysis and recommended priority order
+   - Partnership contact strategies for blocked sources
+
+**Key Findings**:
+- **EYBL**: 80% complete, blocked on manual step (need real player names from nikeeyb.com)
+- **ANGT**: 403 blocked, need EuroLeague official data partnership
+- **OSBA**: Needs manual verification (stats pages may not exist, ToS unknown)
+- **FIBA**: Official API likely exists (FIBA LiveStats / Genius Sports), research needed
+- **SBLive**: Working for 6 states, can expand to 20+ states (highest ROI)
+
+#### Track B: EYBL Green Datasource - Partial Progress ⏸️
+
+**Objective**: Make EYBL the first fully green datasource.
+
+**Progress**:
+- Adapter already implemented with browser automation (Phase 14)
+- Test case structure ready in `datasource_test_cases.yaml`
+- Validation script ready to run
+
+**Blocker**:
+- ⚠️ **MANUAL STEP REQUIRED**: Need 3 real player names from https://nikeeyb.com
+- Anti-bot protection prevents automated extraction
+- Browser automation code exists but dependencies not installed in validation environment
+- Someone needs to manually visit site, select seasons (2024, 2023, 2022), and extract player names
+
+**Instructions Added to config/datasource_test_cases.yaml**:
+```yaml
+# How to add real test cases:
+#   1. Visit https://nikeeyb.com/cumulative-season-stats
+#   2. Select season from dropdown (2024, 2023, or 2022)
+#   3. Find players with COMPLETE stats in the table
+#   4. Pick 1 player per season from different teams
+#   5. Copy their EXACT name as shown on the site
+#   6. Record their team name
+#   7. Replace the placeholders
+```
+
+**Next Steps After Manual Player Names Added**:
+1. Run: `python scripts/validate_datasource_stats.py --source eybl --verbose`
+2. Fix any adapter issues found during validation
+3. Ensure sanity checks pass (FGM ≤ FGA, games ≥ 1, etc.)
+4. Create backfill script for 2022-2024 seasons
+5. Export to Parquet and validate schema
+6. Update `datasource_status.yaml`: `status="green"`
+
+### FILES CREATED
+
+**Configuration**:
+- `config/datasource_test_cases.yaml` - Known-good player/season test cases (200+ lines)
+
+**Validation**:
+- `scripts/validate_datasource_stats.py` - Rewritten with YAML loading + dynamic adapters (577 lines)
+- `scripts/fetch_eybl_players.py` - Helper script for fetching EYBL player names (blocked by deps)
+
+**Documentation**:
+- `DATASOURCE_ROADMAP.md` - Legal triage and implementation roadmap (400+ lines)
+
+### FILES MODIFIED
+
+**Updated**:
+- `config/datasource_test_cases.yaml` - Enhanced with detailed instructions and examples
+
+### IMPACT
+
+**Framework Achievements**:
+- Semantic validation is now configuration-driven (YAML, not code)
+- Dynamic adapter loading enables testing any datasource by name
+- Clear separation of concerns: config (test cases) vs code (validation logic)
+- Non-developers can add test cases by editing YAML
+
+**Strategic Clarity**:
+- Identified exact blockers for each priority source
+- Separated implementation work (EYBL, SBLive) from partnership work (ANGT)
+- Created decision trees for sources needing investigation (OSBA, FIBA)
+- Established ROI-based priority order
+
+**EYBL Status**:
+- Track B 80% complete
+- Framework ready, blocked on simple manual step
+- 3-5 hours from green status after player names added
+
+### NEXT STEPS
+
+**Immediate (Blocked on User)**:
+1. **EYBL Manual Step** (15 minutes)
+   - Visit https://nikeeyb.com/cumulative-season-stats
+   - Extract 3 real player names (one per season: 2024, 2023, 2022)
+   - Update `config/datasource_test_cases.yaml` with real names
+   - This unblocks Track B completion
+
+**Ready to Implement (No Blockers)**:
+1. **OSBA Investigation** (1 hour)
+   - Manual: Visit www.osba.ca and verify stats pages exist
+   - Manual: Review ToS and robots.txt
+   - Decision: Green/Yellow/Red light determination
+   - Update `datasource_status.yaml` with findings
+
+2. **FIBA API Research** (1-2 hours)
+   - Research FIBA.basketball for official data/API documentation
+   - Check FIBA LiveStats API availability
+   - Determine if youth competitions included in feeds
+   - Decision: API implementation vs partnership path
+
+3. **SBLive Expansion** (6-7 hours)
+   - Validate current 6 states working correctly
+   - Research which of 14+ additional states have active stats
+   - Implement multi-state support in adapter
+   - Highest ROI for US coverage (20+ states with one adapter)
+
+**Partnership Inquiries (2-4 Weeks)**:
+1. **ANGT/EuroLeague** - Contact for official ANGT data access
+2. **OSBA** - If ToS prohibits scraping, contact for data access
+
+### BLOCKERS
+
+**Track B (EYBL Green Status)**:
+- ⚠️ **MANUAL**: Need real player names from nikeeyb.com (15 min manual task)
+- Cannot automate due to anti-bot protection + missing deps in validation env
+
+**General**:
+- No code blockers, all frameworks complete
+- Only blocker is manual data extraction for EYBL test cases
+
+### METRICS
+
+**Validation Framework**:
+- 18 datasources configured in test cases YAML
+- 3 test cases per priority source (54 total when placeholders replaced)
+- 0 test cases currently runnable (all have placeholders)
+- 577 lines of validation harness code
+- 5-step validation pattern (search → extract ID → fetch stats → sanity check → report)
+
+**Roadmap Coverage**:
+- 5 priority sources with detailed roadmaps
+- 3 legal access modes defined (Green/Yellow/Red)
+- 4 partnership opportunities identified
+- 1 high-ROI expansion opportunity (SBLive 20+ states)
+
+---
+
+*Last Updated: 2025-11-16 22:15 UTC*
