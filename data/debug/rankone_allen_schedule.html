@@ -1,0 +1,260 @@
+<!DOCTYPE html><html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><link href="../Styles/flk_Styles.css" rel="stylesheet" type="text/css"><title>
+	Schedules
+</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorFlag = urlParams.get('Error');
+            if (errorFlag && errorFlag == "1") {
+                document.getElementById('div_Error').style.display = 'block';
+                setTimeout(function(){
+                    document.getElementById('div_Error').style.display = 'none';
+                }, 3000);
+            }
+        });
+    </script>
+
+    <style media="all" type="text/css">
+        html {
+            height: 100%;
+        }
+
+        body
+        {
+            background: linear-gradient(180deg, #4C5A67 50%, #D3D3D3 50%);
+            font-size: 12px;
+            padding: 0px;
+            margin: 0px;
+            font-family: 'Trebuchet MS';
+            background-color: white;
+        }
+
+        /*table, td{
+            background-color: white;
+        }*/
+
+        h3 {
+            width: 70%;
+        }        
+        /*table .headerSubTitle
+        {
+            background: none;
+            border: none;
+            color: #0060A5;
+        }*/
+        /*.tipb
+        {
+            background: none;
+            border: none;
+            color: #0060A5;
+        }*/
+        a
+        {
+            color: black;
+            text-decoration: none;
+        }
+        a:hover {
+            color: blue;
+        }
+        #content {
+            background-color: white;
+            width: 70%;
+            margin-right: auto;
+            margin-left: auto;
+            overflow: hidden;
+            padding: 0px 20px 20px 20px;
+            margin-top: 20px;
+            border: 2px solid #A00A0B;
+        }
+        #div_Columns {
+            min-height: 300px;
+        }
+        #div_FirstColumn {
+            background-color: white;
+            /*width:50%;*/
+            float: left;
+        }
+        #div_SecondColumn {
+            background-color: white;
+            /*width: 50%;*/
+            float: right;
+        }
+        .VSTable {
+	        font-size: 16px;	
+	        color: #fff;
+	        /*border-top: 1px solid #444444;	
+            border-bottom: none;
+            border-left: 2px solid #444;
+            border-right: 2px solid #444;
+            border-bottom: 1px solid #444;*/
+            font-family: Arial, Helvetica, sans-serif !important;
+            border-spacing: 0px;
+            border-collapse: collapse;
+            padding: 0 0 0 0 !important;
+        }
+        table.VSTable > tbody > tr > td {
+            padding: 5px;
+            width: 100%;
+            border: 2px solid white;
+        }
+        .VSTable > table, th, td:last-child {
+        }
+
+        /*.VSTable th{
+	        border: 1px solid #444444;	
+	        background-color: #666;
+	        height: 20px;
+        }*/
+
+        .VSTable > thead > th, .VSTable > thead > tr, .VSTable > tbody > th:nth-child(even) > td, .VSTable > tbody > tr:nth-child(even) >td {
+	        background-color: #EDEDED; text-align:center;font-size:14px;height:40px;
+        }
+
+        .VSTable > tbody > tr:nth-child(odd) > td {
+	        background-color: #EDEDED; text-align:center;font-size:14px;height:40px;
+
+        }
+
+        .VSTable > tbody > tr:nth-child(even) > td {
+            /*background-color: #fff;*/ text-align:center;font-size:14px;height:40px;
+        }
+
+        .lastTD {
+            border-bottom: 1px solid black; text-align:center;font-size:14px;height:40px;
+        }
+        .flex {
+            display: flex;
+        }
+        .fx-justcenter {
+            justify-content: center;
+        }
+        .fx-aligncenter {
+            align-items:center;
+        }
+        .fxd-row {
+            flex-direction:row;
+        }
+        .fxd-col {
+            flex-direction:column;
+        }
+        .wid50per {
+            width:50%
+        }
+        .wid30per {
+            width:30%
+        }
+        .pad10 {
+            padding: 10px;
+        }
+        .pad15 {
+            padding:15px;
+        }
+        .lblStyle_District {
+            float:left;
+            display:inline;
+            padding:20px 0px 0px 200px;
+        }
+
+        .divStyle_District {
+            background-color:white;
+            color:black;
+            text-align:right;
+            font-family:Arial, Helvetica, sans-serif;
+            font-size:xx-large;
+            font-weight:bolder;
+        }
+    </style>
+
+<link href="../css/Athletics-RankOne.css" rel="stylesheet" type="text/css"></head>
+<body class="NonMasterBody">
+    <!--VS= ViewSchedules -->
+    <div class="headerWrapper divStyle_District">
+        <span id="lbl_DistrictName" class="lblStyle_District">Allen ISD</span>
+        <img src="../images/PoweredByCircle.png" alt="RankOne Logo" height="75" style="padding-right:10px;">
+    </div>
+    <div class="headerSubTitleWrapper primarycolorbg-dark" style="">
+        <div class="headerSubTitle primarycolorbg-dark" style="font-family:Arial, Helvetica, sans-serif;font-size:16px;">
+            <span style="position:relative;top:7px;">
+                &nbsp;&nbsp;
+                &nbsp;&nbsp;
+                
+                <span id="lbl_PageTitle">SELECT A SCHOOL</span></span>
+        </div>
+    </div>  
+    <div id="content" style="border:none;font-family:Arial, Helvetica, sans-serif;padding-top:20px;">
+        <div id="div_Error" style="text-align: center; font-size:15px; display:none;">
+            <span id="lbl_Error" style="color:Red;"></span>
+        </div>
+        <div id="div_Columns" class="flex fxd-col" style="position:relative;">
+            <div class="flex fxd-row" style="width:100%">
+                <div id="div_FirstColumn" class="flex fxd-col wid50per pad10" style="">
+                    <div id="div_FirstColumnTitle" class="scheduleSubTitle NonMasterSubTitle" style="color: white; text-align: center;">
+                        <span id="lbl_FirstColumnTitle"><b>HIGH SCHOOLS</b></span>
+                    </div>
+                    
+                            <table width="100%" class="VSTable" id="highTable">  
+                                <tbody>
+                                    
+                            <tr>
+                                <td align="left" width="100%">
+                                    <a id="rpt_FirstColumn_lnk_Link_0" href="https://app.rankone.com/Schedules/View_Schedule_All_Web.aspx?P=0&amp;D=1777D3E4-89A1-4958-AF4E-5D0EF15A42F5&amp;S=3495&amp;Mt=0">Allen High School</a>
+                                </td>
+                            </tr>                                                       
+                        
+                                </tbody>                                                  
+                            </table>
+                        
+                </div>           
+                <div id="div_SecondColumn" class="flex fxd-col wid50per pad10" style="">
+                    <div id="div_SecondColumnTitle" class="scheduleSubTitle NonMasterSubTitle" style="color: white; text-align: center;">
+                        <span id="lbl_SecondColumnTitle"><b>MIDDLE SCHOOLS / JUNIOR HIGHS</b></span>
+                    </div>                
+                    
+                            <table width="100%" class="VSTable" id="middleTable">                    
+                                
+                            <tbody><tr>
+                                <td align="left" width="100%">
+                                    <a id="rpt_SecondColumn_lnk_Link2_0" href="https://app.rankone.com/Schedules/View_Schedule_All_Web.aspx?P=0&amp;D=1777D3E4-89A1-4958-AF4E-5D0EF15A42F5&amp;S=3496&amp;Mt=0">Curtis Middle School</a>
+                                </td>
+                            </tr>                                                            
+                        
+                            <tr>
+                                <td align="left" width="100%">
+                                    <a id="rpt_SecondColumn_lnk_Link2_1" href="https://app.rankone.com/Schedules/View_Schedule_All_Web.aspx?P=0&amp;D=1777D3E4-89A1-4958-AF4E-5D0EF15A42F5&amp;S=3497&amp;Mt=0">Ereckson Middle School</a>
+                                </td>
+                            </tr>                                                            
+                        
+                            <tr>
+                                <td align="left" width="100%">
+                                    <a id="rpt_SecondColumn_lnk_Link2_2" href="https://app.rankone.com/Schedules/View_Schedule_All_Web.aspx?P=0&amp;D=1777D3E4-89A1-4958-AF4E-5D0EF15A42F5&amp;S=3498&amp;Mt=0">Ford Middle School</a>
+                                </td>
+                            </tr>                                                            
+                        
+                            </tbody></table>
+                        
+                </div>
+                <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+                
+            </div>
+            <div id="lblApp" class="flex fxd-col fx-justcenter fx-aligncenter pad15" style="text-align: center">
+                <div id="dvApp" class="pad15" style="text-align: center">
+                    Download the Rank One app for a mobile optimized experience!
+                </div>
+                <div class="flex fxd-row" style="">
+                    <a href="https://apps.apple.com/us/app/rank-one/id1579070294" target="_blank">
+                        <img id="Image1" src="../images/btn-app-store.png" style="background-color: Black; height: 50px;">
+                    </a>
+                    &nbsp; &nbsp; &nbsp;
+                    <a href="https://play.google.com/store/apps/details?id=com.rankone.r1&amp;hl=en" target="_blank">
+                        <img id="Image2" src="../images/btn-google-play.png" style="background-color: Black; height: 50px;">
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    
+
+
+</body></html>

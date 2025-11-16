@@ -1,0 +1,171 @@
+# PLAYER_RECRUITING Schema
+# Canonical recruiting rankings table (normalized from multiple services)
+#
+# This is the modeling-layer table that aggregates recruiting data from:
+# - On3/Rivals Industry composite
+# - 247Sports (future)
+# - ESPN Recruiting (future)
+# - CSV imports
+#
+# Author: Claude Code
+# Date: 2025-11-15
+
+table_name: player_recruiting
+
+description: |
+  Normalized recruiting rankings from multiple services.
+  One row per (player, class_year, source) combination.
+  Used for modeling and analysis.
+
+primary_key: recruiting_id
+
+indexes:
+  - columns: [class_year, national_rank]
+    name: idx_recruiting_year_rank
+  - columns: [source, class_year]
+    name: idx_recruiting_source_year
+  - columns: [player_name]
+    name: idx_recruiting_player_name
+
+columns:
+  # Identity & Keys
+  recruiting_id:
+    type: VARCHAR
+    nullable: false
+    description: "Stable hash: hash(source, class_year, external_id)"
+    primary_key: true
+
+  external_id:
+    type: VARCHAR
+    nullable: true
+    description: "Source-specific player ID (e.g., 'on3_156943')"
+
+  player_uid:
+    type: VARCHAR
+    nullable: true
+    description: "Universal player ID (from identity resolution service)"
+
+  # Source Metadata
+  source:
+    type: VARCHAR
+    nullable: false
+    description: "Recruiting service (e.g., 'on3_industry', '247sports_composite')"
+
+  source_type:
+    type: VARCHAR
+    nullable: false
+    description: "Source type enum value (e.g., 'on3', '247sports')"
+
+  # Player Identity
+  player_name:
+    type: VARCHAR
+    nullable: false
+    description: "Full player name (cleaned)"
+
+  class_year:
+    type: INTEGER
+    nullable: false
+    description: "High school graduation year"
+
+  # Position
+  position:
+    type: VARCHAR
+    nullable: true
+    description: "Primary position (PG/SG/SF/PF/C/G/F)"
+
+  # Physical Stats
+  height_inches:
+    type: INTEGER
+    nullable: true
+    description: "Height in inches (converted from '6-8' format)"
+
+  weight_lbs:
+    type: INTEGER
+    nullable: true
+    description: "Weight in pounds"
+
+  # Location
+  hometown_city:
+    type: VARCHAR
+    nullable: true
+    description: "Hometown city"
+
+  hometown_state:
+    type: VARCHAR
+    nullable: true
+    description: "Hometown state (2-letter code)"
+
+  high_school_name:
+    type: VARCHAR
+    nullable: true
+    description: "High school name"
+
+  # Rankings
+  national_rank:
+    type: INTEGER
+    nullable: true
+    description: "National rank (1-based)"
+
+  state_rank:
+    type: INTEGER
+    nullable: true
+    description: "State rank (1-based)"
+
+  position_rank:
+    type: INTEGER
+    nullable: true
+    description: "Position rank (1-based)"
+
+  # Ratings
+  stars:
+    type: DOUBLE
+    nullable: true
+    description: "Star rating (2.0-5.0)"
+
+  rating_0_1:
+    type: DOUBLE
+    nullable: true
+    description: "Normalized rating (0.0-1.0 scale)"
+
+  # Commitment
+  is_committed:
+    type: BOOLEAN
+    nullable: true
+    description: "Whether player has committed"
+
+  committed_school:
+    type: VARCHAR
+    nullable: true
+    description: "School committed to (slug format)"
+
+  committed_conf:
+    type: VARCHAR
+    nullable: true
+    description: "Conference of committed school (future enhancement)"
+
+  committed_level:
+    type: VARCHAR
+    nullable: true
+    description: "Division level (D1/D2/JUCO/etc.) (future enhancement)"
+
+  commitment_date:
+    type: TIMESTAMP
+    nullable: true
+    description: "Date of commitment"
+
+  # Profile
+  profile_url:
+    type: VARCHAR
+    nullable: true
+    description: "URL to player profile on source site"
+
+  # Timestamps
+  loaded_at:
+    type: TIMESTAMP
+    nullable: false
+    description: "When this record was loaded into DuckDB"
+
+  source_snapshot_ts:
+    type: TIMESTAMP
+    nullable: false
+    description: "When the source data was scraped"

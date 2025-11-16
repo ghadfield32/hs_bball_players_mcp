@@ -149,8 +149,18 @@ class BrowserClient:
         """
         await self._ensure_browser()
 
-        # Clean up disconnected contexts
-        self._contexts = [c for c in self._contexts if c and not c._is_closed]
+        # Clean up disconnected contexts (try-catch to handle Playwright API changes)
+        cleaned_contexts = []
+        for c in self._contexts:
+            if c:
+                try:
+                    # Check if context is still usable by trying to access pages
+                    _ = c.pages
+                    cleaned_contexts.append(c)
+                except Exception:
+                    # Context is closed or unusable, skip it
+                    pass
+        self._contexts = cleaned_contexts
 
         # Reuse existing context if available
         if self._contexts and len(self._contexts) < self.max_contexts:

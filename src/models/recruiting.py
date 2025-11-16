@@ -26,6 +26,7 @@ class RecruitingService(str, Enum):
     ESPN = "espn"  # ESPN recruiting
     RIVALS = "rivals"  # Rivals (now part of On3)
     ON3 = "on3"  # On3 rankings
+    INDUSTRY = "industry"  # Rivals Industry composite (247 + Rivals + ESPN equally weighted)
     PREP_HOOPS = "prephoops"  # PrepHoops
     UNKNOWN = "unknown"
 
@@ -108,7 +109,7 @@ class RecruitingRank(BaseModel):
 
     # Player Info
     class_year: int = Field(
-        ge=2020,
+        ge=2000,  # Relaxed to support historical data back to 2000
         le=2035,
         description="High school graduation year"
     )

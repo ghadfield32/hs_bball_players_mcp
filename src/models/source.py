@@ -132,6 +132,26 @@ class DataSourceType(str, Enum):
     UNKNOWN = "unknown"  # Unknown/other source
 
 
+class DataSourceCategory(str, Enum):
+    """
+    Category of datasource based on the TYPE of data it provides.
+
+    This classification is critical for routing datasources to the correct pipelines:
+    - PLAYER_STATS: Provides season/game statistics (points, rebounds, assists, etc.)
+    - RECRUITING: Provides recruiting rankings, offers, and commitments
+    - BRACKETS: Provides tournament brackets, seeds, and matchups
+    - SCHEDULES: Provides schedule/fixture information only
+
+    Added: Phase HS-1 (2025-11-16)
+    Purpose: Prevent incorrect datasource usage (e.g., treating recruiting sources as stat sources)
+    """
+
+    PLAYER_STATS = "player_stats"  # Provides player season/game statistics
+    RECRUITING = "recruiting"  # Provides recruiting rankings, offers, commitments
+    BRACKETS = "brackets"  # Provides tournament brackets, seeds, matchups
+    SCHEDULES = "schedules"  # Provides schedules/fixtures only, no stats
+
+
 class DataSourceRegion(str, Enum):
     """Geographic region of data source."""
 

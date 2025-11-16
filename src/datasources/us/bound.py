@@ -49,24 +49,26 @@ from ..base import BaseDataSource
 
 class BoundDataSource(BaseDataSource):
     """
-    Bound (formerly Varsity Bound) data source adapter.
+    Bound (now GoBound - formerly Varsity Bound) data source adapter.
 
     Provides access to high school basketball statistics across multiple Midwest states.
     Known for excellent player profile pages and detailed statistics.
 
     Supported States:
-        - IA: Iowa (flagship state, best coverage)
-        - SD: South Dakota
-        - IL: Illinois
-        - MN: Minnesota
+        - IA: Iowa (flagship state, best coverage) - IHSAA/IGHSAU
+        - SD: South Dakota - SDHSAA
+        - IL: Illinois - IHSA
+        - MN: Minnesota - MSHSL
 
-    URL Pattern: https://www.{state}.bound.com/basketball
-    Note: Each state has its own subdomain (different from SBLive pattern)
+    URL Pattern: https://www.gobound.com/{state}/{org}/{sport}/{season}/{endpoint}
+    Example: https://www.gobound.com/ia/ihsaa/boysbasketball/2024-25/leaders
+
+    Note: Service rebranded from "Bound" to "GoBound" (domain changed)
     """
 
     source_type = DataSourceType.BOUND
     source_name = "Bound"
-    base_url = "https://www.bound.com"  # Generic URL (state-specific URLs in __init__)
+    base_url = "https://www.gobound.com"  # Updated: Bound rebranded to GoBound
     region = DataSourceRegion.US
 
     # Multi-state support (Midwest focus)
@@ -80,27 +82,30 @@ class BoundDataSource(BaseDataSource):
         "MN": "Minnesota",
     }
 
+    # State-to-organization mappings
+    # GoBound URL pattern: gobound.com/{state}/{org}/{sport}/{season}
+    STATE_ORGANIZATIONS = {
+        "IA": {"boys": "ihsaa", "girls": "ighsau"},  # Iowa HS Athletic Assoc
+        "SD": {"boys": "sdhsaa", "girls": "sdhsaa"},  # SD HS Activities Assoc
+        "IL": {"boys": "ihsa", "girls": "ihsa"},  # Illinois HS Assoc
+        "MN": {"boys": "mshsl", "girls": "mshsl"},  # Minnesota State HS League
+    }
+
     def __init__(self):
         """Initialize Bound datasource with multi-state support."""
         super().__init__()
 
-        # Build state-specific base URLs
-        # Note: Bound uses www.{state}.bound.com (subdomain pattern)
-        self.state_base_urls = {
-            state: f"https://www.{state.lower()}.bound.com"
-            for state in self.SUPPORTED_STATES
-        }
+        # Default season (updated as needed)
+        self.default_season = "2024-25"
 
-        # Build state-specific basketball URLs
-        self.state_urls = {
-            state: f"{self.state_base_urls[state]}/basketball"
-            for state in self.SUPPORTED_STATES
-        }
+        # Default to boys basketball (can be overridden per query)
+        self.default_gender = "boys"
 
         self.logger.info(
-            f"Bound initialized with {len(self.SUPPORTED_STATES)} states",
+            f"GoBound initialized with {len(self.SUPPORTED_STATES)} states",
             states=self.SUPPORTED_STATES,
             flagship="IA",
+            base_url=self.base_url,
         )
 
     def _validate_state(self, state: Optional[str]) -> str:
@@ -130,9 +135,43 @@ class BoundDataSource(BaseDataSource):
 
         return state
 
+    def _build_gobound_url(
+        self,
+        state: str,
+        endpoint: str = "leaders",
+        season: Optional[str] = None,
+        gender: str = "boys"
+    ) -> str:
+        """
+        Build GoBound URL following the pattern:
+        https://www.gobound.com/{state}/{org}/{sport}/{season}/{endpoint}
+
+        Args:
+            state: State code (must be validated)
+            endpoint: Page endpoint (leaders, teams, scores, etc.)
+            season: Season string (e.g., "2024-25")
+            gender: "boys" or "girls"
+
+        Returns:
+            Full GoBound URL
+
+        Example:
+            _build_gobound_url("IA", "leaders", "2024-25", "boys")
+            -> "https://www.gobound.com/ia/ihsaa/boysbasketball/2024-25/leaders"
+        """
+        season = season or self.default_season
+        org = self.STATE_ORGANIZATIONS[state][gender]
+        sport = f"{gender}basketball"
+
+        url = f"{self.base_url}/{state.lower()}/{org}/{sport}/{season}"
+        if endpoint:
+            url = f"{url}/{endpoint.lstrip('/')}"
+
+        return url
+
     def _get_state_base_url(self, state: str) -> str:
         """
-        Get state-specific base URL.
+        Get state-specific base URL (legacy method for compatibility).
 
         Args:
             state: State code (must be validated)
@@ -141,13 +180,13 @@ class BoundDataSource(BaseDataSource):
             State base URL
 
         Example:
-            _get_state_base_url("IA") -> "https://www.ia.bound.com"
+            _get_state_base_url("IA") -> "https://www.gobound.com/ia"
         """
-        return self.state_base_urls[state]
+        return f"{self.base_url}/{state.lower()}"
 
     def _get_state_url(self, state: str, endpoint: str = "") -> str:
         """
-        Build state-specific URL for basketball section.
+        Build state-specific URL for basketball section (uses new pattern).
 
         Args:
             state: State code (must be validated)
@@ -157,12 +196,10 @@ class BoundDataSource(BaseDataSource):
             Full URL for state basketball endpoint
 
         Example:
-            _get_state_url("IA", "stats") -> "https://www.ia.bound.com/basketball/stats"
+            _get_state_url("IA", "leaders")
+            -> "https://www.gobound.com/ia/ihsaa/boysbasketball/2024-25/leaders"
         """
-        base = self.state_urls[state]
-        if endpoint:
-            return f"{base}/{endpoint.lstrip('/')}"
-        return base
+        return self._build_gobound_url(state, endpoint=endpoint or "leaders")
 
     def _build_player_id(self, state: str, player_name: str) -> str:
         """
@@ -196,6 +233,368 @@ class BoundDataSource(BaseDataSource):
             state = parts[1].upper()
             return state if state in self.SUPPORTED_STATES else None
         return None
+
+    def _parse_gobound_player_info(self, player_info_str: str) -> dict:
+        """
+        Parse GoBound's combined player info string.
+
+        Actual GoBound format (multi-line):
+            Line 1: "Name, Grade"
+            Line 2: "Position, #Jersey"
+            Line 3: "School - Classification - Conference"
+
+        Example:
+            'Mason Bechen, SR\\r\\n                        G, #20\\nNorth Linn - Class 1A - Tri-Rivers - West'
+
+        Args:
+            player_info_str: Combined player information string with newlines
+
+        Returns:
+            Dictionary with parsed fields: name, position, grade, jersey, school, classification, conference
+        """
+        import re
+
+        result = {
+            "name": None,
+            "position": None,
+            "grade": None,
+            "jersey": None,
+            "school": None,
+            "classification": None,
+            "conference": None,
+        }
+
+        try:
+            # Normalize whitespace and split by newline
+            normalized = ' '.join(player_info_str.split())  # Remove extra whitespace
+            # But preserve comma separators
+            lines = re.split(r'(?:,\s+)(?=[A-Z][A-Z])|(?:,\s+)(?=[A-Z](?:/[A-Z])?,\s*#)', player_info_str)
+
+            # Alternative: split by significant patterns
+            # Pattern 1: Name, Grade \n Position, #Jersey \n School - Class - Conference
+            parts = re.split(r'[\r\n]+', player_info_str.strip())
+            parts = [p.strip() for p in parts if p.strip()]
+
+            if len(parts) >= 1:
+                # First part: "Name, Grade"
+                first_part = parts[0]
+                if ',' in first_part:
+                    name_grade = first_part.split(',', 1)
+                    result["name"] = name_grade[0].strip()
+                    if len(name_grade) > 1:
+                        result["grade"] = name_grade[1].strip()
+
+            if len(parts) >= 2:
+                # Second part: "Position, #Jersey" or just "#Jersey"
+                second_part = parts[1]
+                # Extract position (single letter or letter combo before comma or #)
+                pos_match = re.search(r'^([A-Z](?:/[A-Z])?)', second_part)
+                if pos_match:
+                    result["position"] = pos_match.group(1)
+
+                # Extract jersey
+                jersey_match = re.search(r'#(\d{1,3})', second_part)
+                if jersey_match:
+                    result["jersey"] = int(jersey_match.group(1))
+
+            if len(parts) >= 3:
+                # Third part: "School - Classification - Conference"
+                third_part = parts[2]
+                if " - " in third_part:
+                    school_parts = third_part.split(" - ")
+                    result["school"] = school_parts[0].strip()
+                    if len(school_parts) > 1:
+                        result["classification"] = school_parts[1].strip()
+                    if len(school_parts) > 2:
+                        result["conference"] = " - ".join(school_parts[2:]).strip()
+                else:
+                    result["school"] = third_part.strip()
+
+        except Exception as e:
+            self.logger.debug(f"Failed to parse player info", info=player_info_str, error=str(e))
+
+        return result
+
+    def _extract_gobound_tables(self, soup: BeautifulSoup) -> list[dict]:
+        """
+        Extract GoBound leaderboard tables.
+
+        GoBound uses multiple tables (17+) with 3-column format:
+        ['rank', 'player_info_combined', 'stat_value']
+
+        Args:
+            soup: Parsed HTML
+
+        Returns:
+            List of table dictionaries with 'rows' and 'stat_category'
+        """
+        tables = []
+        all_tables = soup.find_all("table", class_="table")
+
+        # Stat category indicators (look for nearby headings or patterns)
+        # Table order typically: Points, 3PM, Rebounds, Assists, Steals, Blocks, FG%, FT%, etc.
+        stat_keywords = [
+            "points", "3-pointers", "rebounds", "assists", "steals",
+            "blocks", "field goal", "free throw", "offensive", "defensive"
+        ]
+
+        for i, table in enumerate(all_tables):
+            table_data = {
+                "index": i,
+                "rows": [],
+                "stat_category": None,
+            }
+
+            # Extract rows (each row has 3 cells: rank, player_info, stat_value)
+            rows = table.find_all("tr")
+            for row in rows:
+                cells = row.find_all("td")
+                if len(cells) == 3:
+                    table_data["rows"].append({
+                        "rank": get_text_or_none(cells[0]),
+                        "player_info": get_text_or_none(cells[1]),
+                        "stat_value": get_text_or_none(cells[2]),
+                    })
+
+            # Try to detect stat category from context
+            # Look for heading before table
+            prev_heading = table.find_previous(["h1", "h2", "h3", "h4", "h5"])
+            if prev_heading:
+                heading_text = get_text_or_none(prev_heading)
+                if heading_text:
+                    for keyword in stat_keywords:
+                        if keyword.lower() in heading_text.lower():
+                            table_data["stat_category"] = keyword
+                            break
+
+            # Fallback: Use table index as category identifier
+            if not table_data["stat_category"]:
+                # Common order: Points=0, 3PM=1, Rebounds=2, Assists=3, Steals=4, Blocks=5
+                category_map = {
+                    0: "points",
+                    1: "three_pointers",
+                    2: "rebounds",
+                    3: "assists",
+                    4: "steals",
+                    5: "blocks",
+                    6: "field_goals",
+                    7: "free_throws",
+                }
+                table_data["stat_category"] = category_map.get(i, f"stat_{i}")
+
+            tables.append(table_data)
+
+        return tables
+
+    def _build_player_from_gobound_info(
+        self, player_info: dict, state: str, data_source
+    ) -> Optional[Player]:
+        """
+        Build Player object from parsed GoBound player info.
+
+        Args:
+            player_info: Parsed player information dictionary
+            state: State code
+            data_source: DataSource metadata
+
+        Returns:
+            Player object or None
+        """
+        try:
+            full_name = clean_player_name(player_info.get("name", ""))
+            if not full_name:
+                return None
+
+            name_parts = full_name.split()
+            first_name = name_parts[0] if len(name_parts) > 0 else full_name
+            last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+
+            # Build player ID
+            player_id = self._build_player_id(state, full_name)
+
+            # Parse position if available
+            # Position is now separate from grade in parsed data
+            position = None
+            pos_str = player_info.get("position")
+            if pos_str:
+                # Position can be: G, F, C, G/F, F/C, etc.
+                # Take first position letter
+                import re
+                pos_match = re.search(r"[GFC]", pos_str)
+                if pos_match:
+                    try:
+                        position = Position(pos_match.group(0))
+                    except ValueError:
+                        pass
+
+            # Extract grad year from grade field (now separate)
+            grad_year = None
+            grade_str = player_info.get("grade")
+            if grade_str:
+                # SR = Senior (2025), JR = Junior (2026), SO = Sophomore (2027), FR = Freshman (2028)
+                # Current season is 2024-25
+                if "SR" in grade_str:
+                    grad_year = 2025
+                elif "JR" in grade_str:
+                    grad_year = 2026
+                elif "SO" in grade_str:
+                    grad_year = 2027
+                elif "FR" in grade_str:
+                    grad_year = 2028
+
+            player_data = {
+                "player_id": player_id,
+                "first_name": first_name,
+                "last_name": last_name,
+                "full_name": full_name,
+                "position": position,
+                "grad_year": grad_year,
+                "jersey_number": player_info.get("jersey"),
+                "school_name": player_info.get("school"),
+                "school_state": state,
+                "school_country": "USA",
+                "level": PlayerLevel.HIGH_SCHOOL,
+                "data_source": data_source,
+            }
+
+            return self.validate_and_log_data(
+                Player, player_data, f"player {full_name} ({state})"
+            )
+
+        except Exception as e:
+            self.logger.error("Failed to build player from GoBound info", error=str(e))
+            return None
+
+    def _aggregate_gobound_stats(
+        self,
+        gobound_tables: list[dict],
+        player_name: str,
+        player_id: str,
+        season: str,
+        state: str,
+        source_url: str
+    ) -> Optional[PlayerSeasonStats]:
+        """
+        Aggregate player stats from multiple GoBound leaderboard tables.
+
+        Args:
+            gobound_tables: List of extracted GoBound tables
+            player_name: Player name to search for
+            player_id: Player ID
+            season: Season string
+            state: State code
+            source_url: Source URL
+
+        Returns:
+            PlayerSeasonStats or None
+        """
+        try:
+            # Initialize stats dictionary
+            # Field names must match PlayerSeasonStats model
+            stats = {
+                "points": None,
+                "three_pointers_made": None,
+                "total_rebounds": None,
+                "assists": None,
+                "steals": None,
+                "blocks": None,
+            }
+
+            # Stat category to field mapping
+            stat_mapping = {
+                "points": "points",
+                "three_pointers": "three_pointers_made",
+                "rebounds": "total_rebounds",
+                "assists": "assists",
+                "steals": "steals",
+                "blocks": "blocks",
+            }
+
+            player_found = False
+
+            # Search through all tables
+            for table in gobound_tables:
+                for row in table["rows"]:
+                    # Parse player info from row
+                    player_info = self._parse_gobound_player_info(row["player_info"])
+
+                    # Check if this is our player (case-insensitive match)
+                    if (
+                        player_info.get("name")
+                        and player_name.lower() in player_info["name"].lower()
+                    ):
+                        player_found = True
+
+                        # Get stat value and category
+                        stat_value_str = row.get("stat_value", "")
+                        stat_category = table.get("stat_category")
+
+                        # Parse stat value (handle percentages like "74.1%")
+                        stat_value = None
+                        if stat_value_str:
+                            # Remove % sign if present
+                            stat_value_str = stat_value_str.replace("%", "").strip()
+                            stat_value = parse_int(stat_value_str) or parse_float(stat_value_str)
+
+                        # Map to stat field
+                        if stat_category and stat_category in stat_mapping:
+                            field_name = stat_mapping[stat_category]
+                            if stat_value is not None:
+                                stats[field_name] = stat_value
+
+            if not player_found:
+                self.logger.warning(
+                    f"Player not found in any GoBound table",
+                    player_name=player_name,
+                    player_id=player_id
+                )
+                return None
+
+            # Build PlayerSeasonStats
+            data_source = self.create_data_source_metadata(
+                url=source_url, quality_flag=DataQualityFlag.PARTIAL
+            )
+
+            #Extract team_id from first matching player info (if available)
+            team_id = f"bound_{state.lower()}_team_unknown"
+            team_name_found = None
+
+            # Search for player info to get team
+            for table in gobound_tables:
+                for row in table["rows"]:
+                    player_info = self._parse_gobound_player_info(row["player_info"])
+                    if (
+                        player_info.get("name")
+                        and player_name.lower() in player_info["name"].lower()
+                    ):
+                        school = player_info.get("school")
+                        if school:
+                            team_name_found = school
+                            school_clean = school.lower().replace(" ", "_")
+                            team_id = f"bound_{state.lower()}_team_{school_clean}"
+                            break
+                if team_name_found:
+                    break
+
+            stats_data = {
+                "player_id": player_id,
+                "player_name": player_name,  # Required field
+                "team_id": team_id,  # Required field
+                "team_name": team_name_found,
+                "season": season,
+                "league": f"GoBound {self.STATE_NAMES[state]}",
+                "games_played": 1,  # Required field - set to 1 as placeholder (not available in leaders)
+                "data_source": data_source,
+                **stats,  # Merge aggregated stats
+            }
+
+            return self.validate_and_log_data(
+                PlayerSeasonStats, stats_data, f"season stats for {player_name}"
+            )
+
+        except Exception as e:
+            self.logger.error("Failed to aggregate GoBound stats", error=str(e))
+            return None
 
     async def get_player(self, player_id: str) -> Optional[Player]:
         """
@@ -392,55 +791,69 @@ class BoundDataSource(BaseDataSource):
             # STEP 1: Validate state
             state = self._validate_state(state)
 
-            # STEP 2: Fetch state stats page
-            stats_url = self._get_state_url(state, "stats")
-            self.logger.info(f"Fetching stats for state", state=state, url=stats_url)
+            # STEP 2: Fetch state leaders page (GoBound uses "leaders" not "stats")
+            leaders_url = self._get_state_url(state, "leaders")
+            self.logger.info(f"Fetching leaders for state", state=state, url=leaders_url)
 
-            html = await self.http_client.get_text(stats_url, cache_ttl=3600)
+            html = await self.http_client.get_text(leaders_url, cache_ttl=3600)
             soup = parse_html(html)
 
-            # STEP 3: Find stats table
-            stats_table = find_stat_table(soup, table_class_hint="stats")
-            if not stats_table:
-                # Try alternative search
-                stats_table = find_stat_table(soup, header_text="Season Leaders")
+            # STEP 3: Extract GoBound tables (custom 3-column format)
+            gobound_tables = self._extract_gobound_tables(soup)
 
-            if not stats_table:
-                # Fallback to any table
-                stats_table = soup.find("table")
-
-            if not stats_table:
-                self.logger.warning(f"No stats table found", state=state)
+            if not gobound_tables:
+                self.logger.warning(f"No GoBound tables found", state=state)
                 return []
 
-            # STEP 4: Extract table data
-            rows = extract_table_data(stats_table)
-            self.logger.debug(f"Found {len(rows)} rows in stats table", state=state)
+            self.logger.debug(f"Found {len(gobound_tables)} GoBound leaderboard tables", state=state)
 
-            # STEP 5: Parse players
+            # STEP 4: Parse players from first table (typically points leaders)
+            # We use the first table to get player list, then can enrich with other stats
             players = []
             data_source = self.create_data_source_metadata(
-                url=stats_url, quality_flag=DataQualityFlag.COMPLETE
+                url=leaders_url, quality_flag=DataQualityFlag.COMPLETE
             )
 
-            for row in rows[:limit * 2]:  # Get extra rows for filtering
-                player = self._parse_player_from_stats_row(row, state, data_source)
-                if not player:
-                    continue
+            # Get rows from first table
+            if gobound_tables and gobound_tables[0]["rows"]:
+                first_table = gobound_tables[0]
 
-                # STEP 6: Apply filters
-                if name and name.lower() not in player.full_name.lower():
-                    continue
+                for row_data in first_table["rows"][:limit * 2]:  # Get extra for filtering
+                    try:
+                        # Parse combined player info string
+                        player_info = self._parse_gobound_player_info(row_data["player_info"])
 
-                if team and (
-                    not player.school_name or team.lower() not in player.school_name.lower()
-                ):
-                    continue
+                        if not player_info.get("name"):
+                            continue
 
-                players.append(player)
+                        # STEP 5: Apply filters
+                        if name and name.lower() not in player_info["name"].lower():
+                            continue
 
-                if len(players) >= limit:
-                    break
+                        if team and (
+                            not player_info.get("school")
+                            or team.lower() not in player_info["school"].lower()
+                        ):
+                            continue
+
+                        # Build Player object
+                        player = self._build_player_from_gobound_info(
+                            player_info, state, data_source
+                        )
+
+                        if player:
+                            players.append(player)
+
+                        if len(players) >= limit:
+                            break
+
+                    except Exception as e:
+                        self.logger.debug(
+                            f"Failed to parse GoBound row",
+                            row=row_data,
+                            error=str(e)
+                        )
+                        continue
 
             self.logger.info(
                 f"Found {len(players)} players",
@@ -507,13 +920,17 @@ class BoundDataSource(BaseDataSource):
         self, player_id: str, season: Optional[str] = None, state: Optional[str] = None
     ) -> Optional[PlayerSeasonStats]:
         """
-        Get player season statistics from state stats page.
+        Get player season statistics from GoBound leaders page.
+
+        GoBound uses multiple leaderboard tables (one per stat category).
+        This method aggregates stats from all tables where the player appears.
 
         **IMPLEMENTATION STEPS:**
         1. Extract state from player_id or use state parameter
-        2. Fetch state stats page
-        3. Find player row by name
-        4. Parse stats using parse_season_stats_from_row()
+        2. Fetch state leaders page (GoBound format)
+        3. Extract all GoBound tables
+        4. Find player in each table and aggregate stats
+        5. Build PlayerSeasonStats from aggregated data
 
         Args:
             player_id: Player identifier
@@ -524,7 +941,7 @@ class BoundDataSource(BaseDataSource):
             PlayerSeasonStats or None
 
         Example:
-            stats = await bound.get_player_season_stats("bound_ia_john_doe", "2024-25")
+            stats = await bound.get_player_season_stats("bound_ia_mason_bechen", "2024-25")
         """
         try:
             # STEP 1: Determine state
@@ -536,35 +953,29 @@ class BoundDataSource(BaseDataSource):
                 self.logger.error("Could not determine state", player_id=player_id)
                 return None
 
-            # STEP 2: Fetch state stats page
-            stats_url = self._get_state_url(state, "stats")
-            html = await self.http_client.get_text(stats_url, cache_ttl=3600)
+            # STEP 2: Fetch state leaders page (use "leaders" not "stats")
+            leaders_url = self._get_state_url(state, "leaders")
+            html = await self.http_client.get_text(leaders_url, cache_ttl=3600)
             soup = parse_html(html)
 
-            # STEP 3: Find stats table
-            stats_table = find_stat_table(soup)
-            if not stats_table:
+            # STEP 3: Extract GoBound tables
+            gobound_tables = self._extract_gobound_tables(soup)
+
+            if not gobound_tables:
+                self.logger.warning("No GoBound tables found", player_id=player_id, state=state)
                 return None
 
-            rows = extract_table_data(stats_table)
-
-            # STEP 4: Find player row by name
+            # STEP 4: Extract player name from player_id
             player_name = (
                 player_id.replace(f"bound_{state.lower()}_", "").replace("_", " ").title()
             )
 
-            for row in rows:
-                row_player_name = clean_player_name(
-                    row.get("Player") or row.get("NAME") or row.get("Name") or ""
-                )
-                if row_player_name and player_name.lower() in row_player_name.lower():
-                    # STEP 5: Parse stats from row
-                    return self._parse_season_stats_from_row(
-                        row, player_id, season or "2024-25", state
-                    )
+            # STEP 5: Aggregate stats from all tables
+            aggregated_stats = self._aggregate_gobound_stats(
+                gobound_tables, player_name, player_id, season or "2024-25", state, leaders_url
+            )
 
-            self.logger.warning(f"Player not found in stats", player_id=player_id, state=state)
-            return None
+            return aggregated_stats
 
         except Exception as e:
             self.logger.error(

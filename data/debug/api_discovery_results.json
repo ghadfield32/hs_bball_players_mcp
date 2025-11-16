@@ -1,0 +1,210 @@
+{
+  "class_year": 2025,
+  "total_tested": 14,
+  "successful": 0,
+  "results": [
+    {
+      "name": "RESTful - Full Year",
+      "url": "https://ipa.247sports.com/api/rankings/basketball/2025",
+      "params": {},
+      "success": false,
+      "status_code": null,
+      "content_type": null,
+      "response_size": 0,
+      "has_json": false,
+      "has_rankings_data": false,
+      "sample_data": null,
+      "error": "Unexpected error: Client error '404 Not Found' for url 'https://ipa.247sports.com/api/rankings/basketball/2025/'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "RESTful - Full Year with Type",
+      "url": "https://ipa.247sports.com/api/rankings/basketball/2025/composite",
+      "params": {},
+      "success": false,
+      "status_code": null,
+      "content_type": null,
+      "response_size": 0,
+      "has_json": false,
+      "has_rankings_data": false,
+      "sample_data": null,
+      "error": "Unexpected error: Client error '404 Not Found' for url 'https://ipa.247sports.com/api/rankings/basketball/2025/composite/'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "RESTful - Short Year",
+      "url": "https://ipa.247sports.com/api/rankings/basketball/25",
+      "params": {},
+      "success": false,
+      "status_code": null,
+      "content_type": null,
+      "response_size": 0,
+      "has_json": false,
+      "has_rankings_data": false,
+      "sample_data": null,
+      "error": "Unexpected error: Client error '404 Not Found' for url 'https://ipa.247sports.com/api/rankings/basketball/25/'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "Season Path - Full Year",
+      "url": "https://ipa.247sports.com/season/2025/basketball/rankings",
+      "params": {},
+      "success": false,
+      "status_code": null,
+      "content_type": null,
+      "response_size": 0,
+      "has_json": false,
+      "has_rankings_data": false,
+      "sample_data": null,
+      "error": "Unexpected error: Client error '404 Not Found' for url 'https://ipa.247sports.com/season/2025/basketball/rankings/'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "Season Path - Full Year with Composite",
+      "url": "https://ipa.247sports.com/season/2025/basketball/composite",
+      "params": {},
+      "success": false,
+      "status_code": null,
+      "content_type": null,
+      "response_size": 0,
+      "has_json": false,
+      "has_rankings_data": false,
+      "sample_data": null,
+      "error": "Unexpected error: Client error '404 Not Found' for url 'https://ipa.247sports.com/season/2025/basketball/composite/'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "Query Params - rankings endpoint",
+      "url": "https://ipa.247sports.com/rankings",
+      "params": {
+        "year": "2025",
+        "sport": "basketball",
+        "type": "composite"
+      },
+      "success": false,
+      "status_code": null,
+      "content_type": null,
+      "response_size": 0,
+      "has_json": false,
+      "has_rankings_data": false,
+      "sample_data": null,
+      "error": "Unexpected error: Client error '404 Not Found' for url 'https://ipa.247sports.com/rankings/?year=2025&sport=basketball&type=composite'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "Query Params - api/rankings",
+      "url": "https://ipa.247sports.com/api/rankings",
+      "params": {
+        "year": "2025",
+        "sport": "basketball",
+        "rankingType": "composite"
+      },
+      "success": false,
+      "status_code": null,
+      "content_type": null,
+      "response_size": 0,
+      "has_json": false,
+      "has_rankings_data": false,
+      "sample_data": null,
+      "error": "Unexpected error: Client error '404 Not Found' for url 'https://ipa.247sports.com/api/rankings/?year=2025&sport=basketball&rankingType=composite'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "Query Params - classYear",
+      "url": "https://ipa.247sports.com/api/rankings",
+      "params": {
+        "classYear": "2025",
+        "sport": "basketball"
+      },
+      "success": false,
+      "status_code": null,
+      "content_type": null,
+      "response_size": 0,
+      "has_json": false,
+      "has_rankings_data": false,
+      "sample_data": null,
+      "error": "Unexpected error: Client error '404 Not Found' for url 'https://ipa.247sports.com/api/rankings/?classYear=2025&sport=basketball'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "Composite - Direct Path",
+      "url": "https://ipa.247sports.com/composite/2025/basketball",
+      "params": {},
+      "success": false,
+      "status_code": null,
+      "content_type": null,
+      "response_size": 0,
+      "has_json": false,
+      "has_rankings_data": false,
+      "sample_data": null,
+      "error": "Unexpected error: Client error '404 Not Found' for url 'https://ipa.247sports.com/composite/2025/basketball/'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "Composite - With Recruits",
+      "url": "https://ipa.247sports.com/recruits/composite/2025/basketball",
+      "params": {},
+      "success": false,
+      "status_code": null,
+      "content_type": null,
+      "response_size": 0,
+      "has_json": false,
+      "has_rankings_data": false,
+      "sample_data": null,
+      "error": "Unexpected error: Client error '404 Not Found' for url 'https://ipa.247sports.com/recruits/composite/2025/basketball/'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "Players - List Endpoint",
+      "url": "https://ipa.247sports.com/api/players",
+      "params": {
+        "year": "2025",
+        "sport": "basketball",
+        "ranked": "true"
+      },
+      "success": false,
+      "status_code": null,
+      "content_type": null,
+      "response_size": 0,
+      "has_json": false,
+      "has_rankings_data": false,
+      "sample_data": null,
+      "error": "Unexpected error: Client error '404 Not Found' for url 'https://ipa.247sports.com/api/players/?year=2025&sport=basketball&ranked=true'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "Recruits - List Endpoint",
+      "url": "https://ipa.247sports.com/api/recruits",
+      "params": {
+        "classYear": "2025",
+        "sport": "basketball"
+      },
+      "success": false,
+      "status_code": null,
+      "content_type": null,
+      "response_size": 0,
+      "has_json": false,
+      "has_rankings_data": false,
+      "sample_data": null,
+      "error": "Unexpected error: Client error '404 Not Found' for url 'https://ipa.247sports.com/api/recruits/?classYear=2025&sport=basketball'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "Data Feed - Rankings",
+      "url": "https://ipa.247sports.com/data/rankings/2025/basketball",
+      "params": {},
+      "success": false,
+      "status_code": null,
+      "content_type": null,
+      "response_size": 0,
+      "has_json": false,
+      "has_rankings_data": false,
+      "sample_data": null,
+      "error": "Unexpected error: Client error '404 Not Found' for url 'https://ipa.247sports.com/data/rankings/2025/basketball/'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    },
+    {
+      "name": "Feed - Rankings JSON",
+      "url": "https://ipa.247sports.com/feed/rankings",
+      "params": {
+        "year": "2025",
+        "sport": "basketball"
+      },
+      "success": false,
+      "status_code": null,
+      "content_type": null,
+      "response_size": 0,
+      "has_json": false,
+      "has_rankings_data": false,
+      "sample_data": null,
+      "error": "Unexpected error: Client error '404 Not Found' for url 'https://ipa.247sports.com/feed/rankings/?year=2025&sport=basketball'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+    }
+  ]
+}

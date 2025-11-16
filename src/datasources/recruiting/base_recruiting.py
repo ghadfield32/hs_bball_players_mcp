@@ -19,6 +19,7 @@ from ...models import (
     CollegeOffer,
     DataQualityFlag,
     DataSource,
+    DataSourceCategory,
     DataSourceRegion,
     DataSourceType,
     RecruitingPrediction,
@@ -49,6 +50,10 @@ class BaseRecruitingSource(ABC):
     - search_players() - Search by name/location/class
     - get_offers() - College offers for player(s)
     - get_predictions() - Crystal Ball style predictions
+
+    Added Phase HS-1 (2025-11-16):
+    - CATEGORY: Explicitly marks this as a RECRUITING datasource
+    - This prevents accidentally using recruiting sources for player season statistics
     """
 
     # Class attributes to be set by subclasses
@@ -56,6 +61,9 @@ class BaseRecruitingSource(ABC):
     source_name: str
     base_url: str
     region: DataSourceRegion
+
+    # Datasource category - marks that this provides RECRUITING data, NOT player stats
+    CATEGORY: DataSourceCategory = DataSourceCategory.RECRUITING
 
     def __init__(self):
         """Initialize base recruiting datasource."""

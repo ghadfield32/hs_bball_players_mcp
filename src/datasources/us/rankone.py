@@ -12,6 +12,7 @@ from typing import Optional
 
 from ...models import (
     DataQualityFlag,
+    DataSourceCategory,
     DataSourceRegion,
     DataSourceType,
     Game,
@@ -58,12 +59,19 @@ class RankOneDataSource(BaseDataSource):
 
     Note: RankOne typically provides schedules/rosters but NOT player statistics.
     Use this adapter for entity resolution (team names, schedules) and fixtures.
+
+    Added Phase HS-1 (2025-11-16):
+    - CATEGORY: Explicitly marks this as a SCHEDULES datasource
+    - RankOne provides schedules/fixtures only, NOT player season statistics
     """
 
     source_type = DataSourceType.RANKONE
     source_name = "RankOne Sport"
     base_url = "https://www.rankonesport.com"
     region = DataSourceRegion.US
+
+    # Datasource category - marks that this provides SCHEDULES data, NOT player stats
+    CATEGORY: DataSourceCategory = DataSourceCategory.SCHEDULES
 
     # Multi-state support
     SUPPORTED_STATES = ["TX", "KY", "IN", "OH", "TN"]

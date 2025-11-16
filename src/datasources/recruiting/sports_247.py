@@ -31,8 +31,10 @@ Browser Automation: Required (247Sports uses React/dynamic content)
 
 Author: Claude Code
 Date: 2025-11-14
+Updated: 2025-11-15 - Fixed browser scraping selector (ul.rankings-page__list instead of table)
 """
 
+import re
 from datetime import datetime
 from typing import List, Optional
 
@@ -280,46 +282,48 @@ class Sports247DataSource(BaseRecruitingSource):
 
             html = await self.browser_client.get_rendered_html(
                 url=rankings_url,
-                wait_for="table",  # Wait for rankings table to render
-                wait_timeout=30000,  # 30 seconds
-                wait_for_network_idle=True,  # Ensure React finishes loading
+                wait_for="ul.rankings-page__list",  # ✓ FIXED: Wait for rankings list (not table)
+                wait_timeout=60000,  # 60 seconds (increased for heavy pages)
+                wait_for_network_idle=False,  # Don't wait for network (too strict for ad-heavy sites)
             )
 
             # Step 4: Parse rendered HTML
             soup = parse_html(html)
 
-            # Step 5: Find rankings table
-            # 247Sports uses various table classes - try multiple selectors
-            rankings_table = (
-                soup.find("table", class_=lambda x: x and "rankings" in str(x).lower()) or
-                soup.find("table", class_=lambda x: x and "recruit" in str(x).lower()) or
-                soup.find("table")  # Fallback to first table
-            )
+            # Step 5: Find rankings list (ul element with player li items)
+            # ✓ FIXED: Look for <ul class="rankings-page__list"> instead of table
+            rankings_list = soup.find("ul", class_="rankings-page__list")
 
-            if not rankings_table:
+            if not rankings_list:
                 self.logger.warning(
-                    "No rankings table found on 247Sports page",
+                    "No rankings list found on 247Sports page",
                     class_year=class_year,
-                    url=rankings_url
+                    url=rankings_url,
+                    expected_selector="ul.rankings-page__list",
+                    debug_hint="247Sports HTML structure may have changed"
                 )
                 return []
 
-            # Step 6: Extract table data
-            rows = extract_table_data(rankings_table)
+            # Step 6: Extract player list items (li elements)
+            # ✓ FIXED: Find <li class="rankings-page__list-item"> instead of table rows
+            player_items = rankings_list.find_all("li", class_="rankings-page__list-item")
 
-            if not rows:
+            if not player_items:
                 self.logger.warning(
-                    "Rankings table found but no rows extracted",
-                    class_year=class_year
+                    "Rankings list found but no player items extracted",
+                    class_year=class_year,
+                    expected_class="rankings-page__list-item",
+                    debug_hint="Check if 247Sports changed class names"
                 )
                 return []
 
             self.logger.info(
-                f"Extracted {len(rows)} rows from 247Sports rankings table",
+                f"Extracted {len(player_items)} players from 247Sports rankings list",
                 class_year=class_year
             )
 
-            # Step 7: Parse rankings from rows
+            # Step 7: Parse rankings from player list items
+            # ✓ FIXED: Iterate over <li> elements instead of table rows
             rankings = []
             data_source = self.create_data_source_metadata(
                 url=rankings_url,
@@ -327,11 +331,12 @@ class Sports247DataSource(BaseRecruitingSource):
                 notes=f"247Sports {class_year} Composite Rankings"
             )
 
-            for row in rows[:limit * 2]:  # Parse 2x limit to allow for filtering
-                rank = self._parse_ranking_from_row(row, class_year, data_source)
+            for player_item in player_items[:limit * 2]:  # Parse 2x limit to allow for filtering
+                # ✓ FIXED: Call _parse_ranking_from_li() instead of _parse_ranking_from_row()
+                rank = self._parse_ranking_from_li(player_item, class_year, data_source)
 
                 if rank:
-                    # Apply filters
+                    # Apply filters (same as before)
                     if position and rank.position and str(rank.position) != position:
                         continue
 
@@ -498,6 +503,169 @@ class Sports247DataSource(BaseRecruitingSource):
                 "Failed to parse ranking from 247Sports row",
                 error=str(e),
                 row_keys=list(row.keys()) if row else None
+            )
+            return None
+
+    def _parse_ranking_from_li(
+        self,
+        li_element,
+        class_year: int,
+        data_source
+    ) -> Optional[RecruitingRank]:
+        """
+        Parse recruiting rank from 247Sports list item element.
+
+        **FIXED (2025-11-15)**: New method to parse from <li> elements instead of table rows.
+
+        247Sports uses <li class="rankings-page__list-item"> structure with divs:
+        - <div class="rank-column"><div class="primary">1</div></div> - National rank
+        - <div class="recruit"><a>Player Name</a><span class="meta">School (City, ST)</span></div>
+        - <div class="position">PG</div> - Position
+        - <div class="metrics">6-9 / 210</div> - Height/Weight
+        - <div class="rating"><span class="score">0.9999</span></div> - Rating
+        - <div class="status"><img alt="College"></div> - Commitment
+
+        Args:
+            li_element: BeautifulSoup <li> element with class "rankings-page__list-item"
+            class_year: Graduation year
+            data_source: DataSource metadata object
+
+        Returns:
+            RecruitingRank object or None if parsing fails
+        """
+        try:
+            # Extract national rank from rank-column > primary
+            rank_column = li_element.find("div", class_="rank-column")
+            rank_national = None
+            if rank_column:
+                primary_rank = rank_column.find("div", class_="primary")
+                if primary_rank:
+                    rank_national = parse_int(get_text_or_none(primary_rank))
+
+            # Extract player name and ID from recruit section
+            recruit_div = li_element.find("div", class_="recruit")
+            if not recruit_div:
+                self.logger.debug("No recruit div found in list item")
+                return None
+
+            name_link = recruit_div.find("a", class_="rankings-page__name-link")
+            if not name_link:
+                self.logger.debug("No name link found in recruit div")
+                return None
+
+            player_name = name_link.text.strip()
+
+            # Extract player ID from href (e.g., "/player/aj-dybantsa-46134184/")
+            player_href = name_link.get("href", "")
+            player_247_id = None
+            if player_href:
+                # Extract numeric ID from URL using regex
+                id_match = re.search(r'-(\d+)/?$', player_href)
+                if id_match:
+                    player_247_id = id_match.group(1)
+
+            # Extract school info from meta span
+            school_meta = recruit_div.find("span", class_="meta")
+            school_text = get_text_or_none(school_meta) if school_meta else None
+
+            # Parse school_text: "School Name (City, State)"
+            school = None
+            city = None
+            state = None
+            if school_text:
+                # Pattern: "School Name (City, ST)"
+                match = re.match(r'(.+?)\s*\(([^,]+),\s*([A-Z]{2})\)', school_text)
+                if match:
+                    school = match.group(1).strip()
+                    city = match.group(2).strip()
+                    state = match.group(3).strip()
+                else:
+                    # Fallback: use full text as school
+                    school = school_text.strip()
+
+            # Extract position
+            position_div = li_element.find("div", class_="position")
+            position_str = get_text_or_none(position_div) if position_div else None
+            position = None
+            if position_str:
+                position = self.POSITION_MAP.get(position_str.upper().strip())
+
+            # Extract height/weight from metrics
+            metrics_div = li_element.find("div", class_="metrics")
+            metrics_text = get_text_or_none(metrics_div) if metrics_div else None
+
+            height = None
+            weight = None
+            if metrics_text:
+                # Pattern: "6-9 / 210"
+                parts = metrics_text.split("/")
+                if len(parts) == 2:
+                    height = parts[0].strip()
+                    weight = parse_int(parts[1].strip())
+                elif len(parts) == 1:
+                    # Just height, no weight
+                    height = parts[0].strip()
+
+            # Extract rating and stars
+            rating_div = li_element.find("div", class_="rating")
+            rating = None
+            stars = None
+
+            if rating_div:
+                # Extract rating score
+                score_span = rating_div.find("span", class_="score")
+                if score_span:
+                    rating = parse_float(get_text_or_none(score_span))
+
+                # Count star icons (look for yellow filled stars)
+                star_icons = rating_div.find_all("span", class_=lambda x: x and "icon-starsolid" in str(x))
+                if star_icons:
+                    # Only count yellow stars (filled), not gray (unfilled)
+                    yellow_stars = [s for s in star_icons if "yellow" in " ".join(s.get("class", []))]
+                    stars = len(yellow_stars) if yellow_stars else len(star_icons)
+
+            # Extract commitment
+            status_div = li_element.find("div", class_="status")
+            committed_to = None
+
+            if status_div:
+                # Look for commitment image (college logo)
+                commit_img = status_div.find("img")
+                if commit_img:
+                    committed_to = commit_img.get("alt")
+
+            # Build player ID
+            player_id = self._build_player_id(player_name, player_247_id)
+
+            # Create RecruitingRank object
+            return RecruitingRank(
+                player_id=player_id,
+                player_name=player_name,
+                rank_national=rank_national,
+                rank_position=None,  # Not in list view, would need separate page
+                rank_state=None,  # Not in list view, would need separate page
+                stars=stars,
+                rating=rating,
+                service=RecruitingService.COMPOSITE,  # Using composite rankings
+                class_year=class_year,
+                position=position,
+                height=height,
+                weight=weight,
+                school=school,
+                city=city,
+                state=state,
+                committed_to=committed_to if committed_to and committed_to != "N/A" else None,
+                commitment_date=None,  # Not in list view, would need player profile
+                profile_url=None,  # Could construct from player_href if needed
+                data_source=data_source,
+            )
+
+        except Exception as e:
+            self.logger.warning(
+                "Failed to parse ranking from 247Sports list item",
+                error=str(e),
+                error_type=type(e).__name__,
+                html_snippet=str(li_element)[:300] if li_element else None
             )
             return None
 

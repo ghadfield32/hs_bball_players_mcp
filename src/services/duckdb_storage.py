@@ -1165,26 +1165,26 @@ class DuckDBStorage:
 
         query = """
             SELECT
-                player_id as player_uid,
+                player_uid,
                 player_name,
-                rank_national,
-                rank_position,
-                rank_state,
+                national_rank,
+                position_rank,
+                state_rank,
                 stars,
-                rating,
-                service,
+                rating_0_1 as rating,
+                source as service,
                 class_year,
                 position,
-                height,
-                weight,
-                school,
-                city,
-                state,
-                committed_to,
+                height_inches as height,
+                weight_lbs as weight,
+                high_school_name as school,
+                hometown_city as city,
+                hometown_state as state,
+                committed_school as committed_to,
                 commitment_date,
                 profile_url,
-                retrieved_at
-            FROM recruiting_ranks
+                loaded_at as retrieved_at
+            FROM player_recruiting
             WHERE 1=1
         """
 
@@ -1199,10 +1199,10 @@ class DuckDBStorage:
             params.append(min_stars)
 
         if service:
-            query += " AND service = ?"
+            query += " AND source = ?"
             params.append(service)
 
-        query += " ORDER BY rank_national ASC NULLS LAST"
+        query += " ORDER BY national_rank ASC NULLS LAST"
 
         try:
             df = self.conn.execute(query, params).fetchdf()
@@ -1350,6 +1350,279 @@ class DuckDBStorage:
         except Exception as e:
             logger.error("Failed to export MaxPreps data from DuckDB", error=str(e))
             return pd.DataFrame()
+
+    def export_sblive_from_duckdb(
+        self,
+        season: Optional[str] = None,
+        state: Optional[str] = None,
+        min_ppg: Optional[float] = None
+    ) -> pd.DataFrame:
+        """
+        Export SBLive state HS stats from DuckDB for dataset building.
+
+        Returns DataFrame with SBLive stats ready for merging.
+        SBLive covers: WA, OR, CA, AZ, ID, NV
+
+        Args:
+            season: Filter by season (e.g., "2024-25")
+            state: Filter by state (WA/OR/CA/AZ/ID/NV)
+            min_ppg: Minimum points per game filter
+
+        Returns:
+            DataFrame with SBLive stats
+        """
+        if not self.conn:
+            logger.warning("DuckDB not initialized, returning empty DataFrame")
+            return pd.DataFrame()
+
+        # Join with players table to get school info
+        query = """
+            SELECT
+                s.player_id as player_uid,
+                s.player_name,
+                s.season,
+                s.games_played,
+                s.points_per_game as pts_per_g,
+                s.rebounds_per_game as reb_per_g,
+                s.assists_per_game as ast_per_g,
+                s.steals_per_game as stl_per_g,
+                s.blocks_per_game as blk_per_g,
+                s.field_goals_made as fg_made,
+                s.field_goals_attempted as fg_att,
+                s.three_pointers_made as fg3_made,
+                s.three_pointers_attempted as fg3_att,
+                s.free_throws_made as ft_made,
+                s.free_throws_attempted as ft_att,
+                CAST(s.field_goals_made AS FLOAT) / NULLIF(s.field_goals_attempted, 0) * 100 as fg_pct,
+                CAST(s.three_pointers_made AS FLOAT) / NULLIF(s.three_pointers_attempted, 0) * 100 as fg3_pct,
+                CAST(s.free_throws_made AS FLOAT) / NULLIF(s.free_throws_attempted, 0) * 100 as ft_pct,
+                s.turnovers as tov,
+                s.minutes_played as min_played,
+                p.school_name,
+                p.school_state,
+                p.grad_year,
+                s.league as source_league,
+                s.retrieved_at
+            FROM player_season_stats s
+            LEFT JOIN players p ON s.player_id = p.player_id AND s.source_type = p.source_type
+            WHERE s.source_type = 'sblive'
+        """
+
+        params = []
+
+        if season:
+            query += " AND s.season = ?"
+            params.append(season)
+
+        if state:
+            query += " AND p.school_state = ?"
+            params.append(state)
+
+        if min_ppg is not None:
+            query += " AND s.points_per_game >= ?"
+            params.append(min_ppg)
+
+        query += " ORDER BY s.points_per_game DESC"
+
+        try:
+            df = self.conn.execute(query, params).fetchdf()
+            logger.info(
+                f"Exported {len(df)} SBLive player season records from DuckDB",
+                season=season,
+                state=state
+            )
+            return df
+        except Exception as e:
+            logger.error("Failed to export SBLive data from DuckDB", error=str(e))
+            return pd.DataFrame()
+
+    def export_bound_from_duckdb(
+        self,
+        season: Optional[str] = None,
+        state: Optional[str] = None,
+        min_ppg: Optional[float] = None
+    ) -> pd.DataFrame:
+        """
+        Export Bound (formerly Varsity Bound) state HS stats from DuckDB for dataset building.
+
+        Returns DataFrame with Bound stats ready for merging.
+        Bound covers: IA, SD, IL, MN (Midwest states)
+
+        Args:
+            season: Filter by season (e.g., "2024-25")
+            state: Filter by state (IA/SD/IL/MN)
+            min_ppg: Minimum points per game filter
+
+        Returns:
+            DataFrame with Bound stats
+        """
+        if not self.conn:
+            logger.warning("DuckDB not initialized, returning empty DataFrame")
+            return pd.DataFrame()
+
+        # Join with players table to get school info
+        query = """
+            SELECT
+                s.player_id as player_uid,
+                s.player_name,
+                s.season,
+                s.games_played,
+                s.points_per_game as pts_per_g,
+                s.rebounds_per_game as reb_per_g,
+                s.assists_per_game as ast_per_g,
+                s.steals_per_game as stl_per_g,
+                s.blocks_per_game as blk_per_g,
+                s.field_goals_made as fg_made,
+                s.field_goals_attempted as fg_att,
+                s.three_pointers_made as fg3_made,
+                s.three_pointers_attempted as fg3_att,
+                s.free_throws_made as ft_made,
+                s.free_throws_attempted as ft_att,
+                CAST(s.field_goals_made AS FLOAT) / NULLIF(s.field_goals_attempted, 0) * 100 as fg_pct,
+                CAST(s.three_pointers_made AS FLOAT) / NULLIF(s.three_pointers_attempted, 0) * 100 as fg3_pct,
+                CAST(s.free_throws_made AS FLOAT) / NULLIF(s.free_throws_attempted, 0) * 100 as ft_pct,
+                s.turnovers as tov,
+                s.minutes_played as min_played,
+                p.school_name,
+                p.school_state,
+                p.grad_year,
+                s.league as source_league,
+                s.retrieved_at
+            FROM player_season_stats s
+            LEFT JOIN players p ON s.player_id = p.player_id AND s.source_type = p.source_type
+            WHERE s.source_type = 'bound'
+        """
+
+        params = []
+
+        if season:
+            query += " AND s.season = ?"
+            params.append(season)
+
+        if state:
+            query += " AND p.school_state = ?"
+            params.append(state)
+
+        if min_ppg is not None:
+            query += " AND s.points_per_game >= ?"
+            params.append(min_ppg)
+
+        query += " ORDER BY s.points_per_game DESC"
+
+        try:
+            df = self.conn.execute(query, params).fetchdf()
+            logger.info(
+                f"Exported {len(df)} Bound player season records from DuckDB",
+                season=season,
+                state=state
+            )
+            return df
+        except Exception as e:
+            logger.error("Failed to export Bound data from DuckDB", error=str(e))
+            return pd.DataFrame()
+
+    def export_state_hs_stats_from_duckdb(
+        self,
+        season: Optional[str] = None,
+        state: Optional[str] = None,
+        min_ppg: Optional[float] = None,
+        prefer_source: Optional[str] = None
+    ) -> pd.DataFrame:
+        """
+        Export unified state HS stats from DuckDB (SBLive + Bound).
+
+        Merges stats from state-specific sources (SBLive and Bound).
+        De-duplicates by player when same player appears in multiple sources.
+
+        Priority (when duplicates exist):
+        1. prefer_source parameter (if specified)
+        2. SBLive (generally better coverage in western states)
+        3. Bound (flagship source for midwest states)
+
+        Args:
+            season: Filter by season (e.g., "2024-25")
+            state: Filter by state (all supported states)
+            min_ppg: Minimum points per game filter
+            prefer_source: Preferred source when duplicates exist ('sblive' or 'bound')
+
+        Returns:
+            DataFrame with unified state HS stats
+        """
+        if not self.conn:
+            logger.warning("DuckDB not initialized, returning empty DataFrame")
+            return pd.DataFrame()
+
+        # Get stats from both sources
+        sblive_df = self.export_sblive_from_duckdb(season=season, state=state, min_ppg=min_ppg)
+        bound_df = self.export_bound_from_duckdb(season=season, state=state, min_ppg=min_ppg)
+
+        if sblive_df.empty and bound_df.empty:
+            logger.info("No state HS stats found for filters", season=season, state=state)
+            return pd.DataFrame()
+
+        if sblive_df.empty:
+            logger.info(f"Using Bound only: {len(bound_df)} records")
+            return bound_df
+
+        if bound_df.empty:
+            logger.info(f"Using SBLive only: {len(sblive_df)} records")
+            return sblive_df
+
+        # Both sources have data - merge and de-duplicate
+        # Add source column to track origin
+        sblive_df = sblive_df.copy()
+        bound_df = bound_df.copy()
+        sblive_df['data_source'] = 'sblive'
+        bound_df['data_source'] = 'bound'
+
+        # Combine both
+        combined = pd.concat([sblive_df, bound_df], ignore_index=True)
+
+        # De-duplicate by (player_name, season, school_state)
+        # Keep first occurrence based on priority
+        if prefer_source == 'sblive':
+            # SBLive first
+            combined = combined.sort_values('data_source', ascending=True)  # 'bound' < 'sblive' alphabetically
+        elif prefer_source == 'bound':
+            # Bound first
+            combined = combined.sort_values('data_source', ascending=False)  # 'sblive' > 'bound'
+        else:
+            # Default: SBLive priority (western states), Bound priority (midwest states)
+            # Use state to determine priority
+            def source_priority(row):
+                state_code = row.get('school_state', '')
+                # SBLive states: WA, OR, CA, AZ, ID, NV
+                # Bound states: IA, SD, IL, MN
+                if state_code in ['WA', 'OR', 'CA', 'AZ', 'ID', 'NV']:
+                    return 0 if row['data_source'] == 'sblive' else 1
+                elif state_code in ['IA', 'SD', 'IL', 'MN']:
+                    return 0 if row['data_source'] == 'bound' else 1
+                else:
+                    # Default to SBLive
+                    return 0 if row['data_source'] == 'sblive' else 1
+
+            combined['_priority'] = combined.apply(source_priority, axis=1)
+            combined = combined.sort_values('_priority')
+            combined = combined.drop(columns=['_priority'])
+
+        # Drop duplicates, keeping first (highest priority)
+        deduplicated = combined.drop_duplicates(
+            subset=['player_name', 'season', 'school_state'],
+            keep='first'
+        )
+
+        # Drop data_source column (used only for de-duplication)
+        if 'data_source' in deduplicated.columns:
+            deduplicated = deduplicated.drop(columns=['data_source'])
+
+        logger.info(
+            f"Exported {len(deduplicated)} unified state HS stats records",
+            sblive_count=len(sblive_df),
+            bound_count=len(bound_df),
+            duplicates_removed=len(combined) - len(deduplicated)
+        )
+
+        return deduplicated
 
     def get_dataset_sources_summary(
         self,

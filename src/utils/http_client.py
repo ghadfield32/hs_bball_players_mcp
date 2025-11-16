@@ -17,7 +17,6 @@ from tenacity import (
 )
 
 from ..config import get_settings
-from ..services.cache import get_cache
 from ..services.rate_limiter import get_rate_limiter
 from .logger import get_logger
 
@@ -38,6 +37,9 @@ class HTTPClient:
         Args:
             source: Data source identifier
         """
+        # Lazy import to avoid circular dependency
+        from ..services.cache import get_cache
+
         self.source = source
         self.settings = get_settings()
         self.rate_limiter = get_rate_limiter()

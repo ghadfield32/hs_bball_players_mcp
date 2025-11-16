@@ -14,7 +14,7 @@ These sources provide rankings, offers, and commitment data.
 from .base_recruiting import BaseRecruitingSource
 from .csv_recruiting import CSVRecruitingDataSource
 from .espn import ESPNRecruitingDataSource
-from .on3 import On3RecruitingDataSource
+from .on3 import On3DataSource
 from .rivals import RivalsRecruitingDataSource
 from .sports_247 import Sports247DataSource
 
@@ -25,6 +25,6 @@ __all__ = [
     "CSVRecruitingDataSource",
     # NEW - Enhancement 10, Step 4: Recruiting source stubs
     "ESPNRecruitingDataSource",
-    "On3RecruitingDataSource",
+    "On3DataSource",
     "RivalsRecruitingDataSource",
 ]

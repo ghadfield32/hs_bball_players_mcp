@@ -26,6 +26,7 @@ dependencies = [
     "tenacity>=8.2.3",
     "aiofiles>=23.2.1",
     "playwright>=1.40.0",
+    "tqdm>=4.66.0",
 ]
 
 [project.optional-dependencies]

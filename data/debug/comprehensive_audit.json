@@ -1,0 +1,169 @@
+{
+  "timestamp": "2025-11-16T06:10:35.031371",
+  "summary": {
+    "working": 2,
+    "partial": 0,
+    "not_working": 3,
+    "errors": 8
+  },
+  "results": {
+    "GoBound Iowa": {
+      "name": "GoBound Iowa",
+      "module": "src.datasources.us.bound",
+      "class": "BoundDataSource",
+      "test_state": "IA",
+      "status": "working",
+      "player_search_works": true,
+      "player_stats_works": true,
+      "error": null,
+      "notes": [
+        "Found 3 players",
+        "Stats retrieved successfully"
+      ]
+    },
+    "GoBound Illinois": {
+      "name": "GoBound Illinois",
+      "module": "src.datasources.us.bound",
+      "class": "BoundDataSource",
+      "test_state": "IL",
+      "status": "working",
+      "player_search_works": true,
+      "player_stats_works": true,
+      "error": null,
+      "notes": [
+        "Found 3 players",
+        "Stats retrieved successfully"
+      ]
+    },
+    "RankOne Texas": {
+      "name": "RankOne Texas",
+      "module": "src.datasources.us.rankone",
+      "class": "RankOneDataSource",
+      "test_state": "TX",
+      "status": "no_players",
+      "player_search_works": false,
+      "player_stats_works": false,
+      "error": null,
+      "notes": [
+        "Search returned empty"
+      ]
+    },
+    "Texas UIL": {
+      "name": "Texas UIL",
+      "module": "src.datasources.us.texas_uil",
+      "class": "TexasUILDataSource",
+      "test_state": "TX",
+      "status": "search_error",
+      "player_search_works": false,
+      "player_stats_works": false,
+      "error": "Search error: TexasUILDataSource.search_players() got an unexpected keyword argument 'state'",
+      "notes": []
+    },
+    "California CIF": {
+      "name": "California CIF",
+      "module": "src.datasources.us.california_cif_ss",
+      "class": "CIFSSDataSource",
+      "test_state": "CA",
+      "status": "import_error",
+      "player_search_works": false,
+      "player_stats_works": false,
+      "error": "Import error: module 'src.datasources.us.california_cif_ss' has no attribute 'CIFSSDataSource'",
+      "notes": []
+    },
+    "Georgia GHSA": {
+      "name": "Georgia GHSA",
+      "module": "src.datasources.us.georgia_ghsa",
+      "class": "GHSADataSource",
+      "test_state": "GA",
+      "status": "import_error",
+      "player_search_works": false,
+      "player_stats_works": false,
+      "error": "Import error: module 'src.datasources.us.georgia_ghsa' has no attribute 'GHSADataSource'",
+      "notes": []
+    },
+    "Florida FHSAA": {
+      "name": "Florida FHSAA",
+      "module": "src.datasources.us.florida_fhsaa",
+      "class": "FHSAADataSource",
+      "test_state": "FL",
+      "status": "import_error",
+      "player_search_works": false,
+      "player_stats_works": false,
+      "error": "Import error: module 'src.datasources.us.florida_fhsaa' has no attribute 'FHSAADataSource'",
+      "notes": []
+    },
+    "Kentucky KHSAA": {
+      "name": "Kentucky KHSAA",
+      "module": "src.datasources.us.kentucky_khsaa",
+      "class": "KHSAADataSource",
+      "test_state": "KY",
+      "status": "import_error",
+      "player_search_works": false,
+      "player_stats_works": false,
+      "error": "Import error: module 'src.datasources.us.kentucky_khsaa' has no attribute 'KHSAADataSource'",
+      "notes": []
+    },
+    "Indiana IHSAA": {
+      "name": "Indiana IHSAA",
+      "module": "src.datasources.us.indiana_ihsaa",
+      "class": "IHSAADataSource",
+      "test_state": "IN",
+      "status": "import_error",
+      "player_search_works": false,
+      "player_stats_works": false,
+      "error": "Import error: module 'src.datasources.us.indiana_ihsaa' has no attribute 'IHSAADataSource'",
+      "notes": []
+    },
+    "Ohio OHSAA": {
+      "name": "Ohio OHSAA",
+      "module": "src.datasources.us.ohio_ohsaa",
+      "class": "OHSAADataSource",
+      "test_state": "OH",
+      "status": "import_error",
+      "player_search_works": false,
+      "player_stats_works": false,
+      "error": "Import error: module 'src.datasources.us.ohio_ohsaa' has no attribute 'OHSAADataSource'",
+      "notes": []
+    },
+    "MaxPreps CA": {
+      "name": "MaxPreps CA",
+      "module": "src.datasources.us.maxpreps",
+      "class": "MaxPrepsDataSource",
+      "test_state": "CA",
+      "status": "no_players",
+      "player_search_works": false,
+      "player_stats_works": false,
+      "error": null,
+      "notes": [
+        "Search returned empty"
+      ]
+    },
+    "On3": {
+      "name": "On3",
+      "module": "src.datasources.recruiting.on3",
+      "class": "On3DataSource",
+      "test_state": "CA",
+      "status": "no_players",
+      "player_search_works": false,
+      "player_stats_works": false,
+      "error": null,
+      "notes": [
+        "Search returned empty"
+      ]
+    },
+    "247Sports": {
+      "name": "247Sports",
+      "module": "src.datasources.recruiting.sports_247",
+      "class": "Sports247DataSource",
+      "test_state": "CA",
+      "status": "stats_error",
+      "player_search_works": true,
+      "player_stats_works": false,
+      "error": "Stats error: 'Sports247DataSource' object has no attribute 'get_player_season_stats'",
+      "notes": [
+        "Found 3 players",
+        "Stats retrieval failed"
+      ]
+    }
+  }
+}

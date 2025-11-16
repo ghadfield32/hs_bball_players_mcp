@@ -1,0 +1,121 @@
+# RECRUITING_COVERAGE Schema
+# Tracks data availability and coverage metrics per source/year
+#
+# Used for:
+# - Coverage discovery (which years have data)
+# - QA validation (expected vs actual counts)
+# - Gap analysis
+# - Monitoring data freshness
+#
+# Author: Claude Code
+# Date: 2025-11-15
+
+table_name: recruiting_coverage
+
+description: |
+  Coverage metadata for recruiting data sources.
+  One row per (source, class_year) with player counts and quality metrics.
+  Used to track data availability before backfill and for ongoing QA.
+
+primary_key: coverage_id
+
+indexes:
+  - columns: [source, class_year]
+    name: idx_coverage_source_year
+    unique: true
+  - columns: [discovered_at]
+    name: idx_coverage_discovered_at
+
+columns:
+  # Identity
+  coverage_id:
+    type: VARCHAR
+    nullable: false
+    description: "UUID for this coverage record"
+    primary_key: true
+
+  source:
+    type: VARCHAR
+    nullable: false
+    description: "Recruiting service (e.g., 'on3_industry')"
+
+  class_year:
+    type: INTEGER
+    nullable: false
+    description: "High school graduation year"
+
+  # Coverage Metrics
+  n_players:
+    type: INTEGER
+    nullable: false
+    description: "Number of players found"
+
+  n_players_expected:
+    type: INTEGER
+    nullable: true
+    description: "Expected count from pagination metadata (if available)"
+
+  # Pagination Info
+  page_count:
+    type: INTEGER
+    nullable: true
+    description: "Number of pages in source"
+
+  items_per_page:
+    type: INTEGER
+    nullable: true
+    description: "Items per page from source"
+
+  # Quality Metrics
+  n_players_with_ranks:
+    type: INTEGER
+    nullable: true
+    description: "Players with national_rank populated"
+
+  n_players_with_stars:
+    type: INTEGER
+    nullable: true
+    description: "Players with star ratings"
+
+  n_players_with_ratings:
+    type: INTEGER
+    nullable: true
+    description: "Players with numerical ratings"
+
+  n_players_committed:
+    type: INTEGER
+    nullable: true
+    description: "Players who have committed"
+
+  # Data Quality Flags
+  has_gaps:
+    type: BOOLEAN
+    nullable: true
+    description: "Whether ranking sequence has gaps"
+
+  count_mismatch:
+    type: BOOLEAN
+    nullable: true
+    description: "Whether n_players != n_players_expected"
+
+  parse_errors:
+    type: INTEGER
+    nullable: true
+    description: "Number of players that failed to parse"
+
+  # Timestamps
+  discovered_at:
+    type: TIMESTAMP
+    nullable: false
+    description: "When this coverage was discovered/measured"
+
+  last_updated_at:
+    type: TIMESTAMP
+    nullable: true
+    description: "When this coverage record was last updated"
+
+  # Notes
+  notes:
+    type: VARCHAR
+    nullable: true
+    description: "Human-readable notes about this year's coverage"

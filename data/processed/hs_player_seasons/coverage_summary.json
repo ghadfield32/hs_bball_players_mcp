@@ -1,0 +1,28 @@
+{
+  "generated_at": "2025-11-16T08:37:55.830568",
+  "years": [
+    2025
+  ],
+  "coverage_by_year": {
+    "2025": {
+      "total_players": 50,
+      "with_recruiting_info": 0,
+      "with_hs_stats": 0,
+      "with_eybl_stats": 0,
+      "with_offers": 0,
+      "with_power_6_offers": 0,
+      "avg_data_completeness": 0.7999999999999998,
+      "pct_recruiting": 0.0,
+      "pct_hs_stats": 0.0,
+      "pct_eybl": 0.0,
+      "pct_offers": 0.0
+    }
+  },
+  "overall": {
+    "total_years": 1,
+    "total_players": 50,
+    "avg_recruiting_coverage": 0.0,
+    "avg_hs_stats_coverage": 0.0,
+    "avg_eybl_coverage": 0.0
+  }
+}

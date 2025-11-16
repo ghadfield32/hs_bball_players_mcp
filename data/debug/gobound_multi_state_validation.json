@@ -1,0 +1,228 @@
+{
+  "summary": {
+    "timestamp": "2025-11-16T07:07:21.344520",
+    "total_states_tested": 4,
+    "states_working": [
+      "IA",
+      "IL",
+      "SD"
+    ],
+    "states_failed": [
+      "MN"
+    ],
+    "player_search_success_rate": 75.0,
+    "player_stats_success_rate": 75.0,
+    "data_quality": {
+      "all_have_school_names": false,
+      "all_have_positions": false,
+      "all_have_jersey_numbers": false,
+      "all_have_grades": false
+    },
+    "stat_coverage_comparison": {
+      "IA": [
+        "points"
+      ],
+      "IL": [
+        "points"
+      ],
+      "MN": [],
+      "SD": [
+        "points",
+        "rebounds",
+        "steals",
+        "blocks"
+      ]
+    }
+  },
+  "states": {
+    "IA": {
+      "state": "IA",
+      "state_name": "Iowa",
+      "timestamp": "2025-11-16T07:07:21.624600",
+      "player_search": {
+        "success": true,
+        "player_count": 5,
+        "error": null,
+        "sample_players": [
+          {
+            "name": "Mason Bechen",
+            "id": "bound_ia_mason_bechen",
+            "school": "North Linn",
+            "position": "Position.G",
+            "jersey": 20,
+            "grad_year": 2025
+          },
+          {
+            "name": "Hakeal Powell",
+            "id": "bound_ia_hakeal_powell",
+            "school": "Prince of Peace",
+            "position": "Position.G",
+            "jersey": 1,
+            "grad_year": 2025
+          },
+          {
+            "name": "Mason Watkins",
+            "id": "bound_ia_mason_watkins",
+            "school": "West Burlington",
+            "position": "Position.G",
+            "jersey": 24,
+            "grad_year": 2025
+          }
+        ]
+      },
+      "player_stats": {
+        "success": true,
+        "stat_categories_found": [
+          "points"
+        ],
+        "error": null,
+        "sample_stats": {
+          "points": 779
+        }
+      },
+      "data_quality": {
+        "has_school_names": true,
+        "has_positions": true,
+        "has_jersey_numbers": true,
+        "has_grades": true,
+        "parsing_issues": []
+      }
+    },
+    "IL": {
+      "state": "IL",
+      "state_name": "Illinois",
+      "timestamp": "2025-11-16T07:07:21.762990",
+      "player_search": {
+        "success": true,
+        "player_count": 5,
+        "error": null,
+        "sample_players": [
+          {
+            "name": "Brady Sehlhorst",
+            "id": "bound_il_brady_sehlhorst",
+            "school": "Notre Dame College Prep",
+            "position": null,
+            "jersey": 4,
+            "grad_year": 2025
+          },
+          {
+            "name": "Zackary Sharkey",
+            "id": "bound_il_zackary_sharkey",
+            "school": "Marian Catholic",
+            "position": "Position.G",
+            "jersey": 22,
+            "grad_year": 2025
+          },
+          {
+            "name": "Henry Marshall",
+            "id": "bound_il_henry_marshall",
+            "school": "Saint Viator",
+            "position": "Position.G",
+            "jersey": 13,
+            "grad_year": 2025
+          }
+        ]
+      },
+      "player_stats": {
+        "success": true,
+        "stat_categories_found": [
+          "points"
+        ],
+        "error": null,
+        "sample_stats": {
+          "points": 158
+        }
+      },
+      "data_quality": {
+        "has_school_names": true,
+        "has_positions": true,
+        "has_jersey_numbers": true,
+        "has_grades": true,
+        "parsing_issues": []
+      }
+    },
+    "MN": {
+      "state": "MN",
+      "state_name": "Minnesota",
+      "timestamp": "2025-11-16T07:07:21.826579",
+      "player_search": {
+        "success": false,
+        "player_count": 0,
+        "error": "Search returned empty list",
+        "sample_players": []
+      },
+      "player_stats": {
+        "success": false,
+        "stat_categories_found": [],
+        "error": null,
+        "sample_stats": {}
+      },
+      "data_quality": {
+        "has_school_names": false,
+        "has_positions": false,
+        "has_jersey_numbers": false,
+        "has_grades": false,
+        "parsing_issues": []
+      }
+    },
+    "SD": {
+      "state": "SD",
+      "state_name": "South Dakota",
+      "timestamp": "2025-11-16T07:07:22.603853",
+      "player_search": {
+        "success": true,
+        "player_count": 5,
+        "error": null,
+        "sample_players": [
+          {
+            "name": "Patrick Maynard",
+            "id": "bound_sd_patrick_maynard",
+            "school": "Hitchcock-Tulare",
+            "position": "Position.F",
+            "jersey": 4,
+            "grad_year": 2027
+          },
+          {
+            "name": "Devin Enander",
+            "id": "bound_sd_devin_enander",
+            "school": "Hitchcock-Tulare",
+            "position": "Position.G",
+            "jersey": 3,
+            "grad_year": 2027
+          },
+          {
+            "name": "Rylee Veal",
+            "id": "bound_sd_rylee_veal",
+            "school": "Bison",
+            "position": "Position.G",
+            "jersey": 15,
+            "grad_year": 2025
+          }
+        ]
+      },
+      "player_stats": {
+        "success": true,
+        "stat_categories_found": [
+          "points",
+          "rebounds",
+          "steals",
+          "blocks"
+        ],
+        "error": null,
+        "sample_stats": {
+          "points": 336,
+          "rebounds": 142,
+          "steals": 34,
+          "blocks": 18
+        }
+      },
+      "data_quality": {
+        "has_school_names": true,
+        "has_positions": true,
+        "has_jersey_numbers": true,
+        "has_grades": true,
+        "parsing_issues": []
+      }
+    }
+  }
+}

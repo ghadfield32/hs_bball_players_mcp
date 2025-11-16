@@ -24,6 +24,7 @@ from ..config import get_settings
 from ..models import (
     DataQualityFlag,
     DataSource,
+    DataSourceCategory,
     DataSourceRegion,
     DataSourceType,
     Game,
@@ -51,6 +52,10 @@ class BaseDataSource(ABC):
 
     All datasource adapters must inherit from this class and implement
     the abstract methods.
+
+    Added Phase HS-1 (2025-11-16):
+    - CATEGORY: Explicitly marks this as a PLAYER_STATS datasource
+    - This prevents accidentally using recruiting/bracket sources for player statistics
     """
 
     # Class attributes to be set by subclasses
@@ -58,6 +63,10 @@ class BaseDataSource(ABC):
     source_name: str
     base_url: str
     region: DataSourceRegion
+
+    # Datasource category - marks what type of data this source provides
+    # Must be set by subclasses, defaults to PLAYER_STATS for BaseDataSource
+    CATEGORY: DataSourceCategory = DataSourceCategory.PLAYER_STATS
 
     def __init__(self):
         """Initialize base datasource."""

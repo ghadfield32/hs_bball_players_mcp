@@ -1,0 +1,142 @@
+# ON3_PLAYER_RANKINGS_RAW Schema
+# Raw On3/Rivals Industry rankings (source-shaped)
+#
+# This table stores data exactly as received from On3's API/JSON,
+# with minimal transformation. Used for reproducibility and re-normalization.
+#
+# Author: Claude Code
+# Date: 2025-11-15
+
+table_name: on3_player_rankings_raw
+
+description: |
+  Raw recruiting rankings from On3/Rivals Industry composite.
+  Stores JSON data with minimal transformation for reproducibility.
+  Feed for player_recruiting normalized table.
+
+primary_key: raw_id
+
+indexes:
+  - columns: [class_year, consensus_national_rank]
+    name: idx_on3_raw_year_rank
+  - columns: [external_id]
+    name: idx_on3_raw_external_id
+
+columns:
+  # Identity
+  raw_id:
+    type: VARCHAR
+    nullable: false
+    description: "UUID for this raw record"
+    primary_key: true
+
+  external_id:
+    type: VARCHAR
+    nullable: false
+    description: "On3 player key (e.g., 'on3_156943')"
+
+  class_year:
+    type: INTEGER
+    nullable: false
+    description: "High school graduation year"
+
+  # Raw JSON Fields (as-is from On3)
+  player_name:
+    type: VARCHAR
+    nullable: true
+    description: "Full name from person.name"
+
+  position_abbr:
+    type: VARCHAR
+    nullable: true
+    description: "Position abbreviation (PG/SG/etc.)"
+
+  height_formatted:
+    type: VARCHAR
+    nullable: true
+    description: "Height string (e.g., '6-9')"
+
+  weight:
+    type: INTEGER
+    nullable: true
+    description: "Weight in pounds"
+
+  hometown:
+    type: VARCHAR
+    nullable: true
+    description: "Hometown string (e.g., 'Brockton, MA')"
+
+  high_school_name:
+    type: VARCHAR
+    nullable: true
+    description: "High school name"
+
+  # Rankings (raw)
+  consensus_national_rank:
+    type: INTEGER
+    nullable: true
+    description: "Industry consensus national rank"
+
+  consensus_position_rank:
+    type: INTEGER
+    nullable: true
+    description: "Industry consensus position rank"
+
+  consensus_state_rank:
+    type: INTEGER
+    nullable: true
+    description: "Industry consensus state rank"
+
+  consensus_stars:
+    type: INTEGER
+    nullable: true
+    description: "Industry consensus star rating"
+
+  consensus_rating:
+    type: DOUBLE
+    nullable: true
+    description: "Industry consensus rating (0-100 scale)"
+
+  # Commitment (raw)
+  is_committed:
+    type: BOOLEAN
+    nullable: true
+    description: "Commitment status from person.status.isCommitted"
+
+  committed_org_slug:
+    type: VARCHAR
+    nullable: true
+    description: "Committed organization slug"
+
+  commitment_date:
+    type: TIMESTAMP
+    nullable: true
+    description: "Commitment date"
+
+  # Profile
+  player_slug:
+    type: VARCHAR
+    nullable: true
+    description: "On3 player slug for URL construction"
+
+  profile_url:
+    type: VARCHAR
+    nullable: true
+    description: "Full profile URL"
+
+  # Metadata
+  scraped_at:
+    type: TIMESTAMP
+    nullable: false
+    description: "When this data was scraped"
+
+  loaded_at:
+    type: TIMESTAMP
+    nullable: false
+    description: "When this record was loaded into DuckDB"
+
+  # Optional: store full JSON for debugging
+  raw_json:
+    type: JSON
+    nullable: true
+    description: "Full JSON object from On3 API (optional)"

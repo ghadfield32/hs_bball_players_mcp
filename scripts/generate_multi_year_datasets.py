@@ -43,6 +43,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.services.dataset_builder import HSDatasetBuilder, create_mock_data
+from src.services.recruiting_duckdb import RecruitingDuckDBStorage
 from src.services.duckdb_storage import get_duckdb_storage
 from src.utils.logger import get_logger
 
@@ -81,9 +82,11 @@ class MultiYearDatasetGenerator:
         self.dataset_builder = HSDatasetBuilder(output_dir=str(self.output_dir))
 
         if use_real_data:
-            self.duckdb_storage = get_duckdb_storage()
+            self.recruiting_storage = RecruitingDuckDBStorage()  # For player_recruiting table
+            self.analytics_storage = get_duckdb_storage()  # For EYBL, offers, MaxPreps
         else:
-            self.duckdb_storage = None
+            self.recruiting_storage = None
+            self.analytics_storage = None
 
         logger.info(
             "MultiYearDatasetGenerator initialized",
@@ -107,17 +110,14 @@ class MultiYearDatasetGenerator:
 
         data = {}
 
-        # Load recruiting data
-        recruiting_df = self.duckdb_storage.export_recruiting_from_duckdb(
-            class_year=grad_year
-        )
+        # Load recruiting data from recruiting.duckdb
+        recruiting_df = self.recruiting_storage.get_recruiting_data(class_year=grad_year)
         data['recruiting'] = recruiting_df
-
         logger.info(f"  Recruiting: {len(recruiting_df)} records")
 
-        # Load MaxPreps data
+        # Load MaxPreps data from analytics.duckdb
         # Note: MaxPreps doesn't have grad_year in stats table, so we get all and filter later
-        maxpreps_df = self.duckdb_storage.export_maxpreps_from_duckdb()
+        maxpreps_df = self.analytics_storage.export_maxpreps_from_duckdb()
 
         # Filter by grad_year if available
         if 'grad_year' in maxpreps_df.columns:
@@ -126,15 +126,20 @@ class MultiYearDatasetGenerator:
         data['maxpreps'] = maxpreps_df
         logger.info(f"  MaxPreps: {len(maxpreps_df)} records")
 
-        # Load EYBL data
-        eybl_df = self.duckdb_storage.export_eybl_from_duckdb()
+        # Load EYBL data from analytics.duckdb
+        eybl_df = self.analytics_storage.export_eybl_from_duckdb()
         data['eybl'] = eybl_df
         logger.info(f"  EYBL: {len(eybl_df)} records")
 
-        # Load offers data
-        offers_df = self.duckdb_storage.export_college_offers_from_duckdb()
+        # Load offers data from analytics.duckdb
+        offers_df = self.analytics_storage.export_college_offers_from_duckdb()
         data['offers'] = offers_df
         logger.info(f"  Offers: {len(offers_df)} records")
+
+        # Load state HS stats (SBLive/Bound) from analytics.duckdb
+        state_hs_df = self.analytics_storage.export_state_hs_stats_from_duckdb()
+        data['state_hs'] = state_hs_df
+        logger.info(f"  State HS Stats: {len(state_hs_df)} records")
 
         return data
 
@@ -183,7 +188,8 @@ class MultiYearDatasetGenerator:
                 maxpreps_data=data.get('maxpreps'),
                 eybl_data=data.get('eybl'),
                 recruiting_data=data.get('recruiting'),
-                offers_data=data.get('offers')
+                offers_data=data.get('offers'),
+                state_hs_data=data.get('state_hs')
             )
 
             datasets[year] = dataset

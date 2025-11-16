@@ -20,6 +20,7 @@ import httpx
 
 from ..models import (
     DataQualityFlag,
+    DataSourceCategory,
     DataSourceRegion,
     DataSourceType,
     Game,
@@ -53,7 +54,14 @@ class AssociationAdapterBase(BaseDataSource):
     1. Set source_type, source_name, base_url, region
     2. Implement _parse_schedule_page() or _parse_bracket_page()
     3. Optionally override _get_season_url() for season-specific URLs
+
+    Added Phase HS-1 (2025-11-16):
+    - CATEGORY: Explicitly marks this as a BRACKETS datasource
+    - State associations provide tournament brackets, NOT player season statistics
     """
+
+    # Datasource category - marks that this provides BRACKETS data, NOT player stats
+    CATEGORY: DataSourceCategory = DataSourceCategory.BRACKETS
 
     # Default capabilities for association adapters
     # Override in subclass if association has stats/leaderboards

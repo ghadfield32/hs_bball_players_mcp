@@ -52,6 +52,7 @@ class HSDatasetBuilder:
         eybl_data: Optional[pd.DataFrame] = None,
         recruiting_data: Optional[pd.DataFrame] = None,
         offers_data: Optional[pd.DataFrame] = None,
+        state_hs_data: Optional[pd.DataFrame] = None,
         output_path: Optional[str] = None,
     ) -> pd.DataFrame:
         """
@@ -59,11 +60,12 @@ class HSDatasetBuilder:
 
         Merge process:
         1. Start with recruiting data (if available) - most complete player identity
-        2. Left join MaxPreps stats (HS stats)
-        3. Left join EYBL stats (circuit stats)
-        4. Left join offers data (college interest)
-        5. Calculate derived fields (played_eybl, power_6_offers, etc.)
-        6. Add quality flags
+        2. Left join state HS stats (SBLive/Bound - PRIORITY for covered states)
+        3. Left join MaxPreps stats (HS stats fallback for uncovered states)
+        4. Left join EYBL stats (circuit stats)
+        5. Left join offers data (college interest)
+        6. Calculate derived fields (played_eybl, power_6_offers, etc.)
+        7. Add quality flags
 
         Args:
             grad_year: High school graduation year
@@ -71,6 +73,7 @@ class HSDatasetBuilder:
             eybl_data: EYBL season stats DataFrame
             recruiting_data: Recruiting rankings DataFrame
             offers_data: College offers DataFrame
+            state_hs_data: State HS stats DataFrame (SBLive/Bound unified)
             output_path: Optional custom output path
 
         Returns:
@@ -112,7 +115,11 @@ class HSDatasetBuilder:
 
         logger.info(f"Base dataset after grad year filter: {len(base_df)} players")
 
-        # Join MaxPreps stats (HS stats)
+        # Join state HS stats (SBLive/Bound - PRIORITY for covered states)
+        if state_hs_data is not None and not state_hs_data.empty:
+            base_df = self._merge_state_hs_stats(base_df, state_hs_data, grad_year)
+
+        # Join MaxPreps stats (HS stats fallback for uncovered states)
         if maxpreps_data is not None and not maxpreps_data.empty:
             base_df = self._merge_maxpreps_stats(base_df, maxpreps_data, grad_year)
 
@@ -209,6 +216,75 @@ class HSDatasetBuilder:
 
         logger.info(
             f"MaxPreps merge complete",
+            before=len(base_df),
+            after=len(merged),
+            matched=merged['pts_per_g'].notna().sum()
+        )
+
+        return merged
+
+    def _merge_state_hs_stats(
+        self,
+        base_df: pd.DataFrame,
+        state_hs_data: pd.DataFrame,
+        grad_year: int
+    ) -> pd.DataFrame:
+        """
+        Merge state HS stats (SBLive/Bound) into base dataset.
+
+        State HS stats take priority over MaxPreps for covered states:
+        - SBLive: WA, OR, CA, AZ, ID, NV (Western US)
+        - Bound: IA, SD, IL, MN (Midwest US)
+
+        Args:
+            base_df: Base dataset
+            state_hs_data: State HS stats DataFrame (unified SBLive/Bound)
+            grad_year: Graduation year for filtering
+
+        Returns:
+            Merged DataFrame
+        """
+        logger.info(f"Merging state HS stats (SBLive/Bound) ({len(state_hs_data)} records)")
+
+        # Filter by grad year if available
+        hs_df = state_hs_data.copy()
+        if 'grad_year' in hs_df.columns:
+            hs_df = hs_df[hs_df['grad_year'] == grad_year].copy()
+
+        # State HS data already has standardized column names from export function
+        # (pts_per_g, reb_per_g, ast_per_g, etc.)
+        # No renaming needed
+
+        # Select HS stat columns to join
+        hs_cols = [
+            'player_uid', 'pts_per_g', 'reb_per_g', 'ast_per_g',
+            'stl_per_g', 'blk_per_g', 'fg_pct', 'fg3_pct', 'ft_pct',
+            'tov_per_g', 'gp', 'mpg', 'school_name', 'school_state'
+        ]
+
+        # Only keep columns that exist
+        hs_cols = [c for c in hs_cols if c in hs_df.columns]
+        hs_df = hs_df[hs_cols].drop_duplicates(subset=['player_uid'])
+
+        # Left join on player_uid
+        merged = base_df.merge(
+            hs_df,
+            on='player_uid',
+            how='left',
+            suffixes=('', '_state_hs')
+        )
+
+        # Handle school_name/school_state conflicts (prefer state HS data)
+        if 'school_name_state_hs' in merged.columns:
+            merged['school_name'] = merged['school_name_state_hs'].fillna(merged['school_name'])
+            merged.drop(columns=['school_name_state_hs'], inplace=True)
+
+        if 'school_state_state_hs' in merged.columns:
+            merged['school_state'] = merged['school_state_state_hs'].fillna(merged['school_state'])
+            merged.drop(columns=['school_state_state_hs'], inplace=True)
+
+        logger.info(
+            f"State HS merge complete",
             before=len(base_df),
             after=len(merged),
             matched=merged['pts_per_g'].notna().sum()
