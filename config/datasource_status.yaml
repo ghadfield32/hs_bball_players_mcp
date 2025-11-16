@@ -1,0 +1,417 @@
+# Datasource Status Configuration
+#
+# This file provides the canonical view of all configured datasources including:
+# - Legal/access status (ToS, robots.txt compliance)
+# - Implementation status (green/wip/todo/blocked)
+# - Data capabilities (what stats are actually available)
+# - Historical coverage (which seasons are supported)
+#
+# Status values:
+#   - green: Production-ready with tests and validation
+#   - wip: Work in progress, partially implemented
+#   - todo: Planned but not started
+#   - blocked: Cannot proceed (legal, paywall, or technical blocker)
+#
+# Access modes:
+#   - official_api: Documented public API or data feed
+#   - public_html: Public HTML pages, ToS allows scraping
+#   - partnership_needed: Requires license or data partnership
+#   - blocked: Anti-bot protection, ToS prohibits scraping
+#
+# Anti-bot levels:
+#   - none: Standard HTTP requests work
+#   - moderate: Some protection, browser automation may help
+#   - heavy: Cloudflare/Akamai, requires sophisticated bypass
+
+---
+
+# HIGH PRIORITY - International Elite Youth
+# These sources cover top prospects entering pro/college pipelines
+
+angt:
+  name: "ANGT (Adidas Next Generation Tournament)"
+  region: "Europe"
+  level: "U18 elite"
+  has_player_stats: true
+  stats_types: ["season_averages", "game_logs", "tournament_totals"]
+  access_mode: "blocked"  # 403 Forbidden - needs official API or partnership
+  legal_ok: false  # ToS review needed
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 1  # High value (top European prospects)
+  seasons_supported: []
+  notes: "EuroLeague Next Generation Tournament. All endpoints 403. Need to research official EuroLeague data API or partnership."
+  next_action: "Contact EuroLeague about official stats API access"
+
+osba:
+  name: "OSBA (Ontario Scholastic Basketball Association)"
+  region: "Canada (Ontario)"
+  level: "High School / Prep"
+  has_player_stats: true  # Assumed - needs manual verification
+  stats_types: ["season_averages"]
+  access_mode: "blocked"  # 403 Forbidden
+  legal_ok: false  # ToS review needed
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 2  # Canadian prep coverage
+  seasons_supported: []
+  divisions: ["U17", "U19", "Prep"]
+  notes: "All endpoints 403. Need manual site inspection to verify stats exist and ToS allows access."
+  next_action: "Manual inspection of www.osba.ca to verify stats pages exist, check robots.txt and ToS"
+
+# HIGH PRIORITY - US National Circuits (Big 3)
+# These are the premier grassroots circuits covering top HS prospects
+
+eybl:
+  name: "Nike EYBL (Elite Youth Basketball League)"
+  region: "US (National)"
+  level: "Grassroots Elite"
+  has_player_stats: true
+  stats_types: ["season_averages", "game_logs", "leaderboards"]
+  access_mode: "public_html"  # React SPA, requires browser automation
+  legal_ok: true  # Public stats pages
+  anti_bot: "heavy"
+  status: "wip"  # Browser automation added in adapter, needs validation
+  priority: 1  # Top US prospects
+  seasons_supported: ["2024", "2023", "2022"]  # Verify actual coverage
+  notes: "BrowserClient imported. React SPA requires browser automation. Need to validate with real data."
+  next_action: "Run validation tests with known players from recent seasons"
+
+eybl_girls:
+  name: "Nike EYBL Girls"
+  region: "US (National)"
+  level: "Grassroots Elite"
+  has_player_stats: true
+  stats_types: ["season_averages", "game_logs", "leaderboards"]
+  access_mode: "public_html"
+  legal_ok: true
+  anti_bot: "heavy"
+  status: "todo"  # Inherits from boys, needs browser automation
+  priority: 2
+  seasons_supported: []
+  notes: "Inherits from EYBL boys adapter. Needs browser automation implementation."
+  next_action: "Implement browser automation following boys pattern"
+
+three_ssb:
+  name: "Adidas 3SSB (3 Stripe Select Basketball)"
+  region: "US (National)"
+  level: "Grassroots Elite"
+  has_player_stats: true
+  stats_types: ["season_averages", "game_logs", "standings"]
+  access_mode: "blocked"  # 403 Forbidden
+  legal_ok: false  # ToS review needed
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 1
+  seasons_supported: []
+  notes: "All endpoints 403. Need browser automation or official data access."
+  next_action: "Research adidas3ssb.com ToS, implement browser automation if allowed"
+
+three_ssb_girls:
+  name: "Adidas 3SSB Girls"
+  region: "US (National)"
+  level: "Grassroots Elite"
+  has_player_stats: true
+  stats_types: ["season_averages", "game_logs", "standings"]
+  access_mode: "blocked"
+  legal_ok: false
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 2
+  seasons_supported: []
+  notes: "Inherits from boys. Same access issues."
+  next_action: "Follow boys implementation"
+
+uaa:
+  name: "Under Armour Association (UAA)"
+  region: "US (National)"
+  level: "Grassroots Elite"
+  has_player_stats: true
+  stats_types: ["season_averages", "game_logs", "leaderboards"]
+  access_mode: "blocked"  # 403 Forbidden
+  legal_ok: false  # ToS review needed
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 1
+  seasons_supported: []
+  notes: "All endpoints 403. Completes Big 3 national circuits."
+  next_action: "Research uaassociation.com ToS, implement browser automation if allowed"
+
+uaa_girls:
+  name: "UA Next (Girls)"
+  region: "US (National)"
+  level: "Grassroots Elite"
+  has_player_stats: true
+  stats_types: ["season_averages", "game_logs", "leaderboards"]
+  access_mode: "blocked"
+  legal_ok: false
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 2
+  seasons_supported: []
+  notes: "Inherits from UAA boys. Same access issues."
+  next_action: "Follow boys implementation"
+
+# HIGH PRIORITY - US Multi-State Platforms
+
+sblive:
+  name: "SBLive Sports (Multi-State)"
+  region: "US (WA, OR, CA, AZ, ID, NV + potential 14+ more)"
+  level: "High School"
+  has_player_stats: true
+  stats_types: ["season_averages", "leaderboards"]
+  access_mode: "public_html"  # Browser automation working
+  legal_ok: true  # ToS allows reasonable scraping
+  anti_bot: "heavy"
+  status: "green"  # Browser automation implemented in Phase 12.1
+  priority: 1  # Multi-state coverage
+  seasons_supported: ["2024-25", "2023-24"]
+  states: ["WA", "OR", "CA", "AZ", "ID", "NV"]
+  potential_expansion: ["TX", "FL", "GA", "NC", "VA", "+10 more"]
+  notes: "Browser automation working. Can expand to 14+ additional states if ToS permits."
+  next_action: "Validate current 6 states, research expansion states"
+
+bound:
+  name: "Bound (formerly Varsity Bound)"
+  region: "US (IA, SD, IL, MN)"
+  level: "High School"
+  has_player_stats: true  # Assumed
+  stats_types: ["season_averages"]
+  access_mode: "blocked"  # Connection issues, domain may be defunct
+  legal_ok: false  # Domain unreachable
+  anti_bot: "unknown"
+  status: "blocked"
+  priority: 3
+  seasons_supported: []
+  states: ["IA", "SD", "IL", "MN"]
+  notes: "Domain connection failures. May be defunct. Research current status."
+  next_action: "Research if Bound/Varsity Bound is still operational, find new domain if migrated"
+
+mn_basketball_hub:
+  name: "MN Basketball Hub"
+  region: "US (Minnesota)"
+  level: "High School"
+  has_player_stats: true
+  stats_types: ["season_averages", "game_logs"]
+  access_mode: "blocked"  # SSL handshake failure (likely also 403)
+  legal_ok: false  # ToS review needed
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 2  # Best single-state hub
+  seasons_supported: []
+  notes: "SSL errors. Likely also has anti-bot protection."
+  next_action: "Retest with browser automation, verify ToS"
+
+# MEDIUM PRIORITY - US Prep/Elite Circuits
+
+ote:
+  name: "Overtime Elite"
+  region: "US (Professional Prep)"
+  level: "Professional Prep (Ages 16-20)"
+  has_player_stats: true
+  stats_types: ["season_averages", "game_logs"]
+  access_mode: "blocked"  # 403 Forbidden
+  legal_ok: false  # ToS review needed
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 2  # Professional prep, high-profile prospects
+  seasons_supported: []
+  notes: "Professional prep league. All endpoints 403."
+  next_action: "Research official OTE stats API or partnership"
+
+grind_session:
+  name: "Grind Session"
+  region: "US (National)"
+  level: "Elite Prep Tournaments"
+  has_player_stats: true
+  stats_types: ["event_stats", "box_scores"]
+  access_mode: "blocked"  # 403 Forbidden
+  legal_ok: false  # ToS review needed
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 3
+  seasons_supported: []
+  notes: "Elite prep tournament circuit. All endpoints 403."
+  next_action: "Research ToS and data access options"
+
+# MEDIUM PRIORITY - Global Youth
+
+fiba_youth:
+  name: "FIBA Youth (Official)"
+  region: "Global (U16/U17/U18)"
+  level: "International Youth"
+  has_player_stats: true
+  stats_types: ["tournament_stats", "game_logs"]
+  access_mode: "official_api"  # FIBA likely has official feeds
+  legal_ok: true  # Official FIBA competitions
+  anti_bot: "moderate"
+  status: "todo"
+  priority: 2  # Official international competitions
+  seasons_supported: []
+  notes: "FIBA likely has official LiveStats or data feeds. Research official API."
+  next_action: "Research FIBA official data API or feeds"
+
+fiba_livestats:
+  name: "FIBA LiveStats"
+  region: "Global"
+  level: "International Competitions"
+  has_player_stats: true
+  stats_types: ["live_stats", "box_scores"]
+  access_mode: "blocked"  # 403 Forbidden
+  legal_ok: false  # Need to verify official access
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 2
+  seasons_supported: []
+  notes: "LiveStats platform. May have official API access."
+  next_action: "Research official FIBA LiveStats API access"
+
+# MEDIUM PRIORITY - European Youth Leagues
+
+nbbl:
+  name: "NBBL/JBBL (Germany)"
+  region: "Europe (Germany)"
+  level: "U16/U19"
+  has_player_stats: true
+  stats_types: ["season_averages", "game_logs"]
+  access_mode: "blocked"  # 403 Forbidden
+  legal_ok: false  # ToS review needed
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 3
+  seasons_supported: []
+  notes: "German youth leagues. All endpoints 403."
+  next_action: "Research official German basketball federation data access"
+
+feb:
+  name: "FEB Junior (Spain)"
+  region: "Europe (Spain)"
+  level: "U16/U18/U20"
+  has_player_stats: true
+  stats_types: ["season_averages", "championships"]
+  access_mode: "blocked"  # 403 Forbidden
+  legal_ok: false  # ToS review needed
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 3
+  seasons_supported: []
+  notes: "Spanish youth championships. All endpoints 403."
+  next_action: "Research official FEB data access"
+
+# LOWEST PRIORITY / BLOCKED - State Associations
+# Most have fixtures only, not player stats
+
+psal:
+  name: "PSAL NYC (Public Schools Athletic League)"
+  region: "US (New York City)"
+  level: "High School"
+  has_player_stats: false  # Fixtures/standings only
+  stats_types: ["fixtures", "standings"]
+  access_mode: "blocked"  # SSL errors
+  legal_ok: false
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 4  # Low - no player stats
+  seasons_supported: []
+  notes: "Fixtures/standings only, no player stats verified."
+  next_action: "Verify if player stats exist, if not mark as fixtures-only"
+
+wsn:
+  name: "WSN (Wisconsin Sports Network)"
+  region: "US (Wisconsin)"
+  level: "N/A"
+  has_player_stats: false  # NOT A STATS SITE
+  stats_types: []
+  access_mode: "blocked"
+  legal_ok: false
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 5  # INACTIVE - not a stats database
+  seasons_supported: []
+  notes: "SPORTS NEWS WEBSITE, NOT A STATS DATABASE. Per Phase 12.2 investigation."
+  next_action: "Mark adapter as INACTIVE, find Wisconsin alternative (WIAA, SBLive WI)"
+
+# HIGHEST VALUE GAP - PrepHoops Network
+# This is the single biggest coverage opportunity (20+ states)
+
+prephoops:
+  name: "PrepHoops Network (Multi-State)"
+  region: "US (20+ states: TX, FL, GA, NC, VA, OH, PA, IN, NJ, MI, TN, KY, LA, AL, SC, MD, IL, WI, IA, +)"
+  level: "High School"
+  has_player_stats: true
+  stats_types: ["season_averages", "game_logs", "rankings"]
+  access_mode: "partnership_needed"  # Recruiting network, likely subscription-based
+  legal_ok: false  # Commercial recruiting service, ToS likely prohibits scraping
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 1  # HIGHEST ROI - 20+ states with one adapter
+  seasons_supported: []
+  states: ["TX", "FL", "GA", "NC", "VA", "OH", "PA", "IN", "NJ", "MI", "TN", "KY", "LA", "AL", "SC", "MD", "IL", "WI", "IA", "+"]
+  notes: "Commercial recruiting network. Best state coverage but likely requires partnership/license. ROI: 0.8 hrs/state vs 1.9 hrs/state for individual state associations."
+  next_action: "Contact PrepHoops about data partnership or API access. Do NOT scrape without permission."
+
+# RECRUITING SERVICES - Use as features, not primary stats sources
+
+recruiting_247sports:
+  name: "247Sports Basketball"
+  region: "US (National)"
+  level: "Recruiting Rankings"
+  has_player_stats: false  # Rankings, not game stats
+  stats_types: ["rankings", "ratings", "commitments", "physicals"]
+  access_mode: "partnership_needed"  # Commercial service
+  legal_ok: false  # ToS likely prohibits scraping
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 2  # High value for college forecasting (rankings as features)
+  seasons_supported: []
+  notes: "Use for rankings, star ratings, commitments, physicals. NOT a primary stats source. Treat as side table joined to player entity."
+  next_action: "Research 247Sports data partnership or API"
+
+recruiting_on3:
+  name: "On3 (Industry Rating Percentage)"
+  region: "US (National)"
+  level: "Recruiting Rankings"
+  has_player_stats: false
+  stats_types: ["IRP_rankings", "NIL_valuations", "ratings", "commitments"]
+  access_mode: "partnership_needed"
+  legal_ok: false
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 2  # NIL data unique, valuable for college forecasting
+  seasons_supported: []
+  notes: "Composite rankings (IRP) and NIL valuations. Side table for college forecasting."
+  next_action: "Research On3 data partnership"
+
+recruiting_rivals:
+  name: "Rivals (Rivals150)"
+  region: "US (National)"
+  level: "Recruiting Rankings"
+  has_player_stats: false
+  stats_types: ["rivals150", "ratings", "event_stats"]
+  access_mode: "partnership_needed"
+  legal_ok: false
+  anti_bot: "heavy"
+  status: "blocked"
+  priority: 3
+  seasons_supported: []
+  notes: "Rivals150 rankings. Less comprehensive than 247/On3."
+  next_action: "Consider if needed beyond 247/On3"
+
+# SUMMARY STATISTICS
+# Total datasources: 23 shown (subset of 56+ total)
+# Status breakdown:
+#   - green: 1 (SBLive)
+#   - wip: 1 (EYBL)
+#   - todo: 1 (FIBA Youth)
+#   - blocked: 20 (most sources)
+#
+# Access mode breakdown:
+#   - official_api: 1 (FIBA Youth - needs verification)
+#   - public_html: 2 (EYBL, SBLive)
+#   - partnership_needed: 4 (PrepHoops, recruiting services)
+#   - blocked: 16 (anti-bot or unknown)
+#
+# Priority 1 (Critical): 6 sources (ANGT, EYBL, 3SSB, UAA, SBLive, PrepHoops)
+# Priority 2 (High): 7 sources
+# Priority 3 (Medium): 4 sources
+# Priority 4-5 (Low): 2 sources

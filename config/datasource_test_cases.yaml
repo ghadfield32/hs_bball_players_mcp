@@ -1,0 +1,192 @@
+# Datasource Test Cases Configuration
+#
+# Known-good player + season combinations per datasource for semantic validation.
+# These should be manually verified on the source website before adding.
+#
+# Structure:
+#   datasource_name:
+#     - player_name: "Full Player Name"
+#       season: "2023-24" or "2023"
+#       team_hint: "Team Name" (optional, helps with search)
+#       expected_min_games: 1 (minimum games expected)
+#       expected_min_ppg: 5.0 (optional, minimum PPG expected)
+#       expected_max_ppg: 50.0 (optional, maximum PPG expected)
+#       notes: "Any special notes about this test case"
+#
+# Usage:
+#   python scripts/validate_datasource_stats.py
+#
+# Notes:
+# - Keep 2-5 test cases per datasource
+# - Use real player names verified on the source website
+# - expected_* fields are optional; sanity checks alone help
+# - Test cases drive production validation, so choose carefully
+
+# ============================================================================
+# US NATIONAL CIRCUITS
+# ============================================================================
+
+eybl:
+  # Nike EYBL (Elite Youth Basketball League)
+  #
+  # ⚠️  MANUAL STEP REQUIRED - Real player names needed from https://nikeeyb.com
+  #
+  # How to add real test cases:
+  #   1. Visit https://nikeeyb.com/cumulative-season-stats
+  #   2. Select season from dropdown (2024, 2023, or 2022)
+  #   3. Find players with COMPLETE stats in the table (games, PPG, RPG, APG, etc.)
+  #   4. Pick 1 player per season from different teams
+  #   5. Copy their EXACT name as shown on the site
+  #   6. Record their team name
+  #   7. Replace the placeholders below
+  #
+  # Example of what a real test case looks like:
+  #   - player_name: "Cameron Boozer"  # EXACT name from site
+  #     season: "2024"
+  #     team_hint: "Nightrydas Elite"  # Team from stats table
+  #     expected_min_games: 1
+  #     expected_min_ppg: 10.0  # Adjust based on what you see
+  #     expected_max_ppg: 40.0
+  #     notes: "Top prospect from 2024 season"
+  #
+  # Current status: PLACEHOLDERS - will be skipped by validator until replaced
+  #
+
+  - player_name: "REPLACE_WITH_REAL_EYBL_PLAYER_1"
+    season: "2024"
+    team_hint: "REPLACE_WITH_TEAM_NAME"
+    expected_min_games: 1
+    expected_min_ppg: 5.0
+    expected_max_ppg: 50.0
+    notes: "TODO: Visit nikeeyb.com/cumulative-season-stats, select 2024 season, pick a player with complete stats"
+
+  - player_name: "REPLACE_WITH_REAL_EYBL_PLAYER_2"
+    season: "2023"
+    team_hint: "REPLACE_WITH_TEAM_NAME"
+    expected_min_games: 1
+    expected_min_ppg: 5.0
+    expected_max_ppg: 50.0
+    notes: "TODO: Visit nikeeyb.com/cumulative-season-stats, select 2023 season, pick a player with complete stats"
+
+  - player_name: "REPLACE_WITH_REAL_EYBL_PLAYER_3"
+    season: "2022"
+    team_hint: "REPLACE_WITH_TEAM_NAME"
+    expected_min_games: 1
+    expected_min_ppg: 5.0
+    expected_max_ppg: 50.0
+    notes: "TODO: Visit nikeeyb.com/cumulative-season-stats, select 2022 season, pick a player with complete stats"
+
+eybl_girls:
+  # Nike EYBL Girls
+  # Same as EYBL boys but from girls division
+  # URL: https://nikeeyb.com/girls/cumulative-season-stats
+  []
+
+three_ssb:
+  # Adidas 3SSB (3 Stripe Select Basketball)
+  # URL: https://adidas3ssb.com/stats
+  []
+
+three_ssb_girls:
+  # Adidas 3SSB Girls
+  []
+
+uaa:
+  # Under Armour Association (Boys)
+  # URL: https://uaassociation.com/stats
+  []
+
+uaa_girls:
+  # UA Next (Girls)
+  []
+
+# ============================================================================
+# US MULTI-STATE PLATFORMS
+# ============================================================================
+
+sblive:
+  # SBLive Sports
+  # Note: Browser automation working (Phase 12.1)
+  # TODO: Add real players from https://wa.sblive.com or other state sites
+
+  - player_name: "REPLACE_WITH_SBLIVE_PLAYER"
+    season: "2024-25"
+    team_hint: "REPLACE_WITH_TEAM"
+    state: "WA"  # Washington
+    expected_min_games: 1
+    expected_min_ppg: 5.0
+    expected_max_ppg: 50.0
+    notes: "SBLive Washington validation"
+
+mn_basketball_hub:
+  # MN Basketball Hub
+  # URL: https://www.mnbasketballhub.com
+  []
+
+# ============================================================================
+# GLOBAL/INTERNATIONAL
+# ============================================================================
+
+fiba_youth:
+  # FIBA Youth (U16/U17/U18)
+  # Note: Official competitions, likely has API
+  # TODO: Research official FIBA LiveStats API first
+  []
+
+fiba_livestats:
+  # FIBA LiveStats
+  []
+
+angt:
+  # ANGT (Adidas Next Generation Tournament)
+  # Note: Blocked by anti-bot, may require partnership
+  # Do NOT add test cases until legal/access is resolved
+  []
+
+# ============================================================================
+# CANADA
+# ============================================================================
+
+osba:
+  # OSBA (Ontario Scholastic Basketball Association)
+  # Note: Needs manual site verification first
+  # Do NOT add test cases until site is verified
+  []
+
+npa:
+  # NPA Canada (National Prep)
+  []
+
+# ============================================================================
+# AUSTRALIA
+# ============================================================================
+
+playhq:
+  # PlayHQ (Basketball Australia)
+  []
+
+# ============================================================================
+# US PREP/ELITE
+# ============================================================================
+
+ote:
+  # Overtime Elite
+  []
+
+grind_session:
+  # Grind Session
+  []
+
+# ============================================================================
+# SUMMARY
+# ============================================================================
+# Total datasources configured: 18
+# Test cases defined: 0 (all placeholders - need real player names)
+#
+# Next steps:
+# 1. Start with EYBL - visit nikeeyb.com and pick 3 real players
+# 2. Update eybl section above with real names
+# 3. Run: python scripts/validate_datasource_stats.py
+# 4. Fix any issues in EYBL adapter
+# 5. Once EYBL passes, mark status="green" in datasource_status.yaml
+# 6. Repeat for other high-priority sources
