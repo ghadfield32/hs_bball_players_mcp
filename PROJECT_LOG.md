@@ -1329,4 +1329,271 @@ Systematically audit all 56 configured datasources to identify which are working
 
 ---
 
-*Last Updated: 2025-11-16 20:15 UTC*
+## Phase 14: Production-Ready Datasource Framework (2025-11-16)
+
+### OBJECTIVE
+Shift from "discovery mode" to "production mode" by creating a rigorous Definition of Done for datasources, implementing semantic validation (not just connectivity), and establishing legal/access clarity before implementation.
+
+### COMPLETED
+
+#### [2025-11-16 20:30] Phase 14.1: Datasource Status Configuration System
+- ✅ **Created `config/datasource_status.yaml`** (500+ lines)
+  - Canonical view of all 23 priority datasources
+  - Fields: legal_ok, access_mode, anti_bot, status, priority, seasons_supported
+  - Status values: green (production), wip (in progress), todo (planned), blocked (cannot proceed)
+  - Access modes: official_api, public_html, partnership_needed, blocked
+  - Anti-bot levels: none, moderate, heavy
+  - Priority ranking: 1 (critical) to 5 (inactive)
+
+- ✅ **Status Classification Completed**
+  - GREEN (1): SBLive (browser automation working)
+  - WIP (1): EYBL (browser automation added, needs validation)
+  - TODO (1): FIBA Youth (official API research needed)
+  - BLOCKED (20): Most sources - anti-bot, legal issues, or defunct
+
+- ✅ **Access Mode Breakdown**
+  - official_api: 1 (FIBA Youth - needs verification)
+  - public_html: 2 (EYBL, SBLive - browser automation required)
+  - partnership_needed: 4 (PrepHoops, 247Sports, On3, Rivals)
+  - blocked: 16 (anti-bot or ToS prohibits)
+
+- ✅ **Priority Classification**
+  - Priority 1 (Critical - 6 sources): ANGT, EYBL, 3SSB, UAA, SBLive, PrepHoops
+  - Priority 2 (High - 7 sources): OSBA, EYBL Girls, FIBA Youth, OTE, MN Hub, recruiting services
+  - Priority 3 (Medium - 4 sources): Bound, Grind Session, European leagues
+  - Priority 4-5 (Low - 2 sources): PSAL (fixtures only), WSN (INACTIVE - not stats site)
+
+#### [2025-11-16 20:45] Phase 14.2: Semantic Validation Harness
+- ✅ **Created `scripts/validate_datasource_stats.py`** (400+ lines)
+  - Tests DATA CORRECTNESS, not just connectivity
+  - For each datasource with status "green" or "wip":
+    - Loads test cases (known player + season)
+    - Calls search_players() and get_player_season_stats()
+    - Runs sanity checks on returned stats
+    - Validates: games ≥ 1, FGM ≤ FGA, 3PM ≤ 3PA, FTM ≤ FTA, reasonable ranges
+    - Compares against expected values (if available)
+    - Generates pass/fail report
+
+- ✅ **Test Case Framework**
+  - TEST_CASES dict for known players per datasource
+  - Each test case: player_name, season, expected_games, expected_ppg range
+  - Placeholder test cases for EYBL, SBLive, ANGT, OSBA
+  - Ready to fill with real players after manual verification
+
+- ✅ **Sanity Check Implementation**
+  - Games played: Must be ≥ 1
+  - Minutes per game: Must be 0-48
+  - Points per game: Configurable min/max range
+  - Field goals: FGM ≤ FGA, both ≥ 0
+  - Three pointers: 3PM ≤ 3PA, both ≥ 0
+  - Free throws: FTM ≤ FTA, both ≥ 0
+  - Rebounds, assists, steals, blocks: Reasonable upper bounds
+
+- ✅ **Reporting**
+  - Exports validation_results.json (machine-readable)
+  - Exports VALIDATION_SUMMARY.md (human-readable)
+  - Shows per-datasource pass/fail rates
+  - Overall success rate calculation
+
+### KEY INSIGHTS
+
+#### Definition of Done (DoD) for Production-Ready Datasources
+
+A datasource is "production-ready" when:
+
+1. **Legal & Access Verified**
+   - ToS and robots.txt reviewed
+   - Access mode documented (official_api, public_html, partnership_needed)
+   - legal_ok = true in datasource_status.yaml
+
+2. **Implementation Complete**
+   - search_players() works for known test players
+   - get_player_season_stats() returns complete stats
+   - Historical coverage documented (which seasons are supported)
+   - Season/division/state coverage explicitly listed
+
+3. **Validation Passing**
+   - At least 3 test cases defined with real player names
+   - All sanity checks pass (no negative stats, valid ranges, FGM ≤ FGA, etc.)
+   - Test success rate ≥ 90%
+   - test_datasources/test_{source}.py has passing integration tests
+
+4. **Data Export Working**
+   - Can generate Parquet export for at least one season
+   - Data loads into DuckDB successfully
+   - Schema validated, no missing required fields
+
+5. **Documentation Updated**
+   - datasource_status.yaml updated with status="green"
+   - seasons_supported list populated
+   - PROJECT_LOG.md updated with implementation notes
+   - Known limitations documented
+
+#### Legal & Access Triage Results
+
+**Green-light sources** (OK to implement):
+- SBLive (ToS allows reasonable scraping, browser automation working)
+- FIBA Youth (official competitions, likely has documented API)
+- State associations with public stats pages (pending ToS review)
+
+**Yellow-light sources** (proceed with caution):
+- EYBL (public stats but requires browser automation, ToS review needed)
+- National circuits (3SSB, UAA) - public stats but anti-bot protection
+
+**Red-light sources** (partnership required):
+- PrepHoops (commercial recruiting network, likely subscription-based)
+- 247Sports, On3, Rivals (commercial recruiting services)
+- ANGT (EuroLeague - may require official data partnership)
+- OTE (professional prep league - may require partnership)
+
+**Defunct/Blocked sources**:
+- WSN (sports news site, not stats database - INACTIVE)
+- Bound (domain connection issues - possibly defunct)
+- Many state associations (fixtures only, no player stats)
+
+#### Priority Reassessment Based on ROI & Legal Clarity
+
+**Tier 1 - Implement First (High ROI + Legal Clear)**:
+1. SBLive expansion (current 6 states → 14+ states if ToS permits)
+2. FIBA Youth (official API research, international coverage)
+3. EYBL (validate existing browser automation, complete Big 3)
+4. MN Basketball Hub (single-state but high quality)
+
+**Tier 2 - Legal Review Required**:
+1. 3SSB, UAA (complete Big 3, pending ToS review)
+2. State associations with verified player stats
+3. OSBA (Canadian prep, pending site verification)
+
+**Tier 3 - Partnership Approach**:
+1. PrepHoops (highest value but requires data partnership)
+2. ANGT (EuroLeague official data access)
+3. OTE (professional prep - official stats API?)
+4. Recruiting services (use as feature tables, not primary stats)
+
+### RECOMMENDATIONS (Updated)
+
+#### Phase HS-4 Revised: International & Legal Foundations
+
+**Week 1 Actions**:
+1. **FIBA Youth Research** (2-3 hours)
+   - Research official FIBA data APIs or feeds
+   - Determine if publicly accessible
+   - If yes → mark access_mode="official_api", status="wip"
+   - If no → status="blocked", note partnership needed
+
+2. **ANGT Legal Triage** (1-2 hours)
+   - Contact EuroLeague about official data access
+   - Review EuroLeague API documentation if exists
+   - Decide: official_api vs partnership_needed vs blocked
+   - Document decision in datasource_status.yaml
+
+3. **OSBA Site Verification** (1-2 hours)
+   - Manually visit www.osba.ca in browser
+   - Verify player stats pages actually exist
+   - Check robots.txt and ToS
+   - Document: what stats are available, what seasons, what divisions
+   - Update datasource_status.yaml with findings
+
+4. **EYBL Validation** (2-3 hours)
+   - Fill TEST_CASES with 3 real EYBL players from 2023-24 season
+   - Run validate_datasource_stats.py
+   - Fix any sanity check failures
+   - Update status to "green" if validation passes
+
+**Deliverable**:
+- Updated datasource_status.yaml with verified legal/access status for top 4 sources
+- At least 1 source (EYBL or FIBA) with status="green" and passing validation
+
+#### Phase HS-5 Revised: Production-Ready National Circuits
+
+**Week 2 Actions**:
+1. For each of EYBL, 3SSB, UAA:
+   - Complete legal/ToS review
+   - Implement or validate browser automation
+   - Define 3+ test cases with real players
+   - Run validation harness
+   - Fix until validation passes
+   - Update status to "green"
+
+2. Export national_circuits_player_seasons.parquet
+   - Include all 3 circuits
+   - Document season coverage per circuit
+   - Load into DuckDB and validate schema
+
+**Deliverable**:
+- 3 sources with status="green" (EYBL, 3SSB, UAA)
+- Single Parquet file with all Big 3 national circuit stats
+- Documented season coverage table
+
+#### Phase HS-6 Revised: State Coverage Expansion
+
+**Week 3-4 Actions**:
+1. **SBLive Expansion Research** (4-6 hours)
+   - Test 5 pilot expansion states (TX, FL, GA, NC, VA)
+   - Verify stats availability per state
+   - Check if ToS permits multi-state scraping
+   - If yes → expand to all available states
+   - If no → limit to current 6 states
+
+2. **MN Basketball Hub** (2-3 hours)
+   - Fix SSL/anti-bot issues
+   - Validate with browser automation
+   - Define test cases and run validation
+   - Mark as "green" if passes
+
+3. **State Association Triage** (2-3 hours)
+   - For top 10 basketball states (TX, FL, GA, NC, VA, OH, PA, IN, NJ, MI)
+   - Manually verify which have player stats (not just fixtures)
+   - Mark has_player_stats=true/false in datasource_status.yaml
+   - Prioritize those with verified stats
+
+**Deliverable**:
+- SBLive coverage summary (which states work, which seasons)
+- Updated datasource_status.yaml with verified stats availability for state associations
+- At least 2 additional sources with status="green"
+
+### FILES CREATED
+
+**Configuration**:
+- `config/datasource_status.yaml` - Canonical datasource metadata (500+ lines)
+
+**Validation Infrastructure**:
+- `scripts/validate_datasource_stats.py` - Semantic validation harness (400+ lines)
+
+**Impact**:
+- Established clear Definition of Done for datasources
+- Separated legal/accessible sources from partnership-required sources
+- Created semantic validation (data correctness) vs connectivity testing
+- Re-prioritized based on ROI + legal clarity, not just coverage potential
+- Shifted PrepHoops from "scraping target" to "partnership opportunity"
+
+### NEXT STEPS
+
+**Phase HS-4 (THIS WEEK) - Revised**:
+- [ ] Research FIBA Youth official API/feeds
+- [ ] Contact EuroLeague about ANGT data access
+- [ ] Manually verify OSBA stats page existence and ToS
+- [ ] Validate EYBL with real test cases
+- [ ] Update datasource_status.yaml with findings
+
+**Phase HS-5 (NEXT WEEK)**:
+- [ ] Complete legal review for 3SSB, UAA
+- [ ] Implement/validate browser automation for national circuits
+- [ ] Run validation harness on all Big 3 circuits
+- [ ] Export national_circuits_player_seasons.parquet
+
+**Phase HS-6 (WEEKS 3-4)**:
+- [ ] Research SBLive expansion states
+- [ ] Fix and validate MN Basketball Hub
+- [ ] Triage top 10 state associations for stats availability
+- [ ] Implement validated state sources
+
+**Infrastructure (PARALLEL)**:
+- [ ] Implement dynamic adapter loading in validate_datasource_stats.py
+- [ ] Add real test cases after manual player verification
+- [ ] Create coverage summary SQL view in DuckDB
+- [ ] Document legal review process for future sources
+
+---
+
+*Last Updated: 2025-11-16 20:50 UTC*
